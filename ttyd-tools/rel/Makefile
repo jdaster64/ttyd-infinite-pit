@@ -7,14 +7,14 @@ ifeq ($(strip $(DEVKITPPC)),)
 $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
 endif
 
-ifeq ($(strip $(TTYDTOOLS)),)
-$(error "Please set TTYDTOOLS in your environment. export TTYDTOOLS=<path to>ttyd-tools")
+ifeq ($(strip $(PIT_TTYDTOOLS)),)
+$(error "Please set PIT_TTYDTOOLS in your environment. export PIT_TTYDTOOLS=<path to>ttyd-tools")
 endif
 
 include $(DEVKITPPC)/gamecube_rules
 
-export ELF2REL	:=	$(TTYDTOOLS)/bin/elf2rel
-export GCIPACK	:=	python $(TTYDTOOLS)/gcipack/gcipack.py
+export ELF2REL	:=	$(PIT_TTYDTOOLS)/bin/elf2rel
+export GCIPACK	:=	python $(PIT_TTYDTOOLS)/gcipack/gcipack.py
 
 ifeq ($(VERSION),)
 all: us jp eu
@@ -41,7 +41,7 @@ else
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR)).$(VERSION)
 BUILD		:=	build.$(VERSION)
-SOURCES		:=	source
+SOURCES		:=	source $(wildcard source/*)
 DATA		:=	data  
 INCLUDES	:=	include
 
@@ -51,7 +51,7 @@ INCLUDES	:=	include
 
 MACHDEP		= -mno-sdata -mgcn -DGEKKO -mcpu=750 -meabi -mhard-float
 
-CFLAGS		= -nostdlib -ffreestanding -ffunction-sections -fdata-sections -g -O3 -Wall $(MACHDEP) $(INCLUDE)
+CFLAGS		= -nostdlib -ffreestanding -ffunction-sections -fdata-sections -g -Os -Wall -Werror -Wno-address-of-packed-member $(MACHDEP) $(INCLUDE)
 CXXFLAGS	= -fno-exceptions -fno-rtti -std=gnu++17 $(CFLAGS)
 
 LDFLAGS		= -r -e _prolog -u _prolog -u _epilog -u _unresolved -Wl,--gc-sections -nostdlib -g $(MACHDEP) -Wl,-Map,$(notdir $@).map
@@ -172,7 +172,7 @@ $(OFILES_SOURCES) : $(HFILES)
 	
 %.gci: %.rel
 	@echo packing ... $(notdir $@)
-	@$(GCIPACK) $< "rel" "Paper Mario" "TTYD Debug Menu" $(BANNERFILE) $(ICONFILE) $(GAMECODE)
+	@$(GCIPACK) $< "rel" "Paper Mario" "TTYD Infinite Pit" $(BANNERFILE) $(ICONFILE) $(GAMECODE)
 	
 #---------------------------------------------------------------------------------
 # This rule links in binary data with the .jpg extension
