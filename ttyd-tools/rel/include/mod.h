@@ -5,6 +5,8 @@
 
 #include <cstdint>
 
+#include "randomizer.h"
+
 namespace mod {
 
 class Mod
@@ -15,33 +17,12 @@ public:
 	
 private:
 	void updateEarly();
-	void draw();
-
-	void updateConsole();
-	void processCommand(const char *command);
-	void updateHeapInfo();
-	
-	void drawConsole();
-	void drawMovementInfo();
-	void drawHeapInfo();
-
-private:
-	void (*mPFN_makeKey_trampoline)() = nullptr;
-	
-	bool mShowUi = true;
-	char mDisplayBuffer[256];
-
-	bool mShowMovementInfo = false;
-
-	char mCommandBuffer[64] = "";
-	int mBackspaceHoldTimer = 0;
-
-	bool mConsoleActive = false;
-
-	int mDebugHeapId = -1;
-	char mDebugHeapText[64];
-
-	Keyboard *mKeyboard = nullptr;
+    
+    // Encapsulates all the main mod logic.
+    pit_randomizer::Randomizer randomizer_mod_;
+    
+    // Main trampoline to call once-a-frame update logic from.
+    void (*marioStMain_trampoline_)() = nullptr;
 };
 
 }

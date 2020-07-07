@@ -482,6 +482,25 @@
 80077bdc:fontmgrTexSetup
 80077c08:fontmgrInit
 
+// windowdrv.o
+// 8007AD30:getWakuTexObj
+// 8007AD40:windowGetPointer
+// 8007AD50:windowCheckID
+// 8007AD68:windowDispGX2_Waku_col
+8007B44C:windowDispGX_Waku_col
+// 8007BAD8:windowDispGX_Message
+// 8007BDA8:_windowDispGX_Message
+// 8007D994:windowDispGX_System
+// 8007E9F0:windowDispGX_Kanban
+// 8007F9EC:windowMain
+// 8007FA54:windowDeleteID
+// 8007FAC0:windowDelete
+// 8007FB0C:windowEntry
+// 8007FB94:windowReInit
+// 8007FBD8:windowTexSetup
+// 8007FCF0:unk_JP_US_PAL_012
+// 8007FD84:windowInit
+
 // database.o
 80084f24:setupDataBase
 8008558c:setupDataCheck
@@ -496,6 +515,44 @@
 80086d6c:seq_logoMain
 8008746c:seq_logoExit
 800874b0:seq_logoInit
+
+// runtime.c
+802648BC:_savefpr_14
+802648C0:_savefpr_15
+802648C4:_savefpr_16
+802648C8:_savefpr_17
+802648CC:_savefpr_18
+802648D0:_savefpr_19
+802648D4:_savefpr_20
+802648D8:_savefpr_21
+802648DC:_savefpr_22
+802648E0:_savefpr_23
+802648E4:_savefpr_24
+802648E8:_savefpr_25
+802648EC:_savefpr_26
+802648F0:_savefpr_27
+802648F4:_savefpr_28
+802648F8:_savefpr_29
+802648FC:_savefpr_30
+80264900:_savefpr_31
+80264954:_savegpr_14
+80264958:_savegpr_15
+8026495C:_savegpr_16
+80264960:_savegpr_17
+80264964:_savegpr_18
+80264968:_savegpr_19
+8026496C:_savegpr_20
+80264970:_savegpr_21
+80264974:_savegpr_22
+80264978:_savegpr_23
+8026497C:_savegpr_24
+80264980:_savegpr_25
+80264984:_savegpr_26
+80264988:_savegpr_27
+8026498C:_savegpr_28
+80264990:_savegpr_29
+80264994:_savegpr_30
+80264998:_savegpr_31
 
 // printf.c
 8026a0b8:sprintf
@@ -545,6 +602,27 @@
 // data
 8041f070:OSAlloc_HeapArray
 8041f074:OSAlloc_NumHeaps
+
+// OSCache.c
+// 80296A14:DCEnable
+// 80296A28:DCInvalidateRange
+80296A54:DCFlushRange
+// 80296A84:DCStoreRange
+// 80296AB4:DCFlushRangeNoSync
+// 80296AE0:DCStoreRangeNoSync
+// unused:DCZeroRange
+80296B0C:ICInvalidateRange
+// 80296B40:ICFlashInvalidate
+// 80296B50:ICEnable
+// unused:__LCEnable
+// unused:LCEnable
+// 80296B64:LCDisable
+// unused:LCStoreBlocks
+// unused:LCStoreData
+// unused:LCQueueWait
+// 80296B8C:L2GlobalInvalidate
+// 80296C24:DMAErrorHandler
+// 80296D84:__OSCacheInit
 
 // si.a
 802bd7b8:SIBusy
