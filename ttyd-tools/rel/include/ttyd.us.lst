@@ -62,6 +62,34 @@
 // unused:__assert
 80007388:getMarioStDvdRoot
 
+// seq_mapchange.o
+// text
+// 80007574:_relUnLoad
+// 800075E0:_load
+80007AB4:_unload
+// 80007C2C:seq_mapChangeMain
+// 80008724:seq_mapChangeExit
+// 8000874C:seq_mapChangeInit
+// data
+8041E5A8:NextBero
+8041E5C8:NextMap
+8041E5E8:NextArea
+
+// seq_title.o
+// text
+// 80008888:pressStartGX
+// 80008D30:disp2
+// 80009098:disp1
+// 80009224:titleMain
+// 80009AE8:L_titleInit
+// 80009CCC:N_getDebugMode
+// 80009CD8:seq_titleMain
+// 80009CF8:seq_titleExit
+// 80009D30:seq_titleInit
+// 80009D90:DbgBtlSel_GetMsgDataPtr
+// data
+80414FA0:seqTitleWorkPointer2
+
 // dispdrv.o
 // unused:dispGetEntNum
 80010864:dispGetCurWork
