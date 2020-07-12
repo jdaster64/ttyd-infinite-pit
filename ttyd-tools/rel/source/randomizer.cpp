@@ -2,8 +2,12 @@
 
 #include "common_functions.h"
 #include "common_ui.h"
+#include "patch.h"
+#include "randomizer_patches.h"
 
+#include <gc/OSLink.h>
 #include <ttyd/dispdrv.h>
+#include <ttyd/msgdrv.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_title.h>
 
@@ -13,7 +17,12 @@ namespace mod::pit_randomizer {
     
 namespace  {
 
+using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::dispdrv::CameraId;
+
+// Trampoline hooks for patching in custom logic to existing TTYD C functions.
+bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
+const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo =
@@ -26,7 +35,25 @@ void DrawTitleScreenInfo() {
     
 Randomizer::Randomizer() {}
 
-void Randomizer::Init() {}
+void Randomizer::Init() {
+    // Hook functions with custom logic.
+    
+    g_OSLink_trampoline = patch::hookFunction(
+        gc::OSLink::OSLink, [](OSModuleInfo* new_module, void* bss) {
+            bool result = g_OSLink_trampoline(new_module, bss);
+            if (new_module != nullptr && result) {
+                OnModuleLoaded(new_module);
+            }
+            return result;
+        });
+        
+    g_msgSearch_trampoline = patch::hookFunction(
+        ttyd::msgdrv::msgSearch, [](const char* msg_key) {
+            const char* replacement = GetReplacementMessage(msg_key);
+            if (replacement) return replacement;
+            return g_msgSearch_trampoline(msg_key);
+        });
+}
 
 void Randomizer::Update() {}
 
@@ -40,7 +67,6 @@ void Randomizer::Draw() {
             RegisterDrawCallback(DrawTitleScreenInfo, CameraId::k2d);
         }
     }
-    (void)InMainGameModes();
 }
 
 }

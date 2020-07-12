@@ -10,6 +10,10 @@
 
 namespace mod {
 
+// TODO: #ifdef switch for multiple regions.
+const uint32_t kPitTreasureTableOffset = 0x11320;
+const uint32_t kPitEvtOpenBoxOffset = 0x11348;
+
 bool CheckSeq(ttyd::seqdrv::SeqIndex sequence) {
     const ttyd::seqdrv::SeqIndex next_seq = ttyd::seqdrv::seqGetNextSeq();
     const ttyd::seqdrv::SeqIndex cur_seq = ttyd::seqdrv::seqGetSeq();

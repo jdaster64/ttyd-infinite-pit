@@ -67,7 +67,7 @@
 // 80007574:_relUnLoad
 // 800075E0:_load
 80007AB4:_unload
-// 80007C2C:seq_mapChangeMain
+80007C2C:seq_mapChangeMain
 // 80008724:seq_mapChangeExit
 // 8000874C:seq_mapChangeInit
 // data
@@ -450,6 +450,14 @@
 8005e0b0:marioGetColor
 8005e0c0:marioGetPtr
 
+// evt_mobj.o
+8006b948:evt_mobj_wait_animation_end
+8006c03c:evt_mobj_get_position
+
+// evt_eff.o
+8006c76c:evt_eff_softdelete
+8006d970:evt_eff
+
 // mariost.o
 // unused:gcResetDone
 // unused:gcResetCheck
@@ -529,6 +537,31 @@
 // 8007FCF0:unk_JP_US_PAL_012
 // 8007FD84:windowInit
 
+// msgdrv.o
+// 8007fdf4:selectWindow_Disp
+// 8007ff3c:selectWindow_Main
+// 80080260:msgWindow_Disp
+// 8008093c:msgWindow_Clear_Main
+// 80080c20:msgWindow_Main
+// 80081424:msgWindow_ForceClose
+// 800814f4:msgWindow_Repeat
+// 8008156c:msgWindow_Continue
+// 800815bc:msgWindow_Add
+// 80081630:msgWindow_Delete
+// 80081688:msgWindow_Entry
+// 80081a1c:msgIconStr2ID
+// 80081aa0:msgGetCommand
+// 80081b40:_ismbblead
+80081b8c:msgSearch
+// 80081c6c:msg_compare
+// 80081cb4:?msgGetWork
+// 80081cbc:msgAnalize
+// 80083360:msgDispKeyWait_render
+// 800833e0:msgDisp
+// 80083f34:msgMain
+// 8008465c:msgLoad
+// 80084938:msgInit
+
 // database.o
 80084f24:setupDataBase
 8008558c:setupDataCheck
@@ -543,6 +576,37 @@
 80086d6c:seq_logoMain
 8008746c:seq_logoExit
 800874b0:seq_logoInit
+
+// evt_item.o
+800a9f98:evt_item_get_item
+800aa400:evt_item_entry
+
+// evt_msg.o
+800d2008:evt_msg_toge
+800d2460:evt_msg_print_insert
+800d284c:evt_msg_print
+
+// evt_mario.o
+800e2e0c:evt_mario_kill_party
+800e2e78:evt_mario_goodbye_party
+800e3120:evt_mario_set_party_pos
+800e6498:evt_mario_normalize
+800e7474:evt_mario_key_onoff
+
+// evt_party.o
+800eae70:evt_party_run
+800eb3f8:evt_party_get_pos
+800eb87c:evt_party_set_camid
+
+// evt_pouch.o
+800f07d0:evt_pouch_get_yoshiname
+800f0a8c:evt_pouch_party_join
+
+// evt_snd.o
+80152450:evt_snd_bgmoff_f
+8015249c:evt_snd_bgmoff
+80152548:evt_snd_bgmon_f
+801525a4:evt_snd_bgmon
 
 // runtime.c
 802648BC:_savefpr_14
@@ -651,6 +715,16 @@
 // 80296B8C:L2GlobalInvalidate
 // 80296C24:DMAErrorHandler
 // 80296D84:__OSCacheInit
+
+// OSLink.c
+// 8029A340:OSNotifyLink
+// 8029A344:OSNotifyUnlink
+8029A348:Relocate
+8029A604:Link
+8029A8E4:OSLink
+// 8029A908:Undo
+// 8029AB40:OSUnlink
+// 8029AD14:__OSModuleInit
 
 // si.a
 802bd7b8:SIBusy
