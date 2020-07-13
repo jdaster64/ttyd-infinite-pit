@@ -320,8 +320,8 @@ using evt_helper_int_array = int32_t[];
 	EVT_HELPER_CMD(1, 104), EVT_HELPER_OP(evt_id),
 #define START_ID(evt_id) \
 	EVT_HELPER_CMD(1, 105), EVT_HELPER_OP(evt_id),
-#define CHK_EVT(evt_id) \
-	EVT_HELPER_CMD(1, 106), EVT_HELPER_OP(evt_id),
+#define CHK_EVT(evt_id, is_running) \
+	EVT_HELPER_CMD(2, 106), EVT_HELPER_OP(evt_id), EVT_HELPER_OP(is_running),
 
 #define INLINE_EVT() \
 	EVT_HELPER_CMD(0, 107),

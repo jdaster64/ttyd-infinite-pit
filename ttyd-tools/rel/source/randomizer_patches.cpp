@@ -17,12 +17,86 @@
 #include <ttyd/evt_pouch.h>
 #include <ttyd/evt_snd.h>
 #include <ttyd/evtmgr.h>
+#include <ttyd/item_data.h>
 #include <ttyd/mario.h>
+#include <ttyd/mario_party.h>
+#include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
+#include <ttyd/win_main.h>
+#include <ttyd/win_party.h>
 
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
+
+// Assembly patch functions, and code referenced in them.
+extern "C" {
+    void StartFixItemWinPartyDispOrder();
+    void BranchBackFixItemWinPartyDispOrder();
+    void StartFixItemWinPartySelectOrder();
+    void BranchBackFixItemWinPartySelectOrder();
+    void StartUsePartyRankup();
+    void BranchBackUsePartyRankup();
+    
+    void usePartyRankup() {
+        void* winPtr = ttyd::win_main::winGetPtr();
+        const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
+        // If the item is a Shine Sprite...
+        if (item == ttyd::item_data::ItemType::GOLD_BAR_X3) {
+            int32_t* party_member_target = 
+                reinterpret_cast<int32_t*>(winPtr) + (0x2dc / 4);
+            // If Mario is selected, target the first party member instead.
+            if (*party_member_target == 0) *party_member_target = 1;
+            
+            ttyd::win_party::WinPartyData* party_data = 
+                ttyd::win_party::g_winPartyDt;
+            ttyd::mario_pouch::PouchPartyData* pouch_data = 
+                ttyd::mario_pouch::pouchGetPtr()->party_data;
+            const int32_t party_id = ttyd::mario_party::marioGetParty();
+            
+            // Determine the order the party members are shown in the menu.
+            ttyd::win_party::WinPartyData* party_win_order[7];
+            ttyd::win_party::WinPartyData** current_order = party_win_order;
+            for (int32_t i = 0; i < 7; ++i) {
+                if (party_data[i].partner_id == party_id) {
+                    *current_order = party_data + i;
+                    ++current_order;
+                }
+            }
+            for (int32_t i = 0; i < 7; ++i) {
+                int32_t id = party_data[i].partner_id;
+                if ((pouch_data[id].flags & 1) && id != party_id) {
+                    *current_order = party_data + i;
+                    ++current_order;
+                }
+            }
+            // Rank the selected party member up and fully heal them.
+            const int32_t selected_partner_id =
+                party_win_order[*party_member_target - 1]->partner_id;
+            pouch_data += selected_partner_id;
+            int16_t* hp_table = 
+                ttyd::mario_pouch::_party_max_hp_table + selected_partner_id * 4;
+            if (pouch_data->hp_level < 2) {
+                ++pouch_data->hp_level;
+                ++pouch_data->attack_level;
+                ++pouch_data->tech_level;
+            } else {
+                // TODO: The number of HP ups will need to be saved somehow
+                // if the player is allowed to save.
+                if (hp_table[2] < 200) hp_table[2] += 5;
+            }
+            pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
+            pouch_data->current_hp = hp_table[pouch_data->hp_level];
+            pouch_data->max_hp = hp_table[pouch_data->hp_level];
+            // Include HP Plus P in current / max stats.
+            const int32_t hp_plus_p_cnt = 
+                ttyd::mario_pouch::pouchEquipCheckBadge(
+                    ttyd::item_data::ItemType::HP_PLUS_P);
+            pouch_data->current_hp += 5 * hp_plus_p_cnt;
+            pouch_data->max_hp += 5 * hp_plus_p_cnt;
+        }
+    }
+}
 
 namespace mod::pit_randomizer {
 
@@ -30,7 +104,12 @@ namespace {
 
 using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::evt_bero::BeroEntry;
+using ::ttyd::item_data::itemDataTable;
+using ::ttyd::item_data::ItemData;
 using ::ttyd::mariost::g_MarioSt;
+
+namespace ItemType = ::ttyd::item_data::ItemType;
+namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
 // Global variables.
 uintptr_t g_PitModulePtr;
@@ -64,7 +143,7 @@ USER_FUNC(ttyd::evt_eff::evt_eff,
 USER_FUNC(ttyd::evt_msg::evt_msg_toge, 1, 0, 0, 0)
 // Prints a custom message; the "joined party" messages aren't loaded anyway.
 USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("pit_reward_party_join"), 0, 0)
-EVT_HELPER_CMD(2, 106), LW(11), LW(12),  // checks if thread LW(11) running
+CHK_EVT(LW(11), LW(12))
 IF_EQUAL(LW(12), 1)
     DELETE_EVT(LW(11))
     USER_FUNC(ttyd::evt_snd::evt_snd_bgmoff, 0x201)
@@ -185,7 +264,7 @@ const char* GetReplacementMessage(const char* msg_key) {
     static char buf[128];
     
     if (!strcmp(msg_key, "pit_reward_party_join")) {
-        return "<system>\n<p>\nGoombella joined your party!\n<k>";
+        return "<system>\n<p>\nYou got a new party member!\n<k>";
     } else if (!strcmp(msg_key, "pit_disabled_return")) {
         return "<system>\n<p>\nYou can't leave the Infinite Pit!\n<k>";
     } else if (!strcmp(msg_key, "msg_jon_kanban_1")) {
@@ -196,6 +275,50 @@ const char* GetReplacementMessage(const char* msg_key) {
     return nullptr;
 }
 
-void ApplyMiscPatches() {}
+// TODO: Port constants to other game versions.
+void ApplyMiscPatches() {
+    // Apply patches to item menu code to display the correct available partners
+    // (both functions use identical code).
+    const int32_t kWinItemDispPartyTableBeginHookAddress = 0x80169f40;
+    const int32_t kWinItemDispPartyTableEndHookAddress = 0x8016a088;
+    const int32_t kWinItemSelectPartyTableBeginHookAddress = 0x8016ce88;
+    const int32_t kWinItemSelectPartyTableEndHookAddress = 0x8016cfd0;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kWinItemDispPartyTableBeginHookAddress),
+        reinterpret_cast<void*>(StartFixItemWinPartyDispOrder));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackFixItemWinPartyDispOrder),
+        reinterpret_cast<void*>(kWinItemDispPartyTableEndHookAddress));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kWinItemSelectPartyTableBeginHookAddress),
+        reinterpret_cast<void*>(StartFixItemWinPartySelectOrder));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackFixItemWinPartySelectOrder),
+        reinterpret_cast<void*>(kWinItemSelectPartyTableEndHookAddress));
+
+    // Prevents the menu from closing if you use an item on the active party.
+    const int32_t kAlwaysUseItemsInMenuOpcode = 0x4800001c;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(0x8016ce40),
+        &kAlwaysUseItemsInMenuOpcode, sizeof(kAlwaysUseItemsInMenuOpcode));
+        
+    // Apply patch to item menu code to properly use Shine Sprite items.
+    const int32_t kWinItemCheckBackgroundHookAddress = 0x8016cfd0;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kWinItemCheckBackgroundHookAddress),
+        reinterpret_cast<void*>(StartUsePartyRankup));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackUsePartyRankup),
+        reinterpret_cast<void*>(kWinItemCheckBackgroundHookAddress + 0x4));
+        
+    // Item patches.
+    
+    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
+    // TODO: Update descriptions to be more useful?
+    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
+           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
+    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
+        |= ItemUseLocation::kField;
+}
 
 }
