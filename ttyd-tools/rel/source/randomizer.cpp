@@ -53,6 +53,8 @@ void Randomizer::Init() {
             if (replacement) return replacement;
             return g_msgSearch_trampoline(msg_key);
         });
+        
+    ApplyMiscPatches();
 }
 
 void Randomizer::Update() {}

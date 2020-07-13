@@ -78,10 +78,10 @@
 #define DO_CONTINUE() \
 	EVT_HELPER_CMD(0, 8),
 
-#define WAIT_FRM() \
-	EVT_HELPER_CMD(1, 9),
-#define WAIT_MSEC() \
-	EVT_HELPER_CMD(1, 10),
+#define WAIT_FRM(frm) \
+	EVT_HELPER_CMD(1, 9), EVT_HELPER_OP(frm),
+#define WAIT_MSEC(msec) \
+	EVT_HELPER_CMD(1, 10), EVT_HELPER_OP(msec),
 #define HALT(until) \
 	EVT_HELPER_CMD(1, 11), EVT_HELPER_OP(until),
 
@@ -177,34 +177,25 @@
 #define SETF(lhs, rhs) \
 	EVT_HELPER_CMD(2, 52), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
 
-#define ADD(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 53), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define SUB(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 54), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define MUL(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 55), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define DIV(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 56), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define MOD(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 57), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
+#define ADD(lhs, rhs) \
+	EVT_HELPER_CMD(2, 53), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define SUB(lhs, rhs) \
+	EVT_HELPER_CMD(2, 54), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define MUL(lhs, rhs) \
+	EVT_HELPER_CMD(2, 55), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define DIV(lhs, rhs) \
+	EVT_HELPER_CMD(2, 56), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define MOD(lhs, rhs) \
+	EVT_HELPER_CMD(2, 57), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
 
-#define ADDF(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 58), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define SUBF(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 59), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define MULF(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 60), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
-#define DIVF(out, lhs, rhs) \
-	EVT_HELPER_CMD(3, 61), EVT_HELPER_OP(out), EVT_HELPER_OP(lhs), \
-	EVT_HELPER_OP(rhs),
+#define ADDF(lhs, rhs) \
+	EVT_HELPER_CMD(2, 58), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define SUBF(lhs, rhs) \
+	EVT_HELPER_CMD(2, 59), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define MULF(lhs, rhs) \
+	EVT_HELPER_CMD(2, 60), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
+#define DIVF(lhs, rhs) \
+	EVT_HELPER_CMD(2, 61), EVT_HELPER_OP(lhs), EVT_HELPER_OP(rhs),
 
 #define SET_READ(val) \
 	EVT_HELPER_CMD(1, 62), EVT_HELPER_OP(val),
@@ -265,9 +256,9 @@
 #define SET_RAMF(val, ptr) \
 	EVT_HELPER_CMD(2, 84), EVT_HELPER_OP(val), EVT_HELPER_OP(ptr),
 #define GET_RAM(val, ptr) \
-	EVT_HELPER_CMD(2, 85), EVT_HELPER_OP(out), EVT_HELPER_OP(ptr),
+	EVT_HELPER_CMD(2, 85), EVT_HELPER_OP(val), EVT_HELPER_OP(ptr),
 #define GET_RAMF(val, ptr) \
-	EVT_HELPER_CMD(2, 86), EVT_HELPER_OP(out), EVT_HELPER_OP(ptr),
+	EVT_HELPER_CMD(2, 86), EVT_HELPER_OP(val), EVT_HELPER_OP(ptr),
 
 // R is short for Reg
 #define SETR(indirect, val) \

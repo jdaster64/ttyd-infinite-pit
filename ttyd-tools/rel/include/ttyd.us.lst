@@ -459,6 +459,7 @@
 8006d970:evt_eff
 
 // mariost.o
+// .text
 // unused:gcResetDone
 // unused:gcResetCheck
 8006eed8:gcRumbleCheck
@@ -471,6 +472,8 @@
 8006f8dc:marioStDisp
 8006f904:marioStMain
 8006fb3c:marioStInit
+// .data
+80415fd0:g_MarioSt
 
 // fontmgr.o
 // unused:JUTFont_Draw
@@ -517,6 +520,9 @@
 80077b4c:FontDrawStart
 80077bdc:fontmgrTexSetup
 80077c08:fontmgrInit
+
+// evt_bero.o
+8007a9c0:evt_bero_exec_wait
 
 // windowdrv.o
 // 8007AD30:getWakuTexObj
@@ -576,6 +582,9 @@
 80086d6c:seq_logoMain
 8008746c:seq_logoExit
 800874b0:seq_logoInit
+
+// evt_cam.o
+800a9620:evt_cam_ctrl_onoff
 
 // evt_item.o
 800a9f98:evt_item_get_item

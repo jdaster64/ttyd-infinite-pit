@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace ttyd::mariost {
 	
 extern "C" {
@@ -12,6 +14,9 @@ uint32_t marioStGetSystemLevel();
 void viPostCallback(uint32_t retraceCount);
 void gcDvdCheckThread();
 void gcRumbleCheck();
+
+// Various globals.
+extern void* g_MarioSt;
 
 }
 

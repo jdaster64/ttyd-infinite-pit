@@ -11,8 +11,12 @@
 namespace mod {
 
 // TODO: #ifdef switch for multiple regions.
+const uint32_t kTik06RightBeroEntryOffset = 0x1f2f4;
 const uint32_t kPitTreasureTableOffset = 0x11320;
 const uint32_t kPitEvtOpenBoxOffset = 0x11348;
+const uint32_t kPitFloorIncrementEvtOffset = 0x123c4;
+const uint32_t kPitRewardFloorReturnBeroEntryOffset = 0x12520;
+const uint32_t kPitBossFloorReturnBeroEntryOffset = 0x12448;
 
 bool CheckSeq(ttyd::seqdrv::SeqIndex sequence) {
     const ttyd::seqdrv::SeqIndex next_seq = ttyd::seqdrv::seqGetNextSeq();
