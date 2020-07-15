@@ -371,8 +371,9 @@ namespace ItemUseLocation_Flags {
     };
 }
 
-// TODO: Fix forward-declaration's namespace.
+namespace ttyd::battle_database_common {
 struct BattleWeapon;
+}
 
 struct ItemData {
     const char*     id;
@@ -391,7 +392,7 @@ struct ItemData {
     int8_t          sp_restored;
     int16_t         icon_id;
     int16_t         unk_022;
-    BattleWeapon*   weapon_params;
+    ttyd::battle_database_common::BattleWeapon* weapon_params;
 } __attribute__((__packed__));
 
 static_assert(sizeof(ItemData) == 0x28);

@@ -278,7 +278,7 @@ BranchBackFixItemWinPartySelectOrder:
 b 0
 
 StartUsePartyRankup:
-# Call C function to check whether the item being used is a Rank-up Orb.
+# Call C function to check whether the item being used is a Shine Sprite.
 bl usePartyRankup
 # Restore existing opcode.
 lwz %r0, 0x2dc(%r28)

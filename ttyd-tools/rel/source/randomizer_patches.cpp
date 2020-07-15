@@ -41,7 +41,8 @@ extern "C" {
     void usePartyRankup() {
         void* winPtr = ttyd::win_main::winGetPtr();
         const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
-        // If the item is a Shine Sprite...
+        
+        // If the item is a Shine Sprite... (otherwise, handle normally)
         if (item == ttyd::item_data::ItemType::GOLD_BAR_X3) {
             int32_t* party_member_target = 
                 reinterpret_cast<int32_t*>(winPtr) + (0x2dc / 4);

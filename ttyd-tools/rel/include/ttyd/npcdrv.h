@@ -88,6 +88,30 @@ enum class NpcTerritoryType : int32_t
 	kSquare = 0x2,
 };
 
+struct NpcSetupInfo {
+    char*       nameJp;
+    uint32_t    flags;
+    uint32_t    reactionFlags;
+    void*       initEvtCode;
+    void*       regularEvtCode;
+    void*       talkEvtCode;
+    void*       deadEvtCode;
+    void*       findEvtCode;
+    void*       lostEvtCode;
+    void*       returnEvtCode;
+    void*       blowEvtCode;
+    NpcTerritoryType territoryType;
+    gc::vec3    territoryBase;
+    gc::vec3    territoryLoiter;
+    float       searchRange;
+    float       searchAngle;
+    float       homingRange;
+    float       homingAngle;
+    int32_t     battleInfoId;
+}  __attribute__((__packed__));
+
+static_assert(sizeof(NpcSetupInfo) == 0x5c);
+
 struct NpcEntry
 {
 	uint32_t flags;
