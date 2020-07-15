@@ -55,7 +55,7 @@ struct EnemyTypeInfo {
 
 // All data required to construct a particular enemy NPC in a particular module.
 // In particular, contains the offset in the given module for an existing
-// BattleUnitSetup* to use as a reference for 
+// BattleUnitSetup* to use as a reference for the constructed battle.
 struct EnemyModuleInfo {
     ModuleId::e module;
     int32_t     battle_unit_setup_offset;

@@ -36,6 +36,7 @@ extern "C" {
 // mahoon_get_groupname
 
 // .data
+// All of these are evt code.
 extern int32_t enemy_common_dead_event;
 extern int32_t enemy_event_dead_event_sub;
 extern int32_t enemy_event_dead_event;
