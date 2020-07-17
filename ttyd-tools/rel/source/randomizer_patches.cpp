@@ -132,10 +132,10 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
 // Global variables and constants.
-uintptr_t g_PitModulePtr = 0;
-uintptr_t g_AdditionalModulePtr = 0;
-ModuleId::e g_AdditionalModuleToLoad = ModuleId::INVALID_MODULE;
-int32_t g_PitFloor = -1;
+uintptr_t g_PitModulePtr        = 0;
+int32_t g_PitFloor              = -1;
+const char* g_AdditionalModuleToLoad = nullptr;
+char g_AdditionalRelBss[0x3d4];
 
 const char* kPitNpcName = "\x93\x47";  // "enemy"
 const char* kPiderName = "\x83\x70\x83\x43\x83\x5f\x81\x5b\x83\x58";
@@ -371,6 +371,28 @@ void OnModuleLoaded(OSModuleInfo* module) {
 
 int32_t LoadMap() {
     auto* mario_st = ttyd::mariost::g_MarioSt;
+    if (g_AdditionalModuleToLoad) {
+        const char* area = g_AdditionalModuleToLoad;
+        if (ttyd::filemgr::fileAsyncf(
+            nullptr, nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area)) {
+            auto* file = ttyd::filemgr::fileAllocf(
+                nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area);
+            if (file) {
+                memcpy(
+                    mario_st->pMapAlloc, *file->mpFileData,
+                    reinterpret_cast<int32_t>(file->mpFileData[1]));
+                ttyd::filemgr::fileFree(file);
+            }
+            memset(g_AdditionalRelBss, 0, 0x3c4);
+                gc::OSLink::OSLink(
+                    mario_st->pMapAlloc, g_AdditionalRelBss);
+
+            // Both maps loaded; call the prolog for the Pit and exit.
+            reinterpret_cast<void(*)(void)>(mario_st->pRelFileBase->prolog)();
+            return 2;
+        }
+        return 1;
+    }
     if (!strcmp(ttyd::seq_mapchange::NextMap, "title")) {
         strcpy(mario_st->unk_14c, mario_st->currentMapName);
         strcpy(mario_st->currentAreaName, "");
@@ -410,15 +432,23 @@ int32_t LoadMap() {
             memset(&ttyd::seq_mapchange::rel_bss, 0, 0x3c4);
             gc::OSLink::OSLink(
                 mario_st->pRelFileBase, &ttyd::seq_mapchange::rel_bss);
-            // TODO: Move this to after loading the second map, if applicable.
-            reinterpret_cast<void(*)(void)>(mario_st->pRelFileBase->prolog)();
         }
         ttyd::seq_mapchange::_load(
             mario_st->currentMapName, ttyd::seq_mapchange::NextMap,
             ttyd::seq_mapchange::NextBero);
 
-        // TODO: Implement loading second map for the Pit.
+        // Determine the enemies to spawn on this floor, and load a second
+        // relocatable module for support enemies if necessary.
+        if (g_PitModulePtr) {
+            const char* area = ModuleNameFromId(SelectEnemies(g_PitFloor));
+            if (area) {
+                g_AdditionalModuleToLoad = area;
+                return 1;
+            }
+        }
         
+        // If not the Pit, or no second module needed, call the prolog and exit.
+        reinterpret_cast<void(*)(void)>(mario_st->pRelFileBase->prolog)();
         return 2;
     }
     return 1;
@@ -429,11 +459,13 @@ void OnMapUnloaded() {
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
             const_cast<int32_t*>(EnemyNpcSetupEvt));
-        // TODO: Implement unlinking second map for the Pit.
-        g_AdditionalModuleToLoad = ModuleId::INVALID_MODULE;
-        g_AdditionalModulePtr = 0;
+        if (g_AdditionalModuleToLoad) {
+            gc::OSLink::OSUnlink(ttyd::mariost::g_MarioSt->pMapAlloc);
+            g_AdditionalModuleToLoad = nullptr;
+        }
         g_PitModulePtr = 0;
     }
+    // Normal unloading logic follows...
 }
 
 const char* GetReplacementMessage(const char* msg_key) {
@@ -535,8 +567,7 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     ttyd::npcdrv::NpcTribeDescription* npc_tribe_description;
     ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
     BuildBattle(
-        g_PitModulePtr, g_PitFloor, &npc_tribe_description,
-        &npc_setup_info, &g_AdditionalModuleToLoad);
+        g_PitModulePtr, g_PitFloor, &npc_tribe_description, &npc_setup_info);
     int8_t* enemy_100 = 
         reinterpret_cast<int8_t*>(g_PitModulePtr + kPitEnemy100Offset);
     int8_t battle_setup_idx = enemy_100[g_PitFloor % 100];

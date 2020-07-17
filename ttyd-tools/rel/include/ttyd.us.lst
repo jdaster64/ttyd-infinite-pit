@@ -996,14 +996,14 @@
 // 80296D84:__OSCacheInit
 
 // OSLink.c
-// 8029A340:OSNotifyLink
-// 8029A344:OSNotifyUnlink
+8029A340:OSNotifyLink
+8029A344:OSNotifyUnlink
 8029A348:Relocate
 8029A604:Link
 8029A8E4:OSLink
-// 8029A908:Undo
-// 8029AB40:OSUnlink
-// 8029AD14:__OSModuleInit
+8029A908:Undo
+8029AB40:OSUnlink
+8029AD14:__OSModuleInit
 
 // si.a
 802bd7b8:SIBusy

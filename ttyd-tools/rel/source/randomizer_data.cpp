@@ -94,16 +94,21 @@ const EnemyTypeInfo kEnemyInfo[] = {
     {
         // 1. Gloomba
         220, 0, 0, 0, 0, 0, kHpTables[0], kFpTables[0], -1
+    },
+    {
+        // 2. Hyper Goomba
+        217, 0, 0, 0, 0, 0, kHpTables[0], kFpTables[0], -1
     }
 };
 
 const EnemyModuleInfo kEnemyModuleInfo[] = {
-    { BattleUnitType::GLOOMBA, ModuleId::JON, 0x15a20, 1, 1 }
+    { BattleUnitType::GLOOMBA, ModuleId::JON, 0x15a20, 1, 1 },
+    { BattleUnitType::HYPER_GOOMBA, ModuleId::GRA, 0x8690, 1, 2 }
 };
 
 // Global structures for holding constructed battle information.
 int32_t g_NumEnemies = 3;
-int32_t g_Enemies[5] = { 0, 0, 0, -1, -1 };
+int32_t g_Enemies[5] = { 1, 1, 1, -1, -1 };
 NpcSetupInfo g_CustomNpc[2];
 BattleUnitSetup g_CustomUnits[6];
 BattleGroupSetup g_CustomBattleParty;
@@ -111,12 +116,22 @@ BattleGroupSetup g_CustomBattleParty;
 
 }
 
+ModuleId::e SelectEnemies(int32_t floor) {
+    // TODO: Procedurally pick a group of enemies based on the floor number;
+    // currently hardcoded to test one enemy type, in a group of 3.
+    for (int32_t i = 0; i < g_NumEnemies; ++i) {
+        const EnemyModuleInfo* emi = kEnemyModuleInfo + g_Enemies[i];
+        if (emi->module != ModuleId::JON) {
+            return emi->module;
+        }
+    }
+    return ModuleId::INVALID_MODULE;
+}
+
 void BuildBattle(
     uintptr_t pit_module_ptr, int32_t floor,
     NpcTribeDescription** out_npc_tribe_description,
-    NpcSetupInfo** out_npc_setup_info, ModuleId::e* out_secondary_module) {
-    // TODO: Procedurally pick a group of enemies based on the floor number;
-    // currently hardcoded to test one enemy type, in a group of 3.
+    NpcSetupInfo** out_npc_setup_info) {
 
     const EnemyModuleInfo* enemy_module_info[5];
     const EnemyTypeInfo* enemy_info[5];
@@ -128,7 +143,6 @@ void BuildBattle(
         enemy_module_info[i] = kEnemyModuleInfo + g_Enemies[i];
         enemy_info[i] = kEnemyInfo + enemy_module_info[i]->enemy_type_stats_idx;
         if (enemy_module_info[i]->module != ModuleId::JON) {
-            *out_secondary_module = enemy_module_info[i]->module;
             module_ptr = reinterpret_cast<uintptr_t>(
                 ttyd::mariost::g_MarioSt->pMapAlloc);
         }

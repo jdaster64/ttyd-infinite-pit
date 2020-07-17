@@ -28,6 +28,9 @@ bool CheckSeq(ttyd::seqdrv::SeqIndex sequence);
 // Returns true if in normal gameplay (not in title, game over, etc. sequence)
 bool InMainGameModes();
 
+// Returns the string name of a relocatable module from its id.
+const char* ModuleNameFromId(ModuleId::e module_id);
+
 // For custom event support; allows calling subroutines / user_funcs in
 // relocatable modules.
 # define REL_PTR(module_id, offset) \

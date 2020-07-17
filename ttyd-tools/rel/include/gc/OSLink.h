@@ -37,7 +37,7 @@ struct OSModuleInfo {
 // Link
 bool OSLink(OSModuleInfo* new_module, void* bss);
 // Undo
-// OSUnlink
+bool OSUnlink(OSModuleInfo* module);
 // __OSModuleInit
 
 }
