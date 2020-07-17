@@ -20,7 +20,7 @@ struct EvtEntry
 	int8_t wNpcEventType;
 	uint8_t pad_10[3];
 	int32_t nextCommandPtr;
-	void *currentCommandArguments;
+	int32_t *evtArguments;
 	int8_t labelIdTable[16];
 	void *labelAddressTable[16];
 	EvtEntry *waitingEvt;

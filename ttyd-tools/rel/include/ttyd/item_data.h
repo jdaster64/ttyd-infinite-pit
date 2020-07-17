@@ -2,6 +2,10 @@
 
 #include <cstdint>
 
+namespace ttyd::battle_database_common {
+struct BattleWeapon;
+}
+
 namespace ttyd::item_data {
 
 // Types of key items, items, and badges.
@@ -369,10 +373,6 @@ namespace ItemUseLocation_Flags {
         kBattle = 2,
         kField = 4,
     };
-}
-
-namespace ttyd::battle_database_common {
-struct BattleWeapon;
 }
 
 struct ItemData {

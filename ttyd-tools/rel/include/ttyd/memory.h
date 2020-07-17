@@ -10,7 +10,7 @@ extern "C" {
 // memClear
 void *__memAlloc(uint32_t heap, uint32_t size);
 void __memFree(uint32_t heap, void *ptr);
-// _mapAlloc
+void *_mapAlloc(void* heap, uint32_t size);
 // _mapAllocTail
 // _mapFree
 // smartInit

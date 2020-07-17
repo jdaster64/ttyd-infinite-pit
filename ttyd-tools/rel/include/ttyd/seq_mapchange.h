@@ -7,7 +7,7 @@ namespace ttyd::seq_mapchange {
 extern "C" {
 
 // _relUnLoad
-// _load
+void _load(const char *currentMap, const char *nextMap, const char *nextBero);
 void _unload(const char *currentMap, const char *nextMap, const char *nextBero);
 // seq_mapChangeMain
 // seq_mapChangeExit
@@ -16,6 +16,7 @@ void _unload(const char *currentMap, const char *nextMap, const char *nextBero);
 extern char NextBero[];
 extern char NextMap[];
 extern char NextArea[];
+extern char rel_bss[];
 
 }
 

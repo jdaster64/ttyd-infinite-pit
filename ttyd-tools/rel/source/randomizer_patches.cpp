@@ -4,6 +4,7 @@
 #include "common_types.h"
 #include "evt_cmd.h"
 #include "patch.h"
+#include "randomizer_data.h"
 
 #include <gc/OSLink.h>
 #include <ttyd/evt_bero.h>
@@ -13,15 +14,23 @@
 #include <ttyd/evt_mario.h>
 #include <ttyd/evt_mobj.h>
 #include <ttyd/evt_msg.h>
+#include <ttyd/evt_npc.h>
 #include <ttyd/evt_party.h>
 #include <ttyd/evt_pouch.h>
 #include <ttyd/evt_snd.h>
 #include <ttyd/evtmgr.h>
+#include <ttyd/evtmgr_cmd.h>
+#include <ttyd/filemgr.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario.h>
 #include <ttyd/mario_party.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
+#include <ttyd/memory.h>
+#include <ttyd/npcdrv.h>
+#include <ttyd/seq_mapchange.h>
+#include <ttyd/seqdrv.h>
+#include <ttyd/system.h>
 #include <ttyd/win_main.h>
 #include <ttyd/win_party.h>
 
@@ -31,12 +40,21 @@
 
 // Assembly patch functions, and code referenced in them.
 extern "C" {
+    // map_change_patches.s
+    void StartMapLoad();
+    void BranchBackMapLoad();
+    void StartOnMapUnload();
+    void BranchBackOnMapUnload();
+    // win_item_patches.s
     void StartFixItemWinPartyDispOrder();
     void BranchBackFixItemWinPartyDispOrder();
     void StartFixItemWinPartySelectOrder();
     void BranchBackFixItemWinPartySelectOrder();
     void StartUsePartyRankup();
     void BranchBackUsePartyRankup();
+    
+    int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
+    void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
     
     void usePartyRankup() {
         void* winPtr = ttyd::win_main::winGetPtr();
@@ -108,14 +126,25 @@ using ::ttyd::evt_bero::BeroEntry;
 using ::ttyd::item_data::itemDataTable;
 using ::ttyd::item_data::ItemData;
 using ::ttyd::mariost::g_MarioSt;
+using ::ttyd::system::getMarioStDvdRoot;
 
 namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
-// Global variables.
-uintptr_t g_PitModulePtr;
-uintptr_t g_AdditionalModulePtr;
+// Global variables and constants.
+uintptr_t g_PitModulePtr = 0;
+uintptr_t g_AdditionalModulePtr = 0;
+ModuleId::e g_AdditionalModuleToLoad = ModuleId::INVALID_MODULE;
 int32_t g_PitFloor = -1;
+
+const char* kPitNpcName = "\x93\x47";  // "enemy"
+const char* kPiderName = "\x83\x70\x83\x43\x83\x5f\x81\x5b\x83\x58";
+const char* kArantulaName = 
+    "\x83\x60\x83\x85\x83\x89\x83\x93\x83\x5e\x83\x89\x81\x5b";
+const char* kChainChompName = "\x83\x8f\x83\x93\x83\x8f\x83\x93";
+const char* kRedChompName = 
+    "\x83\x6f\x81\x5b\x83\x58\x83\x67\x83\x8f\x83\x93\x83\x8f\x83\x93";
+const char* kBonetailName = "\x83\x5d\x83\x93\x83\x6f\x83\x6f";
 
 // Event that plays "get partner" fanfare.
 EVT_BEGIN(PartnerFanfareEvt)
@@ -209,6 +238,79 @@ RUN_CHILD_EVT(FloorIncrementEvt)
 RETURN()
 EVT_END()
 
+// Event that sets up a Pit enemy NPC, and opens a pipe when it is defeated.
+// TODO: Disable on reward floors.
+EVT_BEGIN(EnemyNpcSetupEvt)
+SET(LW(0), GSW(1321))
+ADD(LW(0), 1)
+IF_NOT_EQUAL(LW(0), 100)
+    MOD(LW(0), 10)
+    IF_EQUAL(LW(0), 0)
+        RETURN()
+    END_IF()
+END_IF()
+USER_FUNC(GetEnemyNpcInfo, LW(0), LW(1), LW(2), LW(3), LW(4), LW(5), LW(6))
+USER_FUNC(ttyd::evt_npc::evt_npc_entry, PTR(kPitNpcName), LW(0))
+USER_FUNC(ttyd::evt_npc::evt_npc_set_tribe, PTR(kPitNpcName), LW(1))
+USER_FUNC(ttyd::evt_npc::evt_npc_setup, LW(2))
+USER_FUNC(ttyd::evt_npc::evt_npc_set_position, 
+    PTR(kPitNpcName), LW(4), LW(5), LW(6))
+IF_STR_EQUAL(LW(1), PTR(kPiderName))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_home_position,
+        PTR(kPitNpcName), LW(4), LW(5), LW(6))
+END_IF()
+IF_STR_EQUAL(LW(1), PTR(kArantulaName))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_home_position,
+        PTR(kPitNpcName), LW(4), LW(5), LW(6))
+END_IF()
+IF_STR_EQUAL(LW(1), PTR(kChainChompName))
+    UNCHECKED_USER_FUNC(
+        REL_PTR(ModuleId::JON, kPitChainChompSetHomePosFuncOffset),
+        LW(4), LW(5), LW(6))
+END_IF()
+IF_STR_EQUAL(LW(1), PTR(kRedChompName))
+    UNCHECKED_USER_FUNC(
+        REL_PTR(ModuleId::JON, kPitChainChompSetHomePosFuncOffset),
+        LW(4), LW(5), LW(6))
+END_IF()
+IF_STR_EQUAL(LW(1), PTR(kBonetailName))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_position, PTR(kPitNpcName), 0, 0, 0)
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_anim, PTR(kPitNpcName), PTR("GNB_H_3"))
+    USER_FUNC(ttyd::evt_npc::evt_npc_flag_onoff, 1, PTR(kPitNpcName), 0x2000040)
+    USER_FUNC(ttyd::evt_npc::evt_npc_pera_onoff, PTR(kPitNpcName), 0)
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_ry, PTR(kPitNpcName), 0)
+    RUN_EVT(REL_PTR(ModuleId::JON, kPitBonetailFirstEvtOffset))
+END_IF()
+USER_FUNC(ttyd::evt_npc::evt_npc_set_battle_info, PTR(kPitNpcName), LW(3))
+UNCHECKED_USER_FUNC(
+    REL_PTR(ModuleId::JON, kPitSetupNpcExtraParametersFuncOffset),
+    PTR(kPitNpcName))
+UNCHECKED_USER_FUNC(REL_PTR(ModuleId::JON, kPitSetKillFlagFuncOffset))
+INLINE_EVT()
+LBL(1)
+    WAIT_FRM(1)
+    USER_FUNC(ttyd::evt_npc::evt_npc_status_check,
+        PTR(kPitNpcName), 4, LW(0))
+    IF_EQUAL(LW(0), 0)
+        GOTO(1)
+    END_IF()
+    SET(LW(0), GSW(1321))
+    ADD(LW(0), 1)
+    IF_NOT_EQUAL(LW(0), 100)
+        RUN_EVT(REL_PTR(ModuleId::JON, kPitOpenPipeEvtOffset))
+    ELSE()
+        SET(GSWF(0x13dd), 1)
+    END_IF()
+END_INLINE()
+RETURN()
+EVT_END()
+
+// Wrapper for modified enemy-setup event.
+EVT_BEGIN(EnemyNpcSetupEvtHook)
+RUN_CHILD_EVT(EnemyNpcSetupEvt)
+RETURN()
+EVT_END()
+
 }
 
 void OnModuleLoaded(OSModuleInfo* module) {
@@ -246,10 +348,17 @@ void OnModuleLoaded(OSModuleInfo* module) {
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + kPitFloorIncrementEvtOffset),
             FloorIncrementEvtHook, sizeof(FloorIncrementEvtHook));
+           
+        // Update the enemy setup event.
+        LinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(module_ptr),
+            const_cast<int32_t*>(EnemyNpcSetupEvt));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kPitEnemySetupEvtOffset),
+            EnemyNpcSetupEvtHook, sizeof(EnemyNpcSetupEvtHook));
         
         g_PitModulePtr = module_ptr;
     } else {
-        g_AdditionalModulePtr = module_ptr;
         if (module_id == ModuleId::TIK) {
             // Make tik_06 (Pit room)'s right exit loop back to itself.
             BeroEntry* tik_06_e_bero = reinterpret_cast<BeroEntry*>(
@@ -257,6 +366,73 @@ void OnModuleLoaded(OSModuleInfo* module) {
             tik_06_e_bero->target_map = "tik_06";
             tik_06_e_bero->target_bero = tik_06_e_bero->name;
         }
+    }
+}
+
+int32_t LoadMap() {
+    auto* mario_st = ttyd::mariost::g_MarioSt;
+    if (!strcmp(ttyd::seq_mapchange::NextMap, "title")) {
+        strcpy(mario_st->unk_14c, mario_st->currentMapName);
+        strcpy(mario_st->currentAreaName, "");
+        strcpy(mario_st->currentMapName, "");
+        ttyd::seqdrv::seqSetSeq(
+            ttyd::seqdrv::SeqIndex::kTitle, nullptr, nullptr);
+        return 1;
+    }
+    const char* area = ttyd::seq_mapchange::NextArea;
+    if (!strcmp(area, "tou")) {
+        if (ttyd::seqdrv::seqGetSeq() == ttyd::seqdrv::SeqIndex::kTitle) {
+            area = "tou2";
+        } else if (!strcmp(ttyd::seq_mapchange::NextMap, "tou_03")) {
+            area = "tou2";
+        }
+    }
+    if (ttyd::filemgr::fileAsyncf(
+        nullptr, nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area)) {
+        auto* file = ttyd::filemgr::fileAllocf(
+            nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area);
+        if (file) {
+            if (!strncmp(area, "tst", 3) || !strncmp(area, "jon", 3)) {
+                auto* module_info = reinterpret_cast<OSModuleInfo*>(
+                    ttyd::memory::_mapAlloc(
+                        reinterpret_cast<void*>(0x8041e808),
+                        reinterpret_cast<int32_t>(file->mpFileData[1])));
+                mario_st->pRelFileBase = module_info;
+            } else {
+                mario_st->pRelFileBase = mario_st->pMapAlloc;
+            }
+            memcpy(
+                mario_st->pRelFileBase, *file->mpFileData,
+                reinterpret_cast<int32_t>(file->mpFileData[1]));
+            ttyd::filemgr::fileFree(file);
+        }
+        if (mario_st->pRelFileBase != nullptr) {
+            memset(&ttyd::seq_mapchange::rel_bss, 0, 0x3c4);
+            gc::OSLink::OSLink(
+                mario_st->pRelFileBase, &ttyd::seq_mapchange::rel_bss);
+            // TODO: Move this to after loading the second map, if applicable.
+            reinterpret_cast<void(*)(void)>(mario_st->pRelFileBase->prolog)();
+        }
+        ttyd::seq_mapchange::_load(
+            mario_st->currentMapName, ttyd::seq_mapchange::NextMap,
+            ttyd::seq_mapchange::NextBero);
+
+        // TODO: Implement loading second map for the Pit.
+        
+        return 2;
+    }
+    return 1;
+}
+
+void OnMapUnloaded() {
+    if (g_PitModulePtr) {
+        UnlinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
+            const_cast<int32_t*>(EnemyNpcSetupEvt));
+        // TODO: Implement unlinking second map for the Pit.
+        g_AdditionalModuleToLoad = ModuleId::INVALID_MODULE;
+        g_AdditionalModulePtr = 0;
+        g_PitModulePtr = 0;
     }
 }
 
@@ -276,8 +452,26 @@ const char* GetReplacementMessage(const char* msg_key) {
     return nullptr;
 }
 
-// TODO: Port constants to other game versions.
 void ApplyMiscPatches() {
+    // Apply patches to seq_mapChangeMain code to run additional logic when
+    // loading or unloading a map.
+    const int32_t kMapLoadBeginHookAddress = 0x80007ef0;
+    const int32_t kMapLoadEndHookAddress = 0x80008148;
+    const int32_t kMapUnloadBeginHookAddress = 0x80007e0c;
+    const int32_t kMapUnloadEndHookAddress = 0x80007e10;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kMapLoadBeginHookAddress),
+        reinterpret_cast<void*>(StartMapLoad));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackMapLoad),
+        reinterpret_cast<void*>(kMapLoadEndHookAddress));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kMapUnloadBeginHookAddress),
+        reinterpret_cast<void*>(StartOnMapUnload));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackOnMapUnload),
+        reinterpret_cast<void*>(kMapUnloadEndHookAddress));
+    
     // Apply patches to item menu code to display the correct available partners
     // (both functions use identical code).
     const int32_t kWinItemDispPartyTableBeginHookAddress = 0x80169f40;
@@ -296,12 +490,6 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackFixItemWinPartySelectOrder),
         reinterpret_cast<void*>(kWinItemSelectPartyTableEndHookAddress));
-
-    // Prevents the menu from closing if you use an item on the active party.
-    const int32_t kAlwaysUseItemsInMenuOpcode = 0x4800001c;
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(0x8016ce40),
-        &kAlwaysUseItemsInMenuOpcode, sizeof(kAlwaysUseItemsInMenuOpcode));
         
     // Apply patch to item menu code to properly use Shine Sprite items.
     const int32_t kWinItemCheckBackgroundHookAddress = 0x8016cfd0;
@@ -311,6 +499,27 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackUsePartyRankup),
         reinterpret_cast<void*>(kWinItemCheckBackgroundHookAddress + 0x4));
+
+    // Prevents the menu from closing if you use an item on the active party.
+    const int32_t kItemWindowCloseHookAddr = 0x8016ce40;
+    const uint32_t kAlwaysUseItemsInMenuOpcode = 0x4800001c;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kItemWindowCloseHookAddr),
+        &kAlwaysUseItemsInMenuOpcode, sizeof(kAlwaysUseItemsInMenuOpcode));
+        
+    // Enable the crash handler.
+    const int32_t kCrashHandlerEnableOpAddr = 0x80009b2c;
+    const uint32_t kEnableHandlerOpcode = 0x3800FFFF;  // li r0, -1
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerEnableOpAddr),
+        &kEnableHandlerOpcode, sizeof(uint32_t));
+        
+    // Skip tutorials for boots / hammer upgrades.
+    const int32_t kSkipUpgradeCutsceneOpAddr = 0x800abcd8;
+    const uint32_t kSkipCutsceneOpcode = 0x48000030;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kSkipUpgradeCutsceneOpAddr),
+        &kSkipCutsceneOpcode, sizeof(uint32_t));
         
     // Item patches.
     
@@ -320,6 +529,34 @@ void ApplyMiscPatches() {
            &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
+}
+
+EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
+    ttyd::npcdrv::NpcTribeDescription* npc_tribe_description;
+    ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
+    BuildBattle(
+        g_PitModulePtr, g_PitFloor, &npc_tribe_description,
+        &npc_setup_info, &g_AdditionalModuleToLoad);
+    int8_t* enemy_100 = 
+        reinterpret_cast<int8_t*>(g_PitModulePtr + kPitEnemy100Offset);
+    int8_t battle_setup_idx = enemy_100[g_PitFloor % 100];
+    const int32_t x_sign = ttyd::system::irand(2) ? 1 : -1;
+    const int32_t x_pos = ttyd::system::irand(50) + 80;
+    const int32_t y_pos = 0;    // TODO: Pick Y-coordinate based on species.
+    const int32_t z_pos = ttyd::system::irand(200) - 100;
+    
+    ttyd::evtmgr_cmd::evtSetValue(
+        evt, evt->evtArguments[0], PTR(npc_tribe_description->modelName));
+    ttyd::evtmgr_cmd::evtSetValue(
+        evt, evt->evtArguments[1], PTR(npc_tribe_description->nameJp));
+    ttyd::evtmgr_cmd::evtSetValue(
+        evt, evt->evtArguments[2], PTR(npc_setup_info));
+    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[3], battle_setup_idx);
+    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[4], x_pos * x_sign);
+    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[5], y_pos);
+    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[6], z_pos);
+        
+    return 2;
 }
 
 }

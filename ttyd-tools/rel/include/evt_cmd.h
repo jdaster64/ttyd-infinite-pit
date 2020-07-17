@@ -289,6 +289,13 @@ using evt_helper_int_array = int32_t[];
 	), \
 	reinterpret_cast<int32_t>(function), \
 	##__VA_ARGS__ ,
+    
+// User function calls with unchecked parameter counts.
+// (Alternative to using the EVT_DECLARE_USER_FUNC macro w/-1)
+#define UNCHECKED_USER_FUNC(function, ...) \
+	EVT_HELPER_CMD(1 + EVT_HELPER_NUM_ARGS(__VA_ARGS__), 91), \
+	reinterpret_cast<int32_t>(function), \
+	##__VA_ARGS__ ,
 
 #define RUN_EVT(evt) \
 	EVT_HELPER_CMD(1, 92), EVT_HELPER_OP(evt),

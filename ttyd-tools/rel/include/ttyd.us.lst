@@ -63,20 +63,21 @@
 80007388:getMarioStDvdRoot
 
 // seq_mapchange.o
-// text
+// .text
 // 80007574:_relUnLoad
-// 800075E0:_load
+800075E0:_load
 80007AB4:_unload
 80007C2C:seq_mapChangeMain
 // 80008724:seq_mapChangeExit
 // 8000874C:seq_mapChangeInit
-// data
+// .data
+803C8460:rel_bss
 8041E5A8:NextBero
 8041E5C8:NextMap
 8041E5E8:NextArea
 
 // seq_title.o
-// text
+// .text
 // 80008888:pressStartGX
 // 80008D30:disp2
 // 80009098:disp1
@@ -87,8 +88,11 @@
 // 80009CF8:seq_titleExit
 // 80009D30:seq_titleInit
 // 80009D90:DbgBtlSel_GetMsgDataPtr
-// data
+// .data
 80414FA0:seqTitleWorkPointer2
+
+// fadedrv.o
+80010d94:fadeIsFinish
 
 // dispdrv.o
 // unused:dispGetEntNum
@@ -129,6 +133,13 @@
 800300f0:__memAlloc
 80030154:memClear
 80030218:memInit
+
+// evtmgr_cmd.o
+800304bc:evtSetFloat
+80030840:evtGetFloat
+80030cfc:evtSetValue
+800310fc:evtGetNumber
+80031260:evtGetValue
 
 // evtmgr.o
 80035a28:evtGetPtrID
@@ -871,6 +882,11 @@
 // win_main.o
 8017ebd4:winGetPtr
 
+// filemgr.o
+8018a0e8:fileAsyncf
+8018a260:fileFree
+8018a61c:fileAllocf
+
 // runtime.c
 802648BC:_savefpr_14
 802648C0:_savefpr_15
@@ -1020,6 +1036,12 @@
 // item_data.o
 // .data
 803108a8:itemDataTable
+
+// npc_data.o
+// .data
+803316d0:npcTribe
+80338270:npc_ai_type_table
+80416580:npc_define_territory_type
 
 // battle_database_common.o
 // .data
