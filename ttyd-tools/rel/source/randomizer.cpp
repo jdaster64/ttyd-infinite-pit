@@ -1,6 +1,7 @@
 #include "randomizer.h"
 
 #include "common_functions.h"
+#include "common_types.h"
 #include "common_ui.h"
 #include "patch.h"
 #include "randomizer_patches.h"
@@ -10,10 +11,15 @@
 #include <ttyd/msgdrv.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_title.h>
+#include <ttyd/system.h>
 
 #include <cstdint>
+#include <cstdio>
 
 namespace mod::pit_randomizer {
+
+// TODO: REMOVE, for TESTING ONLY.
+int32_t g_EnemyTypeToTest = 2;
     
 namespace  {
 
@@ -29,6 +35,28 @@ void DrawTitleScreenInfo() {
         "Pit of Infinite Trials v0.00 by jdaster64\nPUT GITHUB LINK HERE";
     DrawCenteredTextWindow(
         kTitleInfo, 0, -50, 0xFFu, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
+}
+
+// TODO: REMOVE, for TESTING ONLY.
+void DrawCurrentlySelectedEnemyType() {
+    // D-Pad Up or Down to change the type of enemy to test.
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
+        ++g_EnemyTypeToTest;
+    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_RIGHT) {
+        g_EnemyTypeToTest += 10;
+    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_DOWN) {
+        --g_EnemyTypeToTest;
+    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
+        g_EnemyTypeToTest -= 10;
+    }
+    if (g_EnemyTypeToTest > 105) g_EnemyTypeToTest = 105;
+    if (g_EnemyTypeToTest < 1) g_EnemyTypeToTest = 1;
+    
+    // Print the current enemy type to the screen at all times.
+    char buf[16];
+    sprintf(buf, "%d", g_EnemyTypeToTest);
+    DrawCenteredTextWindow(
+        buf, -200, -150, 0xFFu, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
 }
 
 }
@@ -68,6 +96,10 @@ void Randomizer::Draw() {
             // Curtain is not fully down; draw title screen info.
             RegisterDrawCallback(DrawTitleScreenInfo, CameraId::k2d);
         }
+    }
+    // TODO: REMOVE, for TESTING ONLY.
+    if (InMainGameModes()) {
+        RegisterDrawCallback(DrawCurrentlySelectedEnemyType, CameraId::k2d);
     }
 }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace mod::pit_randomizer {
 
 class Randomizer {
@@ -13,5 +15,8 @@ public:
     // Code that runs drawing-related code every frame.
     void Draw();
 };
+
+// TODO: REMOVE, for TESTING ONLY.
+extern int32_t g_EnemyTypeToTest;
  
 }

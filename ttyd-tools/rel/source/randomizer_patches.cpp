@@ -132,10 +132,10 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
 // Global variables and constants.
-uintptr_t g_PitModulePtr        = 0;
-int32_t g_PitFloor              = -1;
+alignas(0x10) char g_AdditionalRelBss[0x3d4];
 const char* g_AdditionalModuleToLoad = nullptr;
-char g_AdditionalRelBss[0x3d4];
+uintptr_t g_PitModulePtr = 0;
+int32_t g_PitFloor       = -1;
 
 const char* kPitNpcName = "\x93\x47";  // "enemy"
 const char* kPiderName = "\x83\x70\x83\x43\x83\x5f\x81\x5b\x83\x58";

@@ -782,10 +782,10 @@
 80346974:basabasa_return_event
 80416820:basabasa_dead_event
 80416830:basabasa2_init_event
-80346a24:basabasa2_move_event 
+80346a24:basabasa2_move_event
 80346c74:basabasa2_find_event
 80346d64:basabasa2_lost_event
-80346de0:basabasa2_return_event 
+80346de0:basabasa2_return_event
 80416860:basabasa2_dead_event
 80416870:teresa_init_event
 80347010:teresa_move_event
@@ -826,11 +826,11 @@
 80349978:kamec_find_event
 80349bd0:kamec_lost_event
 80349c4c:kamec_return_event
-80416938:kamec_dead_even 
+80416938:kamec_dead_event
 80349ea4:kamec_blow_event
 80349ef0:kamec2_init_event
 80349fc8:kamec2_move_event
-8034a0b0:kamec2_find_event 
+8034a0b0:kamec2_find_event
 8034a314:kamec2_lost_event
 8034a390:kamec2_return_event
 8041695c:kamec2_dead_event
