@@ -19,5 +19,11 @@ void BuildBattle(
     uintptr_t pit_module_ptr, int32_t floor,
     ttyd::npcdrv::NpcTribeDescription** out_npc_tribe_description,
     ttyd::npcdrv::NpcSetupInfo** out_npc_setup_info);
+    
+// Randomly sets parameters for a battle condition that grants a bonus item.
+void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable = true);
+
+// Returns a string based on the current battle condition, if any.
+void GetBattleConditionString(char* out_buf);
 
 }

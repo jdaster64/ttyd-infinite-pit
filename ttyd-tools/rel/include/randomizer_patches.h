@@ -19,6 +19,10 @@ void OnMapUnloaded();
 // or nullptr if the default should be printed.
 const char* GetReplacementMessage(const char* msg_key);
 
+// Checks whether the battle condition was satisfied, and if so,
+// adds a bonus item to the "recovered items" pool.
+void CheckBattleCondition();
+
 // Apply miscellaneous small patches that do not require function hooks.
 void ApplyMiscPatches();
 

@@ -7,6 +7,7 @@
 #include "randomizer_data.h"
 
 #include <gc/OSLink.h>
+#include <ttyd/battle.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
@@ -40,6 +41,9 @@
 
 // Assembly patch functions, and code referenced in them.
 extern "C" {
+    // battle_condition_patches.s
+    void StartRuleDisp();
+    void BranchBackRuleDisp();
     // map_change_patches.s
     void StartMapLoad();
     void BranchBackMapLoad();
@@ -52,6 +56,10 @@ extern "C" {
     void BranchBackFixItemWinPartySelectOrder();
     void StartUsePartyRankup();
     void BranchBackUsePartyRankup();
+    
+    void getBattleConditionString(char* out_buf) {
+        mod::pit_randomizer::GetBattleConditionString(out_buf);
+    }
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
@@ -135,6 +143,7 @@ namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 alignas(0x10) char g_AdditionalRelBss[0x3d4];
 const char* g_AdditionalModuleToLoad = nullptr;
 uintptr_t g_PitModulePtr = 0;
+// TODO: Move all references of this to g_Randomizer->state_.floor_.
 int32_t g_PitFloor       = -1;
 
 const char* kPitNpcName = "\x93\x47";  // "enemy"
@@ -484,7 +493,46 @@ const char* GetReplacementMessage(const char* msg_key) {
     return nullptr;
 }
 
+void CheckBattleCondition() {
+    auto* fbat_info =
+        *reinterpret_cast<ttyd::npcdrv::FbatBattleInformation**>(
+            reinterpret_cast<uintptr_t>(ttyd::battle::g_BattleWork) + 0x2738);
+    // If condition is a success and rule is not 0, add a bonus item.
+    if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
+        ttyd::npcdrv::NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
+        for (int32_t i = 0; i < 8; ++i) {
+            if (npc_info->wBackItemIds[i] == 0) {
+                // TODO: Determine the bonus item procedurally.
+                npc_info->wBackItemIds[i] = ItemType::GOLD_BAR_X3;
+                break;
+            }
+        }
+    }
+}
+
 void ApplyMiscPatches() {
+    // Apply patches to _rule_disp code to print a custom string w/conditions.
+    const int32_t kRuleDispBeginHookAddress = 0x8011c384;
+    const int32_t kRuleDispEndHookAddress = 0x8011c428;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kRuleDispBeginHookAddress),
+        reinterpret_cast<void*>(StartRuleDisp));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackRuleDisp),
+        reinterpret_cast<void*>(kRuleDispEndHookAddress));
+    // Individual instruction patches to make the string display longer and
+    // only be dismissable by the B button.
+    const int32_t kLengthenRuleDispTimeOpAddr = 0x8011c5ec;
+    const uint32_t kLengthenRuleDispTimeOpcode = 0x3800012c;  // li r0, 300
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kLengthenRuleDispTimeOpAddr),
+        &kLengthenRuleDispTimeOpcode, sizeof(uint32_t));
+    const int32_t kDismissRuleDispButtonOpAddr = 0x8011c62c;
+    const uint32_t kDismissRuleDispButtonOpcode = 0x38600200;  // li r3, 200
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kDismissRuleDispButtonOpAddr),
+        &kDismissRuleDispButtonOpcode, sizeof(uint32_t));
+
     // Apply patches to seq_mapChangeMain code to run additional logic when
     // loading or unloading a map.
     const int32_t kMapLoadBeginHookAddress = 0x80007ef0;

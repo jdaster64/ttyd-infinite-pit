@@ -864,6 +864,12 @@
 8034bf14:gesso2D_init_event
 8034bf9c:gesso2D_move_event
 
+// battle.o
+// .text
+// 800f8f04:BattleInit
+// .data
+8041eb90:g_BattleWork
+
 // mario_party.o
 801410e8:marioGetParty
 
@@ -886,6 +892,10 @@
 8018a0e8:fileAsyncf
 8018a260:fileFree
 8018a61c:fileAllocf
+
+// battle_actrecord.o
+8018ef8c:BtlActRec_JudgeRuleKeep
+8018f77c:BtlActRec_JudgeTurnRuleKeep
 
 // runtime.c
 802648BC:_savefpr_14

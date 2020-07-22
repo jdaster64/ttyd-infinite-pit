@@ -11,6 +11,7 @@
 #include <ttyd/npc_event.h>
 
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 
 namespace mod::pit_randomizer {
@@ -341,10 +342,11 @@ BattleGroupSetup g_CustomBattleParty;
 ModuleId::e SelectEnemies(int32_t floor) {
     // TODO: Procedurally pick a group of enemies based on the floor number;
     // currently hardcoded to test one enemy type, in a group of 3.
-    g_NumEnemies = 3;
+    const int32_t enemyTypeToTest = g_Randomizer->state_.debug_[0];
+    g_NumEnemies = enemyTypeToTest < 2 ? 1 : 3;
     for (int32_t i = 0; i < 5; ++i) {
         if (i < g_NumEnemies) {
-            g_Enemies[i] = g_EnemyTypeToTest;  // from randomizer.h
+            g_Enemies[i] = enemyTypeToTest;  // from randomizer.h
         } else {
             g_Enemies[i] = -1;
         }
@@ -443,6 +445,18 @@ void BuildBattle(
             pit_battle_setups[50].flag_off_loadouts[0].stage_data;
     }
     // TODO: other battle setup data tweaks (audience makeup, etc.)?
+}
+
+void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
+    // TODO: Put actual logic here (testing = don't jump more than once).
+    npc_info->ruleCondition = 1;
+    npc_info->ruleParameter0 = 2;
+    npc_info->ruleParameter1 = 2;
+}
+
+void GetBattleConditionString(char* out_buf) {
+    // TODO: Put actual descriptions here.
+    sprintf(out_buf, "Don't jump more than once!\nOr else!");
 }
 
 }

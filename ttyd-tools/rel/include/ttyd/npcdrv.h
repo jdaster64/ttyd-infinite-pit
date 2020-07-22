@@ -237,17 +237,13 @@ struct FbatBattleInformation
 	uint32_t wMode;
 	uint32_t wParty;
 	uint32_t wFirstAttack;
-
-	uint8_t gap_c[0x4];
-
+    NpcBattleInfo* wBattleInfo;
 	uint32_t wResult;
 	int32_t wCoinDropCount;
-
-	uint8_t gap_18[0x1];
-
+    uint8_t wBtlActRecCondition;
 	uint8_t wRuleKeepResult;
-
-	uint8_t gap_1a[0x2];
+    uint8_t wBtlActRecParam0;
+    uint8_t wBtlActRecParam1;
 } __attribute__((__packed__));
 
 static_assert(sizeof(FbatBattleInformation) == 0x1c);

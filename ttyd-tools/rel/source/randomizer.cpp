@@ -4,11 +4,15 @@
 #include "common_types.h"
 #include "common_ui.h"
 #include "patch.h"
+#include "randomizer_data.h"
 #include "randomizer_patches.h"
+#include "randomizer_state.h"
 
 #include <gc/OSLink.h>
+#include <ttyd/battle_actrecord.h>
 #include <ttyd/dispdrv.h>
 #include <ttyd/msgdrv.h>
+#include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_title.h>
 #include <ttyd/system.h>
@@ -17,18 +21,20 @@
 #include <cstdio>
 
 namespace mod::pit_randomizer {
-
-// TODO: REMOVE, for TESTING ONLY.
-int32_t g_EnemyTypeToTest = 2;
+    
+Randomizer* g_Randomizer = nullptr;
     
 namespace  {
 
 using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::dispdrv::CameraId;
+using ::ttyd::npcdrv::NpcEntry;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
+void (*g_npcSetupBattleInfo_trampoline)(NpcEntry*, void*) = nullptr;
+void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo =
@@ -38,23 +44,25 @@ void DrawTitleScreenInfo() {
 }
 
 // TODO: REMOVE, for TESTING ONLY.
-void DrawCurrentlySelectedEnemyType() {
+void DrawDebuggingFunctions() {
+    uint32_t& enemyTypeToTest = g_Randomizer->state_.debug_[0];
+    
     // D-Pad Up or Down to change the type of enemy to test.
     if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
-        ++g_EnemyTypeToTest;
+        ++enemyTypeToTest;
     } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_RIGHT) {
-        g_EnemyTypeToTest += 10;
+        enemyTypeToTest += 10;
     } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_DOWN) {
-        --g_EnemyTypeToTest;
+        --enemyTypeToTest;
     } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
-        g_EnemyTypeToTest -= 10;
+        enemyTypeToTest -= 10;
     }
-    if (g_EnemyTypeToTest > 105) g_EnemyTypeToTest = 105;
-    if (g_EnemyTypeToTest < 1) g_EnemyTypeToTest = 1;
+    if (enemyTypeToTest > 105) enemyTypeToTest = 105;
+    if (enemyTypeToTest < 1) enemyTypeToTest = 1;
     
     // Print the current enemy type to the screen at all times.
     char buf[16];
-    sprintf(buf, "%d", g_EnemyTypeToTest);
+    sprintf(buf, "%d", enemyTypeToTest);
     DrawCenteredTextWindow(
         buf, -200, -150, 0xFFu, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
 }
@@ -64,6 +72,9 @@ void DrawCurrentlySelectedEnemyType() {
 Randomizer::Randomizer() {}
 
 void Randomizer::Init() {
+    g_Randomizer = this;
+    state_.InitializeRandomizerState(/* new_save = */ true);
+    
     // Hook functions with custom logic.
     
     g_OSLink_trampoline = patch::hookFunction(
@@ -80,6 +91,18 @@ void Randomizer::Init() {
             const char* replacement = GetReplacementMessage(msg_key);
             if (replacement) return replacement;
             return g_msgSearch_trampoline(msg_key);
+        });
+        
+    g_npcSetupBattleInfo_trampoline = patch::hookFunction(
+        ttyd::npcdrv::npcSetupBattleInfo, [](NpcEntry* npc, void* battleInfo) {
+            g_npcSetupBattleInfo_trampoline(npc, battleInfo);
+            SetBattleCondition(&npc->battleInfo);
+        });
+        
+    g_BtlActRec_JudgeRuleKeep_trampoline = patch::hookFunction(
+        ttyd::battle_actrecord::BtlActRec_JudgeRuleKeep, []() {
+            g_BtlActRec_JudgeRuleKeep_trampoline();
+            CheckBattleCondition();
         });
         
     ApplyMiscPatches();
@@ -99,7 +122,7 @@ void Randomizer::Draw() {
     }
     // TODO: REMOVE, for TESTING ONLY.
     if (InMainGameModes()) {
-        RegisterDrawCallback(DrawCurrentlySelectedEnemyType, CameraId::k2d);
+        RegisterDrawCallback(DrawDebuggingFunctions, CameraId::k2d);
     }
 }
 
