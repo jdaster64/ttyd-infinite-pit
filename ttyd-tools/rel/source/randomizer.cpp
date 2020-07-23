@@ -10,7 +10,11 @@
 
 #include <gc/OSLink.h>
 #include <ttyd/battle_actrecord.h>
+#include <ttyd/battle_enemy_item.h>
+#include <ttyd/battle_event_cmd.h>
+#include <ttyd/battle_unit.h>
 #include <ttyd/dispdrv.h>
+#include <ttyd/evtmgr.h>
 #include <ttyd/msgdrv.h>
 #include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
@@ -27,7 +31,9 @@ Randomizer* g_Randomizer = nullptr;
 namespace  {
 
 using ::gc::OSLink::OSModuleInfo;
+using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::dispdrv::CameraId;
+using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::npcdrv::NpcEntry;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
@@ -35,6 +41,9 @@ bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
 void (*g_npcSetupBattleInfo_trampoline)(NpcEntry*, void*) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
+int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
+void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo =
@@ -105,6 +114,31 @@ void Randomizer::Init() {
             CheckBattleCondition();
         });
         
+    g_btlevtcmd_ConsumeItem_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_ConsumeItem,
+        [](EvtEntry* evt, bool isFirstCall) {
+            EnemyConsumeItem(evt);
+            return g_btlevtcmd_ConsumeItem_trampoline(evt, isFirstCall);
+        });
+        
+    g_btlevtcmd_GetConsumeItem_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetConsumeItem,
+        [](EvtEntry* evt, bool isFirstCall) {
+            if (GetEnemyConsumeItem(evt)) return 2;
+            return g_btlevtcmd_GetConsumeItem_trampoline(evt, isFirstCall);
+        });
+        
+    g_BattleEnemyUseItemCheck_trampoline = patch::hookFunction(
+        ttyd::battle_enemy_item::BattleEnemyUseItemCheck,
+        [](BattleWorkUnit* unit) {
+            void* evt_code = g_BattleEnemyUseItemCheck_trampoline(unit);
+            if (!evt_code) {
+                evt_code = EnemyUseAdditionalItemsCheck(unit);
+            }
+            return evt_code;
+        });
+        
+    ApplyItemAndAttackPatches();
     ApplyMiscPatches();
 }
 

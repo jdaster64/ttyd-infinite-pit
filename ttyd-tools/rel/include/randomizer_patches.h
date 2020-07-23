@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gc/OSLink.h>
+#include <ttyd/battle_unit.h>
 #include <ttyd/evtmgr.h>
 
 #include <cstdint>
@@ -22,6 +23,17 @@ const char* GetReplacementMessage(const char* msg_key);
 // Checks whether the battle condition was satisfied, and if so,
 // adds a bonus item to the "recovered items" pool.
 void CheckBattleCondition();
+
+// Runs extra code on consuming an item and getting the item to be consumed,
+// allowing for enemies to use generic cooking items.
+// GetConsumeItem returns true if the evt was run by an enemy.
+void EnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
+bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
+// Checks for enemies to use additional types of items.
+void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
+
+// Apply patches to item, badge, and weapon data.
+void ApplyItemAndAttackPatches();
 
 // Apply miscellaneous small patches that do not require function hooks.
 void ApplyMiscPatches();

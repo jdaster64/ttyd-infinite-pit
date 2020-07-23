@@ -2,6 +2,10 @@
 
 #include <cstdint>
 
+namespace ttyd::battle_unit {
+struct BattleWorkUnit;
+}
+
 namespace ttyd::battle {
 
 extern "C" {
@@ -41,7 +45,7 @@ extern "C" {
 // BattleGetSystemPtr
 // BattleGetUnitPartsPtr
 // BattleSetUnitPtr
-// BattleGetUnitPtr
+battle_unit::BattleWorkUnit* BattleGetUnitPtr(void* battleWork, int32_t idx);
 // BattleFree
 // BattleAlloc
 // BattleIncSeq

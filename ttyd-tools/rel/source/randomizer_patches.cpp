@@ -8,6 +8,12 @@
 
 #include <gc/OSLink.h>
 #include <ttyd/battle.h>
+#include <ttyd/battle_database_common.h>
+#include <ttyd/battle_enemy_item.h>
+#include <ttyd/battle_event_cmd.h>
+#include <ttyd/battle_item_data.h>
+#include <ttyd/battle_sub.h>
+#include <ttyd/battle_unit.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
@@ -131,11 +137,14 @@ namespace {
 
 using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::evt_bero::BeroEntry;
+using ::ttyd::evtmgr_cmd::evtGetValue;
+using ::ttyd::evtmgr_cmd::evtSetValue;
 using ::ttyd::item_data::itemDataTable;
 using ::ttyd::item_data::ItemData;
 using ::ttyd::mariost::g_MarioSt;
 using ::ttyd::system::getMarioStDvdRoot;
 
+namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
@@ -320,6 +329,16 @@ RUN_CHILD_EVT(EnemyNpcSetupEvt)
 RETURN()
 EVT_END()
 
+// Patch over the end of the existing Trade Off item script so it actually
+// calls the part of the code associated with applying its status.
+EVT_BEGIN(TradeOffPatch)
+SET(LW(12), PTR(&ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_WeaponAftereffect, LW(12))
+// Run the end of ItemEvent_Support_NoEffect's evt.
+RUN_CHILD_EVT(static_cast<int32_t>(0x803652b8U))
+RETURN()
+EVT_END()
+
 }
 
 void OnModuleLoaded(OSModuleInfo* module) {
@@ -501,11 +520,121 @@ void CheckBattleCondition() {
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
         ttyd::npcdrv::NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
         for (int32_t i = 0; i < 8; ++i) {
+            // Only return a bonus item if the enemies were all defeated.
+            if (npc_info->wStolenItems[i] != 0) return;
+        }
+        for (int32_t i = 0; i < 8; ++i) {
             if (npc_info->wBackItemIds[i] == 0) {
                 // TODO: Determine the bonus item procedurally.
                 npc_info->wBackItemIds[i] = ItemType::GOLD_BAR_X3;
                 break;
             }
+        }
+    }
+}
+
+// Global variable for the last type of item consumed;
+// this is necessary to allow enemies to use cooked items.
+int32_t g_EnemyItem = 0;
+
+void EnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt) {
+    void* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    if (unit->current_kind <= BattleUnitType::BONETAIL) {
+        g_EnemyItem = unit->held_item;
+    }
+}
+
+bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt) {
+    void* battleWork = ttyd::battle::g_BattleWork;
+    ttyd::battle_unit::BattleWorkUnit* unit = nullptr;
+    if (evt->wActorThisPtr) {
+        unit = ttyd::battle::BattleGetUnitPtr(
+            battleWork,
+            reinterpret_cast<uint32_t>(evt->wActorThisPtr));
+        if (unit->current_kind <= BattleUnitType::BONETAIL) {
+            evtSetValue(evt, evt->evtArguments[0], g_EnemyItem);
+            return true;
+        }
+    }
+    return false;
+}
+
+void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit) {
+    switch (unit->held_item) {
+        // Items that aren't normally usable but work with no problems:
+        case ItemType::COURAGE_MEAL:
+        case ItemType::EGG_BOMB:
+        case ItemType::COCONUT_BOMB:
+        case ItemType::ZESS_DYNAMITE:
+        case ItemType::HOT_SAUCE:
+        case ItemType::SPITE_POUCH:
+        case ItemType::KOOPA_CURSE:
+        case ItemType::SHROOM_BROTH:
+        case ItemType::LOVE_PUDDING:
+        case ItemType::PEACH_TART:
+        case ItemType::ELECTRO_POP:
+        // Additional items (would not have the desired effect without patches):
+        case ItemType::POISON_SHROOM:
+        case ItemType::POINT_SWAP:
+        case ItemType::TRIAL_STEW:
+        case ItemType::TRADE_OFF:
+            return ttyd::battle_enemy_item::_check_attack_item(unit);
+        // Explicitly not allowed:
+        case ItemType::FRIGHT_MASK:
+        case ItemType::MYSTERY:
+        default:
+            return nullptr;
+    }
+}
+
+void ApplyItemAndAttackPatches() {
+    // Make enemies prefer to use CookingItems like standard healing items.
+    ttyd::battle_item_data::ItemWeaponData_CookingItem.target_weighting_flags =
+        ttyd::battle_item_data::ItemWeaponData_Kinoko.target_weighting_flags;
+        
+    // Make Point Swap and Trial Stew only target Mario's team.
+    ttyd::battle_item_data::ItemWeaponData_Irekaeeru.target_class_flags = 
+        0x01100070;
+    ttyd::battle_item_data::ItemWeaponData_LastDinner.target_class_flags = 
+        0x01100070;
+
+    // Make Poison Mushrooms able to target anyone, and make enemies prefer
+    // to target Mario's team or characters with lower health.
+    ttyd::battle_item_data::ItemWeaponData_PoisonKinoko.target_class_flags = 
+        0x01100060;
+    ttyd::battle_item_data::ItemWeaponData_PoisonKinoko.target_weighting_flags =
+        0x80001403;
+        
+    // Make Trade Off usable only on the enemy party.
+    ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka.target_class_flags =
+        0x02100063;
+    // Make it inflict +ATK for 9 turns (and increase level by 5, as usual).
+    ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka.atk_change_chance = 100;
+    ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka.atk_change_time     = 9;
+    ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka.atk_change_strength = 3;
+    // Patch in evt code to actually apply the item's newly granted status.
+    const int32_t kTradeOffScriptHookAddr = 0x80369b34;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kTradeOffScriptHookAddr),
+        TradeOffPatch, sizeof(TradeOffPatch));
+    
+    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
+    // TODO: Update descriptions to be more useful?
+    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
+           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
+    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
+        |= ItemUseLocation::kField;
+        
+    // For all items that restore HP or FP, assign them the "cooking item"
+    // weapon struct if they don't already have a weapon assigned.
+    for (int32_t i = ItemType::THUNDER_BOLT; i <= ItemType::FRESH_JUICE; ++i) {
+        ItemData& item = itemDataTable[i];
+        if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
+            item.weapon_params = 
+                &ttyd::battle_item_data::ItemWeaponData_CookingItem;
         }
     }
 }
@@ -596,19 +725,17 @@ void ApplyMiscPatches() {
         
     // Skip tutorials for boots / hammer upgrades.
     const int32_t kSkipUpgradeCutsceneOpAddr = 0x800abcd8;
-    const uint32_t kSkipCutsceneOpcode = 0x48000030;
+    const uint32_t kSkipCutsceneOpcode = 0x48000030;  // b 0x30
     mod::patch::writePatch(
         reinterpret_cast<void*>(kSkipUpgradeCutsceneOpAddr),
         &kSkipCutsceneOpcode, sizeof(uint32_t));
         
-    // Item patches.
-    
-    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
-    // TODO: Update descriptions to be more useful?
-    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
-           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
-    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
-        |= ItemUseLocation::kField;
+    // Disable the check for enemies only holding certain types of items.
+    const int32_t kSkipEnemyHeldItemCheckOpAddr = 0x80125d54;
+    const uint32_t kSkipEnemyHeldItemCheckOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kSkipEnemyHeldItemCheckOpAddr),
+        &kSkipEnemyHeldItemCheckOpcode, sizeof(uint32_t));
 }
 
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
@@ -624,16 +751,13 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     const int32_t y_pos = 0;    // TODO: Pick Y-coordinate based on species.
     const int32_t z_pos = ttyd::system::irand(200) - 100;
     
-    ttyd::evtmgr_cmd::evtSetValue(
-        evt, evt->evtArguments[0], PTR(npc_tribe_description->modelName));
-    ttyd::evtmgr_cmd::evtSetValue(
-        evt, evt->evtArguments[1], PTR(npc_tribe_description->nameJp));
-    ttyd::evtmgr_cmd::evtSetValue(
-        evt, evt->evtArguments[2], PTR(npc_setup_info));
-    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[3], battle_setup_idx);
-    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[4], x_pos * x_sign);
-    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[5], y_pos);
-    ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[6], z_pos);
+    evtSetValue(evt, evt->evtArguments[0], PTR(npc_tribe_description->modelName));
+    evtSetValue(evt, evt->evtArguments[1], PTR(npc_tribe_description->nameJp));
+    evtSetValue(evt, evt->evtArguments[2], PTR(npc_setup_info));
+    evtSetValue(evt, evt->evtArguments[3], battle_setup_idx);
+    evtSetValue(evt, evt->evtArguments[4], x_pos * x_sign);
+    evtSetValue(evt, evt->evtArguments[5], y_pos);
+    evtSetValue(evt, evt->evtArguments[6], z_pos);
         
     return 2;
 }
