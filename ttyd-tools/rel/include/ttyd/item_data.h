@@ -364,6 +364,8 @@ namespace ItemType {
         SQUARE_DIAMOND_BADGE_P,
         SUPER_CHARGE,
         SUPER_CHARGE_P,
+        
+        MAX_ITEM_TYPE
     };
 }
 
@@ -389,7 +391,7 @@ struct ItemData {
     int8_t          bp_cost;
     int8_t          hp_restored;
     int8_t          fp_restored;
-    int8_t          sp_restored;
+    int8_t          sp_restored;  // Only works on field
     int16_t         icon_id;
     int16_t         unk_022;
     ttyd::battle_database_common::BattleWeapon* weapon_params;

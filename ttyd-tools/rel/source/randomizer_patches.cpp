@@ -14,6 +14,7 @@
 #include <ttyd/battle_item_data.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
+#include <ttyd/battle_weapon_power.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
@@ -500,6 +501,8 @@ const char* GetReplacementMessage(const char* msg_key) {
     // Do not use for more than one custom message at a time!
     static char buf[128];
     
+    // TODO: Consider replacing these compares with a single hash and
+    // comparison if many more strings are added.
     if (!strcmp(msg_key, "pit_reward_party_join")) {
         return "<system>\n<p>\nYou got a new party member!\n<k>";
     } else if (!strcmp(msg_key, "pit_disabled_return")) {
@@ -508,7 +511,56 @@ const char* GetReplacementMessage(const char* msg_key) {
         sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
                 g_PitFloor + 1);
         return buf;
+    } else if (!strcmp(msg_key, "in_cake")) {
+        return "Strawberry Cake";
+    } else if (!strcmp(msg_key, "msg_cake")) {
+        return "Scrumptious strawberry cake \n"
+               "that heals 15 HP and 15 FP.";
+    } else if (!strcmp(msg_key, "msg_kame_no_noroi")) {
+        return "Has a chance of inducing Slow \n"
+               "status on all foes.";
+    } else if (!strcmp(msg_key, "msg_teki_kyouka")) {
+        return "Boosts foes' level by 5, but \n"
+               "temporarily gives them +3 ATK.";
+    } else if (!strcmp(msg_key, "msg_ice_candy")) {
+        return "A dessert made by Zess T.\n"
+               "Gives 15 FP, but might freeze!";
+    } else if (!strcmp(msg_key, "list_ice_candy")) {
+        return "A dessert made by Zess T.\n"
+               "Gives 15 FP, but might freeze!\n"
+               "Made by mixing Honey Syrup \n"
+               "with an Ice Storm.";
+    } else if (!strcmp(msg_key, "msg_nancy_frappe")) {
+        return "A dessert made by Zess T.\n"
+               "Gives 20 FP, but might freeze!";
+    } else if (!strcmp(msg_key, "list_nancy_frappe")) {
+        return "A dessert made by Zess T.\n"
+               "Gives 20 FP, but might freeze!\n"
+               "Made by mixing Maple Syrup \n"
+               "with an Ice Storm.";
+    } else if (!strcmp(msg_key, "in_toughen_up")) {
+        return "Toughen Up";
+    } else if (!strcmp(msg_key, "in_toughen_up_p")) {
+        return "Toughen Up P";
+    } else if (!strcmp(msg_key, "msg_toughen_up")) {
+        return "Wear this to add Toughen Up\n"
+               "to Mario's Tactics menu.\n"
+               "This uses 1 FP to raise DEF\n"
+               "by 2 points for a turn.\n"
+               "Wearing more copies raises\n"
+               "the effect and FP cost.";
+    } else if (!strcmp(msg_key, "msg_toughen_up_p")) {
+        return "Wear this to add Toughen Up\n"
+               "to partners' Tactics menu.\n"
+               "This uses 1 FP to raise DEF\n"
+               "by 2 points for a turn.\n"
+               "Wearing more copies raises\n"
+               "the effect and FP cost.";
+    } else if (!strcmp(msg_key, "btl_hlp_cmd_operation_super_charge")) {
+        return "Briefly increases DEF by\n"
+               "more than Defending.";
     }
+
     return nullptr;
 }
 
@@ -582,6 +634,9 @@ void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit) {
         case ItemType::TRIAL_STEW:
         case ItemType::TRADE_OFF:
             return ttyd::battle_enemy_item::_check_attack_item(unit);
+        case ItemType::FRESH_JUICE:
+        case ItemType::HEALTHY_SALAD:
+            return ttyd::battle_enemy_item::_check_status_recover_item(unit);
         // Explicitly not allowed:
         case ItemType::FRIGHT_MASK:
         case ItemType::MYSTERY:
@@ -591,7 +646,134 @@ void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit) {
 }
 
 void ApplyItemAndAttackPatches() {
+    // Rebalanced price tiers for badges.
+    static const constexpr uint32_t kBadgePriceTiers[] = {
+        0x32222633U, 0x66262224U, 0x77662244U, 0x55778888U, 0x33555555U, 
+        0x44444773U, 0x32224581U, 0x63355553U, 0x41182216U, 0x11111564U,
+        0x04111411U, 0x10000000U, 0x00000221U
+    };
+    static const constexpr int16_t kSquareDiamondIconId     =  44;
+    static const constexpr int16_t kSquareDiamondPartnerId  =  87;
+    static const constexpr int16_t kKoopaCurseIconId        = 390;
+    
+    // Individual balance / visual changes.
+    itemDataTable[ItemType::TRADE_OFF].buy_price = 50;
+    itemDataTable[ItemType::TRADE_OFF].sell_price = 25;
+    itemDataTable[ItemType::TRIAL_STEW].buy_price = 50;
+    itemDataTable[ItemType::TRIAL_STEW].sell_price = 25;
+    itemDataTable[ItemType::STRANGE_SACK].buy_price = 250;
+    itemDataTable[ItemType::ULTRA_HAMMER].buy_price = 250;
+    itemDataTable[ItemType::CAKE].buy_price = 30;
+    itemDataTable[ItemType::CAKE].sell_price = 15;
+    itemDataTable[ItemType::CAKE].hp_restored = 15;
+    itemDataTable[ItemType::CAKE].fp_restored = 15;
+    itemDataTable[ItemType::FRESH_PASTA].buy_price = 15;
+    itemDataTable[ItemType::FRESH_PASTA].sell_price = 10;
+    itemDataTable[ItemType::KOOPASTA].buy_price = 20;
+    itemDataTable[ItemType::KOOPASTA].sell_price = 15;
+    itemDataTable[ItemType::SPICY_PASTA].buy_price = 30;
+    itemDataTable[ItemType::SPICY_PASTA].sell_price = 20;
+    itemDataTable[ItemType::INK_PASTA].buy_price = 30;
+    itemDataTable[ItemType::INK_PASTA].sell_price = 20;
+    itemDataTable[ItemType::KOOPA_CURSE].icon_id = kKoopaCurseIconId;
+    itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
+    // Because, let's be honest.
+    itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
+    
+    // New badges (Toughen Up, Toughen Up P).
+    itemDataTable[ItemType::SUPER_CHARGE].bp_cost = 1;
+    itemDataTable[ItemType::SUPER_CHARGE].icon_id = kSquareDiamondIconId;
+    itemDataTable[ItemType::SUPER_CHARGE].name = "in_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE].description = "msg_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE].menu_description = "msg_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE_P].bp_cost = 1;
+    itemDataTable[ItemType::SUPER_CHARGE_P].icon_id = kSquareDiamondPartnerId;
+    itemDataTable[ItemType::SUPER_CHARGE_P].name = "in_toughen_up_p";
+    itemDataTable[ItemType::SUPER_CHARGE_P].description = "msg_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE_P].menu_description = "msg_toughen_up_p";
+    
+    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
+    // TODO: Update descriptions to be more useful?
+    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
+           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
+    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
+        |= ItemUseLocation::kField;
+    
+    // Set coin buy / discount / sell prices for badges to rebalanced values,
+    // badge Star Piece costs on BP cost, recipe prices based on sell price,
+    // cooking items' weapons, and fix unused items' and badges' sort order.    
+    for (int32_t i = 0; i < ItemType::MAX_ITEM_TYPE; ++i) {
+        ItemData& item = itemDataTable[i];
+        if (i >= ItemType::GOLD_BAR && i <= ItemType::FRESH_JUICE) {
+            // For all items that restore HP or FP, assign the "cooked item"
+            // weapon struct if they don't already have a weapon assigned.
+            if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
+                item.weapon_params = 
+                    &ttyd::battle_item_data::ItemWeaponData_CookingItem;
+            }
+            
+            if (item.buy_price == 10 && item.sell_price > 8) {
+                item.buy_price = item.sell_price * 5 / 4;
+            }
+            
+            if (item.type_sort_order > 0x31) {
+                item.type_sort_order += 1;
+            }
+        } else if (i >= ItemType::POWER_JUMP) {
+            const int32_t word_index = (i - ItemType::POWER_JUMP) >> 3;
+            const int32_t nybble_index = (i - ItemType::POWER_JUMP) & 7;
+            const int32_t tier = 
+                (kBadgePriceTiers[word_index] >> (nybble_index << 2)) & 15;
+            if (tier > 0) {
+                item.buy_price = tier > 4 ? tier * 50 - 100 : tier * 25;
+            }
+            item.star_piece_price = tier > 0 ? tier : 1;
+            
+            // Higher discounted price, since most prices in general are lower.
+            item.discount_price = item.buy_price * 4 / 5;
+            item.sell_price = item.buy_price >> 1;
+            
+            if (item.type_sort_order > 0x49) ++item.type_sort_order;
+            if (item.type_sort_order > 0x43) ++item.type_sort_order;
+            if (item.type_sort_order > 0x3b) ++item.type_sort_order;
+            if (item.type_sort_order > 0x24) ++item.type_sort_order;
+            if (item.type_sort_order > 0x21) ++item.type_sort_order;
+            if (item.type_sort_order > 0x1f) ++item.type_sort_order;
+            if (item.type_sort_order > 0x16) item.type_sort_order += 2;
+        }
+    }
+    
+    // Fixed sort order for Koopa Curse, new badges, and unused 'P' badges.
+    itemDataTable[ItemType::KOOPA_CURSE].type_sort_order        = 0x31 + 1;
+    
+    itemDataTable[ItemType::SUPER_CHARGE].type_sort_order       = 0x16 + 1;
+    itemDataTable[ItemType::SUPER_CHARGE_P].type_sort_order     = 0x16 + 2;
+    // Leftover code for Mini HP-/FP-Plus from Shufflizer.
+    // itemDataTable[ItemType::SQUARE_DIAMOND_BADGE].type_sort_order = 0x1f + 3;
+    // itemDataTable[ItemType::SQUARE_DIAMOND_BADGE_P].type_sort_order = 0x21 + 4;
+    itemDataTable[ItemType::ALL_OR_NOTHING_P].type_sort_order   = 0x24 + 5;
+    itemDataTable[ItemType::LUCKY_DAY_P].type_sort_order        = 0x3b + 6;
+    itemDataTable[ItemType::PITY_FLOWER_P].type_sort_order      = 0x43 + 7;
+    itemDataTable[ItemType::FP_DRAIN_P].type_sort_order         = 0x49 + 8;
+    
+    // Reinstate Fire Pop's fire damage (base it off of Electro Pop's params).
+    static ttyd::battle_database_common::BattleWeapon kFirePopParams;
+    memcpy(&kFirePopParams,
+           &ttyd::battle_item_data::ItemWeaponData_BiribiriCandy,
+           sizeof(ttyd::battle_database_common::BattleWeapon));
+    kFirePopParams.item_id = ItemType::FIRE_POP;
+    kFirePopParams.damage_function =
+        reinterpret_cast<void*>(
+            &ttyd::battle_weapon_power::weaponGetPowerDefault);
+    kFirePopParams.damage_function_params[0] = 1;
+    kFirePopParams.element = 1;  // fire (naturally)
+    kFirePopParams.special_property_flags = 0x00030048;  // pierce defense
+    kFirePopParams.electric_chance = 0;
+    kFirePopParams.electric_time = 0;
+    itemDataTable[ItemType::FIRE_POP].weapon_params = &kFirePopParams;
+    
     // Make enemies prefer to use CookingItems like standard healing items.
+    // (i.e. they use them on characters with less HP)
     ttyd::battle_item_data::ItemWeaponData_CookingItem.target_weighting_flags =
         ttyd::battle_item_data::ItemWeaponData_Kinoko.target_weighting_flags;
         
@@ -607,6 +789,12 @@ void ApplyItemAndAttackPatches() {
         0x01100060;
     ttyd::battle_item_data::ItemWeaponData_PoisonKinoko.target_weighting_flags =
         0x80001403;
+    // Make Poison Mushrooms poison & halve HP 67% of the time instead of 80%.
+    const int32_t kPoisonMushroomChanceAddr = 0x8036c914;
+    const int32_t kPoisonMushroomChance = 67;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kPoisonMushroomChanceAddr),
+        &kPoisonMushroomChance, sizeof(kPoisonMushroomChance));
         
     // Make Trade Off usable only on the enemy party.
     ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka.target_class_flags =
@@ -620,23 +808,6 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kTradeOffScriptHookAddr),
         TradeOffPatch, sizeof(TradeOffPatch));
-    
-    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
-    // TODO: Update descriptions to be more useful?
-    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
-           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
-    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
-        |= ItemUseLocation::kField;
-        
-    // For all items that restore HP or FP, assign them the "cooking item"
-    // weapon struct if they don't already have a weapon assigned.
-    for (int32_t i = ItemType::THUNDER_BOLT; i <= ItemType::FRESH_JUICE; ++i) {
-        ItemData& item = itemDataTable[i];
-        if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
-            item.weapon_params = 
-                &ttyd::battle_item_data::ItemWeaponData_CookingItem;
-        }
-    }
 }
 
 void ApplyMiscPatches() {
@@ -736,6 +907,13 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kSkipEnemyHeldItemCheckOpAddr),
         &kSkipEnemyHeldItemCheckOpcode, sizeof(uint32_t));
+        
+    // Make item names in battle menu based on item data rather than weapon data
+    const int32_t kGetItemWeaponNameOpAddr = 0x80124924;
+    const uint32_t kGetItemWeaponNameOpcode = 0x807b0004;  // r3, 4 (r27)
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kGetItemWeaponNameOpAddr),
+        &kGetItemWeaponNameOpcode, sizeof(uint32_t));
 }
 
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {

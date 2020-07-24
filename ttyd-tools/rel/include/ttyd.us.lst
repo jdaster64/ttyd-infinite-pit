@@ -897,6 +897,21 @@
 // win_main.o
 8017ebd4:winGetPtr
 
+// battle_weapon_power.o
+80189a28:weaponGetPowerTatsumaki
+80189a74:weaponGetFPPowerFPHalf
+80189aa0:weaponGetPowerHPHalf2
+80189ab0:weaponGetPowerHPHalf
+80189adc:weaponGetACOutputParam
+80189b04:weaponGetPowerFromGulliblePartyAttackLv
+80189b50:weaponGetPowerFromPartyAttackLv
+80189bb0:weaponGetPowerOverlapHammer1
+80189bf4:weaponGetPowerOverlapJump1
+80189c38:weaponGetPowerFromMarioHammerLv
+80189cb0:weaponGetPowerFromMarioJumpLv
+80189d28:weaponGetFPPowerDefault
+80189d30:weaponGetPowerDefault
+
 // filemgr.o
 8018a0e8:fileAsyncf
 8018a260:fileFree
