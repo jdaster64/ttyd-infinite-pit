@@ -869,6 +869,7 @@ void ApplyWeaponLevelSelectionPatches() {
                     int8_t badges = g_CurMoveBadgeCounts[17 - is_mario];
                     *strength = badges + 1;
                 }
+                // TODO: Alter power of enemy charge moves.
             });
 }
 
