@@ -105,6 +105,9 @@
 80010c64:dispReInit
 80010c70:dispInit
 
+// icondrv.o
+80019120:iconNumberDispGx
+
 // seqdrv.o
 8002e1e4:seqCheckSeq
 8002e200:seqGetNextSeq
@@ -625,6 +628,9 @@
 // .data
 80315380:_party_max_hp_table
 
+// sound.o
+800e0ca0:SoundEfxPlayEx
+
 // evt_mario.o
 800e2e0c:evt_mario_kill_party
 800e2e78:evt_mario_goodbye_party
@@ -871,13 +877,143 @@
 // .data
 8041eb90:g_BattleWork
 
+// battle_ac.o
+800fa1a0:BattleACPadCheckRecordTrigger
+800fa1b8:BattleActionCommandCheckDefence
+
+// battle_damage.o
+// 800fa678:BattleCheckCounter
+// 800fac1c:BattleInitCounterPreCheckWork
+// 800fac58:BattleAttackDeclareAll
+// 800fad70:__declare
+// 800faecc:BattleAttackDeclare
+// 800fb01c:BattleCheckDamage
+// 800fba1c:_checkDamageCode_EmergencyRevival
+// 800fbadc:BattlePreCheckDamage
+// 800fbd8c:BattleSetStatusDamageFromWeapon
+// 800fbed8:BattleSetStatusDamage
+// 800fcf54:_getRegistStatus
+800fd030:_getSickStatusParam
+// 800fd490:_getSickStatusRate
+800fd680:BattleCalculateFpDamage
+800fd790:BattleCalculateDamage
+// 800fde2c:BattleCheckPikkyoro
+// 800fdfd4:BattleDamageDirect
+
 // battle_event_cmd.o
 801054e8:btlevtcmd_WeaponAftereffect
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
 
+// battle_mario.o
+// .text
+80115648:_get_mario_hammer_lv
+// .data
+803538a8:marioDefaultWeapon_Jump
+80353968:marioWeapon_KururinJump
+80353a28:marioWeapon_KururinJump2
+80353ae8:marioWeapon_JyabaraJump
+80353ba8:marioWeapon_JyabaraJumpFailed
+80353c68:marioDefaultWeapon_FirstAttackKaitenHammer
+80353d28:marioDefaultWeapon_FirstAttackUltraHammer
+80353de8:marioDefaultWeapon_Hammer
+80353ea8:marioWeapon_KaitenHammer
+80353f68:marioWeapon_KaitenHammerInvolved
+80354028:marioWeapon_UltraHammer
+803540e8:marioWeapon_UltraHammerInvolved
+803541a8:marioWeapon_UltraHammerFinish
+80354268:badgeWeapon_TugitugiJump
+80354328:badgeWeapon_GatsunJump
+803543e8:badgeWeapon_DokanJump
+803544a8:badgeWeapon_RenzokuJump
+80354568:badgeWeapon_TatsumakiJump
+80354628:badgeWeapon_TatsumakiJumpInvolved
+803546e8:badgeWeapon_MiniminiFumi
+803547a8:badgeWeapon_NemuraseFumi
+80354868:badgeWeapon_FunyafunyaJump
+80354928:badgeWeapon_GatsunHammer
+803549e8:badgeWeapon_DokanHammer
+80354aa8:badgeWeapon_JishinHammer
+80354b68:badgeWeapon_UltraJishinHammer
+80354c28:badgeWeapon_HammerNageru
+80354ce8:badgeWeapon_TsuranukiNaguri
+80354da8:badgeWeapon_ConfuseHammer
+80354e68:badgeWeapon_FireNaguri
+80354f28:badgeWeapon_FireNaguriFailed
+80354fe8:badgeWeapon_IceNaguri
+803550a8:badgeWeapon_Charge
+80355168:badgeWeapon_ChargeP
+80355228:badgeWeapon_SuperCharge
+803552e8:badgeWeapon_SuperChargeP
+803553a8:badgeWeapon_2KaiItem
+80355468:badgeWeapon_3KaiItem
+80355528:badgeWeapon_DefenceCommand
+803555e8:badgeWeapon_DefenceCommandP
+803556a8:marioWeapon_BakuGame
+80355768:marioWeapon_Scissor
+80355828:marioWeapon_ZubaStar
+803558e8:marioWeapon_Genki0
+803559a8:marioWeapon_Genki1
+80355a68:marioWeapon_Deka
+80355b28:marioWeapon_Muki
+80355be8:marioWeapon_Suki
+80355ca8:superActionTable
+80355cf0:marioAttackEvent_NormalJump
+80356bfc:marioAttackEvent_KururinJump
+80357ee4:marioAttackEvent_JyabaraJump
+80359964:marioAttackEvent_GatsuDokaJump
+80416bd8:marioAttackEvent_GatsunJump
+80416bf4:marioAttackEvent_DokanJump
+8035a35c:marioAttackEvent_TatsumakiJump
+80416c10:marioAttackEvent_MiniminiFumi
+80416c20:marioAttackEvent_NemuraseFumi
+80416c30:marioAttackEvent_FunyafunyaJump
+8035bd98:marioAttackEvent_RenzokuJump
+8035cab8:marioAttackEvent_TugiTugiJump
+80416c40:marioAttackEvent_NormalHammer
+80416c5c:marioAttackEvent_GatsunHammer
+80416c78:marioAttackEvent_IceNaguri
+80416c94:marioAttackEvent_TsuranukiHammer
+8035d6d4:marioAttackEvent_NormalHammer_Core
+8035eba8:marioAttackEvent_KaitenHammer
+8035fc38:marioAttackEvent_FirstAttackKaitenHammer
+8035fc84:marioAttackEvent_JishinHammer
+803609b8:marioAttackEvent_UltraJishinHammer
+8036141c:marioAttackEvent_HammerRotate
+80361480:marioAttackEvent_HammerNageru
+80361ba4:marioAttackEvent_HammerNageru_object
+80361f80:marioAttackEvent_FireNaguri
+80362a78:marioAttackEvent_FireNaguri_object
+80363050:_NormalCharge_core
+80416cb0:marioAttackEvent_NormalCharge
+80416ccc:marioAttackEvent_NormalChargeP
+803631ec:_SuperCharge_core
+80416ce8:marioAttackEvent_SuperCharge
+80416d04:marioAttackEvent_SuperChargeP
+80363388:marioAttackEvent_MajinaiPowerUpCheck
+80363414:marioAttackEvent_MajinaiJump
+803634c0:_MajinaiPoseReset
+803634f8:marioAttackEvent_MajinaiDefenceUp
+8036356c:marioAttackEvent_MajinaiExpUp
+
+// battle_menu_disp.o
+80115b30:DrawOperationWin
+80115dac:DrawWeaponWin
+
 // battle_sub.o
 801253ec:BattleTransID
+
+// battle_unit.o
+80126968:BtlUnit_GetWeaponCost
+80126c64:BtlUnit_GetFp
+80126fe8:BtlUnit_ReviseHpFp
+80128fe0:BtlUnit_Entry
+
+// statuswindow.o
+// .text
+8013cb24:statusWinDisp
+// .data
+8041ebec:g_StatusWindowWork
 
 // mario_party.o
 801410e8:marioGetParty
@@ -1037,6 +1173,11 @@
 // 80296B8C:L2GlobalInvalidate
 // 80296C24:DMAErrorHandler
 // 80296D84:__OSCacheInit
+
+// mtx.a mtx.c
+8029dd04:PSMTXIdentity
+8029dd30:PSMTXCopy
+8029e230:PSMTXTrans
 
 // OSLink.c
 8029A340:OSNotifyLink

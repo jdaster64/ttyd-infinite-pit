@@ -124,9 +124,64 @@ struct BadgesEquipped {
 } __attribute__((__packed__));
 
 static_assert(sizeof(BadgesEquipped) == 0x28);
+
+struct BattleWorkUnit;
+struct BattleWorkUnitPart;
     
 struct BattleWorkUnitPart {
-    int8_t      misc_000[0x500];
+    BattleWorkUnitPart* next_part;
+    battle_database_common::BattleUnitKindPart* kind_part_params;
+    const char*         part_name;
+    gc::vec3            home_position;
+    gc::vec3            position;
+    gc::vec3            position_offset;
+    gc::vec3            display_offset;
+    gc::vec3            base_rotation;
+    gc::vec3            rotation;
+    gc::vec3            rotation_offset;
+    gc::vec3            scale;
+    gc::vec3            base_scale;
+    float               unk_078;  // some sort of scale
+    
+    MovementParams      movement_params;
+    uint32_t            parts_work[16];  // length unknown; at least 3
+    gc::vec3            hit_base_position;  // ?
+    gc::vec3            hit_offset;
+    gc::vec3            hit_cursor_base_position;  // ?
+    gc::vec3            hit_cursor_offset;
+    int16_t             addl_target_offset_x;
+    int16_t             unk_1a2;
+    int16_t             unk_1a4;
+    int8_t              unk_1a6[6];
+    
+    uint32_t            part_attribute_flags;
+    uint32_t            counter_attribute_flags;
+    int8_t*             defense;
+    int8_t*             defense_attr;
+    
+    void*               pose_table;
+    int32_t             anim_pose_type;
+    char                anim_pose_name[64];  // length unknown
+    uint32_t            unk_204;  // anim-related flags
+    float               unk_208;
+    float               anim_motion_speed;
+    void*               unk_210;  // some sort of anim-related callback fn
+    int8_t              unk_214;
+    int8_t              unk_215;  // flags related to anim
+    int8_t              pad_216[2];
+    gc::color4          base_blur_color;
+    uint32_t            blur_flags;
+    gc::color4          blur_colors[2];
+    int8_t              blur_params[0x44 * 10];
+    int8_t              pose_sound_params[0x18];
+    
+    int32_t             unk_4e8;
+    BattleWorkUnit*     unit_owner;
+    gc::color4          color;
+    gc::color4          blended_color;  // with base alpha, invis status, etc.
+    float               unk_4f8;  // some sort of z-offset?  Used in btlDispMain
+    int8_t              unk_4fc;  // axis order to apply rotations?
+    int8_t              unk_4fd[3];
 } __attribute__((__packed__));
 
 static_assert(sizeof(BattleWorkUnitPart) == 0x500);
@@ -296,13 +351,14 @@ extern "C" {
 // BtlUnit_GetGuardKouraPtr
 // BtlUnit_PayWeaponCost
 // BtlUnit_CheckWeaponCost
-// BtlUnit_GetWeaponCost
+int32_t BtlUnit_GetWeaponCost(
+    BattleWorkUnit* unit, battle_database_common::BattleWeapon* weapon);
 // BtlUnit_SetMaxFp
 // BtlUnit_GetMaxFp
 // BtlUnit_RecoverFp
 // BtlUnit_RecoverHp
 // BtlUnit_SetFp
-// BtlUnit_GetFp
+int32_t BtlUnit_GetFp(BattleWorkUnit* unit);
 // BtlUnit_GetCoin
 // BtlUnit_GetExp
 // BtlUnit_CheckPinchStatus
@@ -399,7 +455,8 @@ extern "C" {
 // BtlUnit_GetUnitId
 // BtlUnit_Spawn
 // BtlUnit_Delete
-// BtlUnit_Entry
+BattleWorkUnit* BtlUnit_Entry(
+    battle_database_common::BattleUnitSetup* unit_setup);
 // BtlUnit_Init
 
 }

@@ -28,13 +28,14 @@ namespace mod::pit_randomizer {
     
 Randomizer* g_Randomizer = nullptr;
     
-namespace  {
+namespace {
 
 using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::dispdrv::CameraId;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::npcdrv::NpcEntry;
+using ::ttyd::seqdrv::SeqIndex;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
@@ -44,6 +45,7 @@ void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
+void (*g_seqSetSeq_trampoline)(SeqIndex, const char*, const char*) = nullptr;
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo =
@@ -94,6 +96,14 @@ void Randomizer::Init() {
             }
             return result;
         });
+    
+    g_seqSetSeq_trampoline = patch::hookFunction(
+        ttyd::seqdrv::seqSetSeq, 
+        [](SeqIndex seq, const char* mapName, const char* beroName) {
+            OnEnterExitBattle(/* is_start = */ seq == SeqIndex::kBattle);
+            // TODO: Initialize for randomizer if seq/map/bero = start of game.
+            g_seqSetSeq_trampoline(seq, mapName, beroName);
+        });
         
     g_msgSearch_trampoline = patch::hookFunction(
         ttyd::msgdrv::msgSearch, [](const char* msg_key) {
@@ -138,6 +148,7 @@ void Randomizer::Init() {
             return evt_code;
         });
         
+    ApplyWeaponLevelSelectionPatches();
     ApplyItemAndAttackPatches();
     ApplyMiscPatches();
 }

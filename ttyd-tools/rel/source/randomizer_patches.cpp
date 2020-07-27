@@ -8,10 +8,13 @@
 
 #include <gc/OSLink.h>
 #include <ttyd/battle.h>
+#include <ttyd/battle_damage.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_enemy_item.h>
 #include <ttyd/battle_event_cmd.h>
 #include <ttyd/battle_item_data.h>
+#include <ttyd/battle_mario.h>
+#include <ttyd/battle_menu_disp.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
@@ -38,6 +41,7 @@
 #include <ttyd/npcdrv.h>
 #include <ttyd/seq_mapchange.h>
 #include <ttyd/seqdrv.h>
+#include <ttyd/sound.h>
 #include <ttyd/system.h>
 #include <ttyd/win_main.h>
 #include <ttyd/win_party.h>
@@ -69,67 +73,8 @@ extern "C" {
     }
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
-    void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
-    
-    void usePartyRankup() {
-        void* winPtr = ttyd::win_main::winGetPtr();
-        const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
-        
-        // If the item is a Shine Sprite... (otherwise, handle normally)
-        if (item == ttyd::item_data::ItemType::GOLD_BAR_X3) {
-            int32_t* party_member_target = 
-                reinterpret_cast<int32_t*>(winPtr) + (0x2dc / 4);
-            // If Mario is selected, target the first party member instead.
-            if (*party_member_target == 0) *party_member_target = 1;
-            
-            ttyd::win_party::WinPartyData* party_data = 
-                ttyd::win_party::g_winPartyDt;
-            ttyd::mario_pouch::PouchPartyData* pouch_data = 
-                ttyd::mario_pouch::pouchGetPtr()->party_data;
-            const int32_t party_id = ttyd::mario_party::marioGetParty();
-            
-            // Determine the order the party members are shown in the menu.
-            ttyd::win_party::WinPartyData* party_win_order[7];
-            ttyd::win_party::WinPartyData** current_order = party_win_order;
-            for (int32_t i = 0; i < 7; ++i) {
-                if (party_data[i].partner_id == party_id) {
-                    *current_order = party_data + i;
-                    ++current_order;
-                }
-            }
-            for (int32_t i = 0; i < 7; ++i) {
-                int32_t id = party_data[i].partner_id;
-                if ((pouch_data[id].flags & 1) && id != party_id) {
-                    *current_order = party_data + i;
-                    ++current_order;
-                }
-            }
-            // Rank the selected party member up and fully heal them.
-            const int32_t selected_partner_id =
-                party_win_order[*party_member_target - 1]->partner_id;
-            pouch_data += selected_partner_id;
-            int16_t* hp_table = 
-                ttyd::mario_pouch::_party_max_hp_table + selected_partner_id * 4;
-            if (pouch_data->hp_level < 2) {
-                ++pouch_data->hp_level;
-                ++pouch_data->attack_level;
-                ++pouch_data->tech_level;
-            } else {
-                // TODO: The number of HP ups will need to be saved somehow
-                // if the player is allowed to save.
-                if (hp_table[2] < 200) hp_table[2] += 5;
-            }
-            pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
-            pouch_data->current_hp = hp_table[pouch_data->hp_level];
-            pouch_data->max_hp = hp_table[pouch_data->hp_level];
-            // Include HP Plus P in current / max stats.
-            const int32_t hp_plus_p_cnt = 
-                ttyd::mario_pouch::pouchEquipCheckBadge(
-                    ttyd::item_data::ItemType::HP_PLUS_P);
-            pouch_data->current_hp += 5 * hp_plus_p_cnt;
-            pouch_data->max_hp += 5 * hp_plus_p_cnt;
-        }
-    }
+    void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); } 
+    void usePartyRankup() { mod::pit_randomizer::UseShineSprite(); }
 }
 
 namespace mod::pit_randomizer {
@@ -137,6 +82,11 @@ namespace mod::pit_randomizer {
 namespace {
 
 using ::gc::OSLink::OSModuleInfo;
+using ::ttyd::battle::BattleWorkCommandCursor;
+using ::ttyd::battle::BattleWorkCommandOperation;
+using ::ttyd::battle::BattleWorkCommandWeapon;
+using ::ttyd::battle_database_common::BattleWeapon;
+using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::evt_bero::BeroEntry;
 using ::ttyd::evtmgr_cmd::evtGetValue;
 using ::ttyd::evtmgr_cmd::evtSetValue;
@@ -144,26 +94,47 @@ using ::ttyd::item_data::itemDataTable;
 using ::ttyd::item_data::ItemData;
 using ::ttyd::mariost::g_MarioSt;
 using ::ttyd::system::getMarioStDvdRoot;
+using ::ttyd::win_party::WinPartyData;
 
 namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
-// Global variables and constants.
-alignas(0x10) char g_AdditionalRelBss[0x3d4];
-const char* g_AdditionalModuleToLoad = nullptr;
-uintptr_t g_PitModulePtr = 0;
-// TODO: Move all references of this to g_Randomizer->state_.floor_.
-int32_t g_PitFloor       = -1;
+// Trampoline hooks for patching in custom logic to existing TTYD C functions.
+int32_t (*g_pouchEquipCheckBadge_trampoline)(int16_t) = nullptr;
+int32_t (*g_BtlUnit_GetWeaponCost_trampoline)(
+    BattleWorkUnit*, BattleWeapon*) = nullptr;
+void (*g_DrawOperationWin_trampoline)() = nullptr;
+void (*g_DrawWeaponWin_trampoline)() = nullptr;
+void (*g__getSickStatusParam_trampoline)(
+    BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
 
-const char* kPitNpcName = "\x93\x47";  // "enemy"
-const char* kPiderName = "\x83\x70\x83\x43\x83\x5f\x81\x5b\x83\x58";
-const char* kArantulaName = 
+// Global variables and constants.
+alignas(0x10) char  g_AdditionalRelBss[0x3d4];
+const char*         g_AdditionalModuleToLoad = nullptr;
+uintptr_t           g_PitModulePtr = 0;
+// TODO: Move all references of this to g_Randomizer->state_.floor_.
+int32_t             g_PitFloor = -1;
+
+bool                g_InBattle = false;
+int8_t              g_MaxMoveBadgeCounts[18];
+int8_t              g_CurMoveBadgeCounts[18];
+char                g_MoveBadgeTextBuffers[18][24];
+const char*         kMoveBadgeAbbreviations[18] = {
+    "Power J.", "Multib.", "Power B.", "Tornado J.", "Shrink S.",
+    "Sleep S.", "Soft S.", "Power S.", "Quake H.", "H. Throw",
+    "Pier. B.", "H. Rattle", "Fire Drive", "Ice Smash",
+    "Charge", "Charge", "Tough. Up", "Tough. Up"
+};
+
+const char kPitNpcName[] = "\x93\x47";  // "enemy"
+const char kPiderName[] = "\x83\x70\x83\x43\x83\x5f\x81\x5b\x83\x58";
+const char kArantulaName[] = 
     "\x83\x60\x83\x85\x83\x89\x83\x93\x83\x5e\x83\x89\x81\x5b";
-const char* kChainChompName = "\x83\x8f\x83\x93\x83\x8f\x83\x93";
-const char* kRedChompName = 
+const char kChainChompName[] = "\x83\x8f\x83\x93\x83\x8f\x83\x93";
+const char kRedChompName[] = 
     "\x83\x6f\x81\x5b\x83\x58\x83\x67\x83\x8f\x83\x93\x83\x8f\x83\x93";
-const char* kBonetailName = "\x83\x5d\x83\x93\x83\x6f\x83\x6f";
+const char kBonetailName[] = "\x83\x5d\x83\x93\x83\x6f\x83\x6f";
 
 // Event that plays "get partner" fanfare.
 EVT_BEGIN(PartnerFanfareEvt)
@@ -497,6 +468,281 @@ void OnMapUnloaded() {
     // Normal unloading logic follows...
 }
 
+void OnEnterExitBattle(bool is_start) {
+    if (is_start) {
+        int8_t badge_count;
+        for (int32_t i = 0; i < 14; ++i) {
+            badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
+                ItemType::POWER_JUMP + i);
+            g_MaxMoveBadgeCounts[i] = badge_count;
+            g_CurMoveBadgeCounts[i] = badge_count;
+        }
+        for (int32_t i = 0; i < 2; ++i) {
+            badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
+                ItemType::CHARGE + i);
+            g_MaxMoveBadgeCounts[14 + i] = badge_count;
+            g_CurMoveBadgeCounts[14 + i] = badge_count;
+            badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
+                ItemType::SUPER_CHARGE + i);
+            g_MaxMoveBadgeCounts[16 + i] = badge_count;
+            g_CurMoveBadgeCounts[16 + i] = badge_count;
+        }
+        g_InBattle = true;
+    } else {
+        g_InBattle = false;
+    }
+}
+
+int32_t GetWeaponLevelSelectionIndex(int16_t badge_id) {
+    if (badge_id >= ItemType::POWER_JUMP && badge_id <= ItemType::ICE_SMASH) {
+        return badge_id - ItemType::POWER_JUMP;
+    }
+    switch (badge_id) {
+        case ItemType::CHARGE: return 14;
+        case ItemType::CHARGE_P: return 15;
+        case ItemType::SUPER_CHARGE: return 16;
+        case ItemType::SUPER_CHARGE_P: return 17;
+    }
+    return -1;
+}
+
+int32_t GetSelectedLevelWeaponCost(BattleWorkUnit* unit, BattleWeapon* weapon) {
+    if (!weapon || !g_InBattle) return -1;
+    if (int32_t idx = GetWeaponLevelSelectionIndex(weapon->item_id); idx >= 0) {
+        const int32_t fp_cost =
+            weapon->base_fp_cost * g_CurMoveBadgeCounts[idx] -
+            unit->badges_equipped.flower_saver;
+        return fp_cost < 1 ? 1 : fp_cost;
+    }
+    return -1;
+}
+
+void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
+    const uint16_t buttons = ttyd::system::keyGetButtonTrg(0);
+    const bool left_press = buttons & (ButtonId::L | ButtonId::DPAD_LEFT);
+    const bool right_press = buttons & (ButtonId::R | ButtonId::DPAD_RIGHT);
+    
+    void** win_data = reinterpret_cast<void**>(
+        ttyd::battle::g_BattleWork->command_work.window_work);
+    if (!win_data || !win_data[0]) return;
+    
+    auto* cursor = reinterpret_cast<BattleWorkCommandCursor*>(win_data[0]);
+    if (is_strategies_menu) {
+        auto* battleWork = ttyd::battle::g_BattleWork;
+        auto* strats = battleWork->command_work.operation_table;
+        BattleWorkUnit* unit =
+            battleWork->battle_units[battleWork->active_unit_idx];
+        BattleWeapon* weapon = nullptr;
+        int32_t idx = 0;
+        for (int32_t i = 0; i < cursor->num_options; ++i) {
+            // Not selecting Charge or Super Charge.
+            if (strats[i].type < 1 || strats[i].type > 2) continue;
+            
+            if (strats[i].type == 1) {
+                if (unit->current_kind == BattleUnitType::MARIO) {
+                    weapon = &ttyd::battle_mario::badgeWeapon_Charge;
+                } else {
+                    weapon = &ttyd::battle_mario::badgeWeapon_ChargeP;
+                }
+            } else {
+                if (unit->current_kind == BattleUnitType::MARIO) {
+                    weapon = &ttyd::battle_mario::badgeWeapon_SuperCharge;
+                } else {
+                    weapon = &ttyd::battle_mario::badgeWeapon_SuperChargeP;
+                }
+            }
+            idx = GetWeaponLevelSelectionIndex(weapon->item_id);
+            
+            // If current selection, and L/R pressed, change power level.
+            if (i == cursor->abs_position) {
+                if (left_press && g_CurMoveBadgeCounts[idx] > 1) {
+                    --g_CurMoveBadgeCounts[idx];
+                    ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
+                } else if (
+                    right_press && 
+                    g_CurMoveBadgeCounts[idx] < g_MaxMoveBadgeCounts[idx]) {
+                    ++g_CurMoveBadgeCounts[idx];
+                    ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
+                }
+            }
+            
+            sprintf(
+                g_MoveBadgeTextBuffers[idx], "%s Lv. %" PRId8,
+                kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
+            strats[i].name = g_MoveBadgeTextBuffers[idx];
+            strats[i].cost = GetSelectedLevelWeaponCost(unit, weapon);
+            strats[i].enabled =
+                strats[i].cost <= ttyd::battle_unit::BtlUnit_GetFp(unit);
+            strats[i].unk_08 = !strats[i].enabled;  // 1 if disabled: "no FP" msg
+        }
+    } else {
+        auto* weapons = reinterpret_cast<BattleWorkCommandWeapon*>(win_data[2]);
+        if (!weapons) return;
+        for (int32_t i = 0; i < cursor->num_options; ++i) {
+            if (!weapons[i].weapon) continue;
+            const int32_t idx = GetWeaponLevelSelectionIndex(
+                weapons[i].weapon->item_id);
+            if (idx < 0 || g_MaxMoveBadgeCounts[idx] <= 1) continue;
+            
+            // If current selection, and L/R pressed, change power level.
+            if (i == cursor->abs_position) {
+                if (left_press && g_CurMoveBadgeCounts[idx] > 1) {
+                    --g_CurMoveBadgeCounts[idx];
+                    ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
+                } else if (
+                    right_press && 
+                    g_CurMoveBadgeCounts[idx] < g_MaxMoveBadgeCounts[idx]) {
+                    ++g_CurMoveBadgeCounts[idx];
+                    ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
+                }
+            }
+            
+            // Overwrite default text based on current power level.
+            sprintf(
+                g_MoveBadgeTextBuffers[idx], "%s Lv. %" PRId8,
+                kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
+            weapons[i].name = g_MoveBadgeTextBuffers[idx];
+        }
+    }
+}
+
+void UseShineSprite() {
+    void* winPtr = ttyd::win_main::winGetPtr();
+    const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
+    
+    // If the item is a Shine Sprite... (otherwise, handle normally)
+    if (item == ItemType::GOLD_BAR_X3) {
+        int32_t* party_member_target = 
+            reinterpret_cast<int32_t*>(winPtr) + (0x2dc / 4);
+        // If Mario is selected, target the first party member instead.
+        if (*party_member_target == 0) *party_member_target = 1;
+        
+        WinPartyData* party_data = ttyd::win_party::g_winPartyDt;
+        ttyd::mario_pouch::PouchPartyData* pouch_data = 
+            ttyd::mario_pouch::pouchGetPtr()->party_data;
+        const int32_t party_id = ttyd::mario_party::marioGetParty();
+        
+        // Determine the order the party members are shown in the menu.
+        // TODO: Try to reuse the same code currently in win_item_patches.s.
+        WinPartyData* party_win_order[7];
+        WinPartyData** current_order = party_win_order;
+        for (int32_t i = 0; i < 7; ++i) {
+            if (party_data[i].partner_id == party_id) {
+                *current_order = party_data + i;
+                ++current_order;
+            }
+        }
+        for (int32_t i = 0; i < 7; ++i) {
+            int32_t id = party_data[i].partner_id;
+            if ((pouch_data[id].flags & 1) && id != party_id) {
+                *current_order = party_data + i;
+                ++current_order;
+            }
+        }
+        // Rank the selected party member up and fully heal them.
+        const int32_t selected_partner_id =
+            party_win_order[*party_member_target - 1]->partner_id;
+        pouch_data += selected_partner_id;
+        int16_t* hp_table = 
+            ttyd::mario_pouch::_party_max_hp_table + selected_partner_id * 4;
+        if (pouch_data->hp_level < 2) {
+            ++pouch_data->hp_level;
+            ++pouch_data->attack_level;
+            ++pouch_data->tech_level;
+        } else {
+            // TODO: Save the number of HP ups to the randomizer_state.
+            if (hp_table[2] < 200) hp_table[2] += 5;
+        }
+        pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
+        pouch_data->current_hp = hp_table[pouch_data->hp_level];
+        pouch_data->max_hp = hp_table[pouch_data->hp_level];
+        // Include HP Plus P in current / max stats.
+        const int32_t hp_plus_p_cnt =
+            ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
+        pouch_data->current_hp += 5 * hp_plus_p_cnt;
+        pouch_data->max_hp += 5 * hp_plus_p_cnt;
+    }
+}
+
+void CheckBattleCondition() {
+    auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
+    // If condition is a success and rule is not 0, add a bonus item.
+    if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
+        ttyd::npcdrv::NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
+        for (int32_t i = 0; i < 8; ++i) {
+            // Only return a bonus item if the enemies were all defeated.
+            if (npc_info->wStolenItems[i] != 0) return;
+        }
+        for (int32_t i = 0; i < 8; ++i) {
+            if (npc_info->wBackItemIds[i] == 0) {
+                // TODO: Determine the bonus item procedurally.
+                npc_info->wBackItemIds[i] = ItemType::GOLD_BAR_X3;
+                break;
+            }
+        }
+    }
+}
+
+// Global variable for the last type of item consumed;
+// this is necessary to allow enemies to use cooked items.
+int32_t g_EnemyItem = 0;
+
+void EnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    if (unit->current_kind <= BattleUnitType::BONETAIL) {
+        g_EnemyItem = unit->held_item;
+    }
+}
+
+bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    BattleWorkUnit* unit = nullptr;
+    if (evt->wActorThisPtr) {
+        unit = ttyd::battle::BattleGetUnitPtr(
+            battleWork,
+            reinterpret_cast<uint32_t>(evt->wActorThisPtr));
+        if (unit->current_kind <= BattleUnitType::BONETAIL) {
+            evtSetValue(evt, evt->evtArguments[0], g_EnemyItem);
+            return true;
+        }
+    }
+    return false;
+}
+
+void* EnemyUseAdditionalItemsCheck(BattleWorkUnit* unit) {
+    switch (unit->held_item) {
+        // Items that aren't normally usable but work with no problems:
+        case ItemType::COURAGE_MEAL:
+        case ItemType::EGG_BOMB:
+        case ItemType::COCONUT_BOMB:
+        case ItemType::ZESS_DYNAMITE:
+        case ItemType::HOT_SAUCE:
+        case ItemType::SPITE_POUCH:
+        case ItemType::KOOPA_CURSE:
+        case ItemType::SHROOM_BROTH:
+        case ItemType::LOVE_PUDDING:
+        case ItemType::PEACH_TART:
+        case ItemType::ELECTRO_POP:
+        // Additional items (would not have the desired effect without patches):
+        case ItemType::POISON_SHROOM:
+        case ItemType::POINT_SWAP:
+        case ItemType::TRIAL_STEW:
+        case ItemType::TRADE_OFF:
+            return ttyd::battle_enemy_item::_check_attack_item(unit);
+        case ItemType::FRESH_JUICE:
+        case ItemType::HEALTHY_SALAD:
+            return ttyd::battle_enemy_item::_check_status_recover_item(unit);
+        // Explicitly not allowed:
+        case ItemType::FRIGHT_MASK:
+        case ItemType::MYSTERY:
+        default:
+            return nullptr;
+    }
+}
+
 const char* GetReplacementMessage(const char* msg_key) {
     // Do not use for more than one custom message at a time!
     static char buf[128];
@@ -564,85 +810,55 @@ const char* GetReplacementMessage(const char* msg_key) {
     return nullptr;
 }
 
-void CheckBattleCondition() {
-    auto* fbat_info =
-        *reinterpret_cast<ttyd::npcdrv::FbatBattleInformation**>(
-            reinterpret_cast<uintptr_t>(ttyd::battle::g_BattleWork) + 0x2738);
-    // If condition is a success and rule is not 0, add a bonus item.
-    if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
-        ttyd::npcdrv::NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
-        for (int32_t i = 0; i < 8; ++i) {
-            // Only return a bonus item if the enemies were all defeated.
-            if (npc_info->wStolenItems[i] != 0) return;
-        }
-        for (int32_t i = 0; i < 8; ++i) {
-            if (npc_info->wBackItemIds[i] == 0) {
-                // TODO: Determine the bonus item procedurally.
-                npc_info->wBackItemIds[i] = ItemType::GOLD_BAR_X3;
-                break;
+void ApplyWeaponLevelSelectionPatches() {
+    g_pouchEquipCheckBadge_trampoline = patch::hookFunction(
+        ttyd::mario_pouch::pouchEquipCheckBadge, [](int16_t badge_id) {
+            if (g_InBattle) {
+                int32_t idx = GetWeaponLevelSelectionIndex(badge_id);
+                if (idx >= 0) {
+                    return static_cast<int32_t>(g_CurMoveBadgeCounts[idx]);
+                }
             }
-        }
-    }
-}
+            return g_pouchEquipCheckBadge_trampoline(badge_id);
+        });
 
-// Global variable for the last type of item consumed;
-// this is necessary to allow enemies to use cooked items.
-int32_t g_EnemyItem = 0;
+    g_BtlUnit_GetWeaponCost_trampoline = patch::hookFunction(
+        ttyd::battle_unit::BtlUnit_GetWeaponCost,
+        [](BattleWorkUnit* unit, BattleWeapon* weapon) {
+            int32_t cost = GetSelectedLevelWeaponCost(unit, weapon);
+            if (cost >= 0) return cost;
+            return g_BtlUnit_GetWeaponCost_trampoline(unit, weapon);
+        });
 
-void EnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt) {
-    void* battleWork = ttyd::battle::g_BattleWork;
-    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
-    id = ttyd::battle_sub::BattleTransID(evt, id);
-    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
-    if (unit->current_kind <= BattleUnitType::BONETAIL) {
-        g_EnemyItem = unit->held_item;
-    }
-}
-
-bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt) {
-    void* battleWork = ttyd::battle::g_BattleWork;
-    ttyd::battle_unit::BattleWorkUnit* unit = nullptr;
-    if (evt->wActorThisPtr) {
-        unit = ttyd::battle::BattleGetUnitPtr(
-            battleWork,
-            reinterpret_cast<uint32_t>(evt->wActorThisPtr));
-        if (unit->current_kind <= BattleUnitType::BONETAIL) {
-            evtSetValue(evt, evt->evtArguments[0], g_EnemyItem);
-            return true;
-        }
-    }
-    return false;
-}
-
-void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit) {
-    switch (unit->held_item) {
-        // Items that aren't normally usable but work with no problems:
-        case ItemType::COURAGE_MEAL:
-        case ItemType::EGG_BOMB:
-        case ItemType::COCONUT_BOMB:
-        case ItemType::ZESS_DYNAMITE:
-        case ItemType::HOT_SAUCE:
-        case ItemType::SPITE_POUCH:
-        case ItemType::KOOPA_CURSE:
-        case ItemType::SHROOM_BROTH:
-        case ItemType::LOVE_PUDDING:
-        case ItemType::PEACH_TART:
-        case ItemType::ELECTRO_POP:
-        // Additional items (would not have the desired effect without patches):
-        case ItemType::POISON_SHROOM:
-        case ItemType::POINT_SWAP:
-        case ItemType::TRIAL_STEW:
-        case ItemType::TRADE_OFF:
-            return ttyd::battle_enemy_item::_check_attack_item(unit);
-        case ItemType::FRESH_JUICE:
-        case ItemType::HEALTHY_SALAD:
-            return ttyd::battle_enemy_item::_check_status_recover_item(unit);
-        // Explicitly not allowed:
-        case ItemType::FRIGHT_MASK:
-        case ItemType::MYSTERY:
-        default:
-            return nullptr;
-    }
+    g_DrawOperationWin_trampoline = patch::hookFunction(
+        ttyd::battle_menu_disp::DrawOperationWin, []() {
+            CheckForSelectingWeaponLevel(/* is_strategies_menu = */ true);
+            g_DrawOperationWin_trampoline();
+        });
+        
+    g_DrawWeaponWin_trampoline = patch::hookFunction(
+        ttyd::battle_menu_disp::DrawWeaponWin, []() {
+            CheckForSelectingWeaponLevel(/* is_strategies_menu = */ false);
+            g_DrawWeaponWin_trampoline();
+        });
+        
+    g__getSickStatusParam_trampoline = patch::hookFunction(
+        ttyd::battle_damage::_getSickStatusParam, [](
+            BattleWorkUnit* unit, BattleWeapon* weapon, int32_t status_type,
+            int8_t* turn_count, int8_t* strength) {
+                // Run vanilla logic.
+                g__getSickStatusParam_trampoline(
+                    unit, weapon, status_type, turn_count, strength);
+                // If badge type and status type (DEF-Up) are correct,
+                // change the effect strength based on the badges equipped.
+                if (status_type == 14 && (
+                    weapon->item_id == ItemType::SUPER_CHARGE ||
+                    weapon->item_id == ItemType::SUPER_CHARGE_P)) {
+                    bool is_mario = unit->current_kind == BattleUnitType::MARIO;
+                    int8_t badges = g_CurMoveBadgeCounts[17 - is_mario];
+                    *strength = badges + 1;
+                }
+            });
 }
 
 void ApplyItemAndAttackPatches() {
@@ -757,10 +973,10 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::FP_DRAIN_P].type_sort_order         = 0x49 + 8;
     
     // Reinstate Fire Pop's fire damage (base it off of Electro Pop's params).
-    static ttyd::battle_database_common::BattleWeapon kFirePopParams;
+    static BattleWeapon kFirePopParams;
     memcpy(&kFirePopParams,
            &ttyd::battle_item_data::ItemWeaponData_BiribiriCandy,
-           sizeof(ttyd::battle_database_common::BattleWeapon));
+           sizeof(BattleWeapon));
     kFirePopParams.item_id = ItemType::FIRE_POP;
     kFirePopParams.damage_function =
         reinterpret_cast<void*>(
@@ -808,6 +1024,45 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kTradeOffScriptHookAddr),
         TradeOffPatch, sizeof(TradeOffPatch));
+        
+    // Make Koopa Curse multi-target.
+    ttyd::battle_item_data::ItemWeaponData_Kameno_Noroi.target_class_flags =
+        0x02101260;
+        
+    // Make Piercing Blow stackable (copy Hammer Throw damage function & params)
+    memcpy(
+        &ttyd::battle_mario::badgeWeapon_TsuranukiNaguri.damage_function,
+        &ttyd::battle_mario::badgeWeapon_HammerNageru.damage_function,
+        9 * sizeof(uint32_t));
+    // Determines which badge type to count to determine the power level.
+    ttyd::battle_mario::badgeWeapon_TsuranukiNaguri.damage_function_params[6] =
+        ItemType::PIERCING_BLOW;
+        
+    // Change Super Charge (P) into Toughen Up (P), a single-turn DEF buff.
+    ttyd::battle_mario::badgeWeapon_SuperCharge.base_fp_cost = 1;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.charge_strength = 0;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_chance = 100;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_time = 1;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_strength = 2;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.icon = kSquareDiamondIconId;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.name = "in_toughen_up";
+    
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.base_fp_cost = 1;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.charge_strength = 0;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_chance = 100;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_time = 1;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_strength = 2;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.icon = kSquareDiamondIconId;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.name = "in_toughen_up";
+        
+    // Change base FP cost of some moves.
+    ttyd::battle_mario::badgeWeapon_Charge.base_fp_cost = 2;
+    ttyd::battle_mario::badgeWeapon_ChargeP.base_fp_cost = 2;
+    ttyd::battle_mario::badgeWeapon_IceNaguri.base_fp_cost = 2;
+    ttyd::battle_mario::badgeWeapon_TatsumakiJump.base_fp_cost = 2;
+    ttyd::battle_mario::badgeWeapon_FireNaguri.base_fp_cost = 4;
+    
+    // TODO: Change base FP / other parameters for more moves.
 }
 
 void ApplyMiscPatches() {
