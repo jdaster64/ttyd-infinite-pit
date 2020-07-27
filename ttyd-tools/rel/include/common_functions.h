@@ -14,6 +14,8 @@ extern const uint32_t kPitEnemy100Offset;
 extern const uint32_t kPitTreasureTableOffset;
 extern const uint32_t kPitRewardFloorReturnBeroEntryOffset;
 extern const uint32_t kPitBossFloorReturnBeroEntryOffset;
+extern const uint32_t kPitMoverLastSpawnFloorOffset;
+extern const uint32_t kPitCharlietonSpawnChanceOffset;
 extern const uint32_t kPitEvtOpenBoxOffset;
 extern const uint32_t kPitFloorIncrementEvtOffset;
 extern const uint32_t kPitEnemySetupEvtOffset;

@@ -52,6 +52,11 @@
 
 // Assembly patch functions, and code referenced in them.
 extern "C" {
+    // charlieton_patches.s (patched directly, not branched to)
+    void CharlietonPitPriceListPatchStart();
+    void CharlietonPitPriceListPatchEnd();
+    void CharlietonPitPriceItemPatchStart();
+    void CharlietonPitPriceItemPatchEnd();
     // battle_condition_patches.s
     void StartRuleDisp();
     void BranchBackRuleDisp();
@@ -121,7 +126,7 @@ int8_t              g_MaxMoveBadgeCounts[18];
 int8_t              g_CurMoveBadgeCounts[18];
 char                g_MoveBadgeTextBuffers[18][24];
 const char*         kMoveBadgeAbbreviations[18] = {
-    "Power J.", "Multib.", "Power B.", "Tornado J.", "Shrink S.",
+    "Power J.", "Multib.", "Power B.", "Tor. J.", "Shrink S.",
     "Sleep S.", "Soft S.", "Power S.", "Quake H.", "H. Throw",
     "Pier. B.", "H. Rattle", "Fire Drive", "Ice Smash",
     "Charge", "Charge", "Tough. Up", "Tough. Up"
@@ -356,6 +361,12 @@ void OnModuleLoaded(OSModuleInfo* module) {
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + kPitEnemySetupEvtOffset),
             EnemyNpcSetupEvtHook, sizeof(EnemyNpcSetupEvtHook));
+            
+        // Make Charlieton always spawn, and Movers never spawn.
+        *reinterpret_cast<int32_t*>(
+            module_ptr + kPitCharlietonSpawnChanceOffset) = 1000;
+        *reinterpret_cast<int32_t*>(
+            module_ptr + kPitMoverLastSpawnFloorOffset) = 0;
         
         g_PitModulePtr = module_ptr;
     } else {
@@ -1141,6 +1152,18 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kItemWindowCloseHookAddr),
         &kAlwaysUseItemsInMenuOpcode, sizeof(kAlwaysUseItemsInMenuOpcode));
+        
+    // Patch Charlieton's sell price scripts, making them scale from 1x to 3x.
+    const int32_t kCharlietonPitListHookAddr = 0x8023c120;
+    const int32_t kCharlietonPitItemHookAddr = 0x8023d2e0;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCharlietonPitListHookAddr),
+        reinterpret_cast<void*>(CharlietonPitPriceListPatchStart),
+        reinterpret_cast<void*>(CharlietonPitPriceListPatchEnd));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCharlietonPitItemHookAddr),
+        reinterpret_cast<void*>(CharlietonPitPriceItemPatchStart),
+        reinterpret_cast<void*>(CharlietonPitPriceItemPatchEnd));
         
     // Enable the crash handler.
     const int32_t kCrashHandlerEnableOpAddr = 0x80009b2c;
