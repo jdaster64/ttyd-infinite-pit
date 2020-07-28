@@ -382,9 +382,9 @@ int32_t BtlUnit_GetFp(BattleWorkUnit* unit);
 // BtlUnit_SetAnim
 // BtlUnit_SetAnimType
 // BtlUnit_GetPoseNameFromType
-// BtlUnit_OffUnitFlag
-// BtlUnit_OnUnitFlag
-// BtlUnit_CheckUnitFlag
+void BtlUnit_OffUnitFlag(BattleWorkUnit* unit, uint32_t flag);
+void BtlUnit_OnUnitFlag(BattleWorkUnit* unit, uint32_t flag);
+uint32_t BtlUnit_CheckUnitFlag(BattleWorkUnit* unit, uint32_t flag);
 // BtlUnit_OffStatusFlag
 // BtlUnit_OnStatusFlag
 // BtlUnit_CheckStatusFlag

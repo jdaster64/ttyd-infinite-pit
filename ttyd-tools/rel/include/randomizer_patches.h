@@ -72,4 +72,7 @@ EVT_DECLARE_USER_FUNC(InfatuateChangeAlliance, 2)
 // Returns the percentage of max HP a battle unit currently has.
 EVT_DECLARE_USER_FUNC(GetPercentOfMaxHP, 2)
 
+// Replaces the behavior of Mowz's Kiss Thief.
+EVT_DECLARE_USER_FUNC(GetKissThiefResult, 3)
+
 }

@@ -243,7 +243,6 @@ RETURN()
 EVT_END()
 
 // Event that sets up a Pit enemy NPC, and opens a pipe when it is defeated.
-// TODO: Disable on reward floors.
 EVT_BEGIN(EnemyNpcSetupEvt)
 SET(LW(0), GSW(1321))
 ADD(LW(0), 1)
@@ -1140,6 +1139,14 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kInfatuateChangeAllianceHookAddr),
         &kInfatuateChangeAllianceFuncAddr, sizeof(int32_t));
         
+    // Replace Kiss Thief's item stealing routine with a custom one.
+    const int32_t kKissThiefItemHookAddr = 0x80386258;
+    const int32_t kKissThiefItemFuncAddr =
+        reinterpret_cast<int32_t>(GetKissThiefResult);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kKissThiefItemHookAddr),
+        &kKissThiefItemFuncAddr, sizeof(int32_t));
+        
     // Increase Tease's base status rate to 1.27x.
     g__make_madowase_weapon_trampoline = mod::patch::hookFunction(
         ttyd::unit_party_chuchurina::_make_madowase_weapon,
@@ -1415,6 +1422,56 @@ EVT_DEFINE_USER_FUNC(GetPercentOfMaxHP) {
     auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
     evtSetValue(
         evt, evt->evtArguments[1], unit->current_hp * 100 / unit->max_hp);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    uint32_t ac_result = evtGetValue(evt, evt->evtArguments[2]);
+    
+    int32_t item = unit->held_item;
+    // No held item; pick a random item to steal;
+    // 30% chance of item (20% normal, 10% recipe), 10% badge, 60% coin.
+    if (!item) {
+        item = PickRandomItem(/* seeded = */ false, 20, 10, 10, 60);
+        if (!item) item = ItemType::COIN;
+    }
+    if ((ac_result & 2) == 0 || !ttyd::mario_pouch::pouchGetItem(item)) {
+        // Action command unsuccessful, or inventory cannot hold the item.
+        evtSetValue(evt, evt->evtArguments[1], 0);
+    } else {
+        unit->held_item = 0;
+        
+        if (!ttyd::battle_unit::BtlUnit_CheckUnitFlag(unit, 0x40000000)) {
+            if (unit->group_index >= 0) {
+                battleWork->fbat_info->wBattleInfo->wHeldItems
+                    [unit->group_index] = 0;
+            }
+        } else {
+            ttyd::battle_unit::BtlUnit_OffUnitFlag(unit, 0x40000000);
+            if (unit->group_index >= 0) {
+                auto* npc_battle_info = battleWork->fbat_info->wBattleInfo;
+                npc_battle_info->wHeldItems[unit->group_index] = 0;
+                npc_battle_info->wStolenItems[unit->group_index] = 0;
+            }
+        }
+        
+        if (item >= ItemType::POWER_JUMP && item < ItemType::MAX_ITEM_TYPE) {
+            int32_t kind = unit->current_kind;
+            if (kind == BattleUnitType::MARIO) {
+                ttyd::battle::BtlUnit_EquipItem(unit, 3, 0);
+            } else if (kind >= BattleUnitType::GOOMBELLA) {
+                ttyd::battle::BtlUnit_EquipItem(unit, 5, 0);
+            } else {
+                ttyd::battle::BtlUnit_EquipItem(unit, 1, 0);
+            }
+        }
+        
+        evtSetValue(evt, evt->evtArguments[1], item);
+    }
     return 2;
 }
 

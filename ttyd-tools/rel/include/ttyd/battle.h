@@ -207,7 +207,8 @@ extern "C" {
 // BattleStoreCoin
 // BattlePartyInfoWorkInit
 // _EquipItem
-// BtlUnit_EquipItem
+void BtlUnit_EquipItem(
+    battle_unit::BattleWorkUnit* unit, uint32_t unk0, int32_t item);
 // BattleTransPartyIdToUnitKind
 // BattleTransPartyId
 // BattleChangeParty

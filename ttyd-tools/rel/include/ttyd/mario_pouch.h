@@ -125,7 +125,7 @@ int16_t pouchGetHP();
 // pouchRemoveItemIndex
 // pouchRemoveItem
 // pouchCheckItem
-// pouchGetItem
+uint32_t pouchGetItem(int32_t item_type);
 // pouchGetEmptyKeepItemCnt
 // pouchGetEmptyHaveItemCnt
 // pouchGetEquipBadgeCnt

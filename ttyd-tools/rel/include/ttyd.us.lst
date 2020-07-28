@@ -624,6 +624,7 @@
 800d3d00:pouchSetHP
 800d3d24:pouchGetMaxHP
 800d3d30:pouchGetHP
+800d50cc:pouchGetItem
 800d5eb0:pouchGetPtr
 // .data
 80315380:_party_max_hp_table
@@ -872,6 +873,7 @@
 
 // battle.o
 // .text
+800f831c:BtlUnit_EquipItem
 800f8874:BattleGetUnitPartsPtr
 800f88cc:BattleGetUnitPtr
 800f8f04:BattleInit
@@ -1010,6 +1012,9 @@
 80126968:BtlUnit_GetWeaponCost
 80126c64:BtlUnit_GetFp
 80126fe8:BtlUnit_ReviseHpFp
+801277ac:BtlUnit_OffUnitFlag
+801277bc:BtlUnit_OnUnitFlag
+801277cc:BtlUnit_CheckUnitFlag
 80128fe0:BtlUnit_Entry
 
 // statuswindow.o
