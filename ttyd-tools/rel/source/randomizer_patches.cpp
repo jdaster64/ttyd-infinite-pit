@@ -1133,7 +1133,6 @@ void ApplyItemAndAttackPatches() {
     *reinterpret_cast<int32_t*>(0x8038df34) = 0x0002001a;
     // Call a custom function on successfully hitting an enemy w/Infatuate
     // that makes the enemy permanently switch alliances (won't work on bosses).
-    // TODO: Disable confusion message text if possible?
     const int32_t kInfatuateChangeAllianceHookAddr = 0x8038de50;
     const int32_t kInfatuateChangeAllianceFuncAddr =
         reinterpret_cast<int32_t>(InfatuateChangeAlliance);
@@ -1392,6 +1391,17 @@ EVT_DEFINE_USER_FUNC(InfatuateChangeAlliance) {
             &dummy, unit, part, 0x100 /* ignore status vulnerability */,
             5 /* Confusion */, 100, 0, 0, 0);
         unit->alliance = 0;
+        
+        // Unqueue the status message for inflicting confusion.
+        static constexpr const uint32_t kNoStatusMsg[] = { 0xff000000U, 0, 0 };
+        memcpy(
+            reinterpret_cast<void*>(
+                reinterpret_cast<uintptr_t>(battleWork) + 0x18ddc),
+            kNoStatusMsg, sizeof(kNoStatusMsg));
+        memcpy(
+            reinterpret_cast<void*>(
+                reinterpret_cast<uintptr_t>(unit) + 0xae8),
+            kNoStatusMsg, sizeof(kNoStatusMsg));
     }
     // Call the function this user_func replaced with its original params.
     return ttyd::battle_event_cmd::btlevtcmd_AudienceDeclareACResult(
