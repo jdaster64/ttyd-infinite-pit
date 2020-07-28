@@ -43,6 +43,12 @@
 #include <ttyd/seqdrv.h>
 #include <ttyd/sound.h>
 #include <ttyd/system.h>
+#include <ttyd/unit_bomzou.h>
+#include <ttyd/unit_party_christine.h>
+#include <ttyd/unit_party_chuchurina.h>
+#include <ttyd/unit_party_nokotarou.h>
+#include <ttyd/unit_party_sanders.h>
+#include <ttyd/unit_party_yoshi.h>
 #include <ttyd/win_main.h>
 #include <ttyd/win_party.h>
 
@@ -93,6 +99,7 @@ using ::ttyd::battle::BattleWorkCommandWeapon;
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::evt_bero::BeroEntry;
+using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::evtmgr_cmd::evtGetValue;
 using ::ttyd::evtmgr_cmd::evtSetValue;
 using ::ttyd::item_data::itemDataTable;
@@ -113,6 +120,7 @@ void (*g_DrawOperationWin_trampoline)() = nullptr;
 void (*g_DrawWeaponWin_trampoline)() = nullptr;
 void (*g__getSickStatusParam_trampoline)(
     BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
+int32_t(*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -1070,6 +1078,10 @@ void ApplyItemAndAttackPatches() {
     ttyd::battle_item_data::ItemWeaponData_Kameno_Noroi.target_class_flags =
         0x02101260;
         
+    // Add 75%-rate Dizzy status to Tornado Jump's tornadoes.
+    ttyd::battle_mario::badgeWeapon_TatsumakiJumpInvolved.dizzy_time = 3;
+    ttyd::battle_mario::badgeWeapon_TatsumakiJumpInvolved.dizzy_chance = 75;
+        
     // Make Piercing Blow stackable (copy Hammer Throw damage function & params)
     memcpy(
         &ttyd::battle_mario::badgeWeapon_TsuranukiNaguri.damage_function,
@@ -1117,8 +1129,98 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kInfatuateChangeAllianceHookAddr),
         &kInfatuateChangeAllianceFuncAddr, sizeof(int32_t));
+        
+    // Increase Tease's base status rate to 1.27x.
+    g__make_madowase_weapon_trampoline = mod::patch::hookFunction(
+        ttyd::unit_party_chuchurina::_make_madowase_weapon,
+        [](EvtEntry* evt, bool isFirstCall) {
+            g__make_madowase_weapon_trampoline(evt, isFirstCall);
+            reinterpret_cast<BattleWeapon*>(evt->lwData[12])->dizzy_chance
+                *= 1.27;
+            return 2;
+        });
+        
+    // Increase Hold Fast and Return Postage's returned damage to 1x
+    // (but not Poison counter status / regular Payback status).
+    const int32_t kHoldFastCounterDivisorHookAddr = 0x800fb800;
+    const int32_t kReturnPostageCounterDivisorHookAddr = 0x800fb824;
+    const uint32_t kLoadCounterDivisorOpcode = 0x38000032;  // li r0, 50
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kHoldFastCounterDivisorHookAddr),
+        &kLoadCounterDivisorOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kReturnPostageCounterDivisorHookAddr),
+        &kLoadCounterDivisorOpcode, sizeof(int32_t));
+
+    // Smooch parameter changes to make it restore 0 - 15 HP and cost 5 FP.
+    *reinterpret_cast<int32_t*>(0x80386ae4) = 7;    // % of bar that = 1 HP   
+    *reinterpret_cast<int32_t*>(0x80386b10) = 1;    // flag to disable base 1 HP
+    *reinterpret_cast<int32_t*>(0x80386af8) = 35;   // Bar color thresholds
+    *reinterpret_cast<int32_t*>(0x80386afc) = 70;
+    *reinterpret_cast<int32_t*>(0x80386c4c) = 15;   // AC success lvl thresholds
+    *reinterpret_cast<int32_t*>(0x80386c60) = 10;
+    *reinterpret_cast<int32_t*>(0x80386c74) = 5;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaKiss.base_fp_cost = 5;
     
-    // TODO: Change base FP / other parameters for more moves.
+    // Misc. other party move balance changes.
+    ttyd::unit_party_christine::partyWeapon_ChristineNormalAttack.
+        damage_function_params[0] = 2;
+    ttyd::unit_party_christine::partyWeapon_ChristineNormalAttack.
+        damage_function_params[1] = 2;
+    static constexpr const int32_t kKoopsBobberyBaseAttackParams[] =
+        { 1, 3, 2, 5, 3, 7 };
+    static constexpr const int32_t kKoopsBobberyFirstAttackParams[] =
+        { 3, 3, 5, 5, 7, 7 };
+    memcpy(
+        ttyd::unit_party_nokotarou::partyWeapon_NokotarouKouraAttack.
+            damage_function_params,
+        kKoopsBobberyBaseAttackParams, sizeof(kKoopsBobberyBaseAttackParams));
+    memcpy(
+        ttyd::unit_party_sanders::partyWeapon_SandersNormalAttack.
+            damage_function_params,
+        kKoopsBobberyBaseAttackParams, sizeof(kKoopsBobberyBaseAttackParams));
+    memcpy(
+        ttyd::unit_party_nokotarou::partyWeapon_NokotarouFirstAttack.
+            damage_function_params,
+        kKoopsBobberyFirstAttackParams, sizeof(kKoopsBobberyFirstAttackParams));
+    memcpy(
+        ttyd::unit_party_sanders::partyWeapon_SandersFirstAttack.
+            damage_function_params,
+        kKoopsBobberyFirstAttackParams, sizeof(kKoopsBobberyFirstAttackParams));
+    // Stampede is limited to targets within Hammer range.
+    ttyd::unit_party_yoshi::partyWeapon_YoshiCallGuard.
+        target_property_flags |= 0x2000;
+    ttyd::unit_party_yoshi::partyWeapon_YoshiCallGuard.base_fp_cost = 7;
+    // Bomb Squad and Bob-ombast are Defense-piercing.
+    ttyd::unit_bomzou::weapon_bomzou_explosion.special_property_flags |= 0x40;
+    ttyd::unit_party_sanders::partyWeapon_SandersSuperBombAttack.
+        special_property_flags |= 0x40;
+    // Love Slap immune to fire and spikes (except pre-emptive spikes).
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
+        counter_resistance_flags |= 0x1a;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRight.
+        counter_resistance_flags |= 0x1a;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeftLast.
+        counter_resistance_flags |= 0x1a;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRightLast.
+        counter_resistance_flags |= 0x1a;
+    // Love Slap maximum power of 4, 6 at Super, Ultra Rank.
+    *reinterpret_cast<int32_t*>(0x803825ac) = 34;  // % of bar per extra damage
+    *reinterpret_cast<int32_t*>(0x80382558) = 20;
+    *reinterpret_cast<int32_t*>(0x8038256c) = 40;  // Bar color thresholds
+    *reinterpret_cast<int32_t*>(0x80382570) = 60;
+    *reinterpret_cast<int32_t*>(0x80382574) = 80;
+    // Kiss Thief immune to all contact hazards and can target any height.
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
+        counter_resistance_flags |= 0x7ff;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
+        target_property_flags &= ~0x2000;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
+        base_fp_cost = 5;
+    
+    // Sweet Feast and Showstopper both cost 4 SP.
+    ttyd::battle_mario::marioWeapon_Genki1.base_sp_cost = 4;
+    ttyd::battle_mario::marioWeapon_Suki.base_sp_cost = 4;
 }
 
 void ApplyMiscPatches() {

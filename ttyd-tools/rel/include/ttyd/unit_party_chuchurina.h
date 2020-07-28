@@ -1,6 +1,7 @@
 #pragma once
 
 #include "battle_database_common.h"
+#include "evtmgr.h"
 
 #include <cstdint>
 
@@ -15,9 +16,9 @@ extern "C" {
 // mono_main
 // mono_disp
 // mono_capture
-// _chuchu_item_steal
-// _get_itemsteal_param
-// _make_madowase_weapon
+EVT_DECLARE_USER_FUNC(_chuchu_item_steal, 3)
+EVT_DECLARE_USER_FUNC(_get_itemsteal_param, 3)
+EVT_DECLARE_USER_FUNC(_make_madowase_weapon, 2)
 // _get_binta_hit_position
 // __makeTechMenuFunc
 // _chuchu_make_extra_work_area
