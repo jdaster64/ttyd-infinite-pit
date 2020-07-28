@@ -23,7 +23,11 @@ extern "C" {
 // _checkDamageCode_EmergencyRevival
 // BattlePreCheckDamage
 // BattleSetStatusDamageFromWeapon
-// BattleSetStatusDamage
+int32_t BattleSetStatusDamage(
+    uint32_t* out_unk0, battle_unit::BattleWorkUnit* unit,
+    battle_unit::BattleWorkUnitPart* part, uint32_t special_property_flags,
+    int32_t status_type, int32_t rate, int32_t gale_factor, int32_t turns,
+    int32_t strength);
 // _getRegistStatus
 void _getSickStatusParam(
     battle_unit::BattleWorkUnit* unit,

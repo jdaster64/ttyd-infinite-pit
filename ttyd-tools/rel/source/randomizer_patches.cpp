@@ -316,6 +316,19 @@ RUN_CHILD_EVT(static_cast<int32_t>(0x803652b8U))
 RETURN()
 EVT_END()
 
+// Patch over the end of subsetevt_blow_dead event to disable getting
+// coins and EXP from Gale Force.
+EVT_BEGIN(GaleForceKillPatch)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_KillUnit, -2, 0)
+RETURN()
+EVT_END()
+
+// A fragment of an event to patch over Hammer/Boomerang/Fire Bros.' HP checks.
+const int32_t HammerBrosHpCheck[] = {
+    USER_FUNC(GetPercentOfMaxHP, -2, LW(0))
+    IF_SMALL(LW(0), 50)
+};
+
 }
 
 void OnModuleLoaded(OSModuleInfo* module) {
@@ -376,6 +389,22 @@ void OnModuleLoaded(OSModuleInfo* module) {
                 module_ptr + kTik06RightBeroEntryOffset);
             tik_06_e_bero->target_map = "tik_06";
             tik_06_e_bero->target_bero = tik_06_e_bero->name;
+            
+            // Patch over Hammer Bros. HP check.
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x323a4),
+                HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+        } else if (module_id == ModuleId::TOU2) {
+            // Patch over Hammer, Boomerang, and Fire Bros.' HP checks.
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x373ec),
+                HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x2b644),
+                HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x31aa4),
+                HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
         }
     }
 }
@@ -1074,6 +1103,21 @@ void ApplyItemAndAttackPatches() {
     ttyd::battle_mario::badgeWeapon_TatsumakiJump.base_fp_cost = 2;
     ttyd::battle_mario::badgeWeapon_FireNaguri.base_fp_cost = 4;
     
+    // Disable getting coins and experience from a successful Gale Force.
+    const int32_t kGaleForceKillHookAddr = 0x80351ea4;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kGaleForceKillHookAddr),
+        GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        
+    // Call a custom function on successfully hitting an enemy w/Infatuate.
+    // TODO: This is stupidly imbalanced as is; will leave in for testing.
+    const int32_t kInfatuateChangeAllianceHookAddr = 0x8038de50;
+    const int32_t kInfatuateChangeAllianceFuncAddr =
+        reinterpret_cast<int32_t>(InfatuateChangeAlliance);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kInfatuateChangeAllianceHookAddr),
+        &kInfatuateChangeAllianceFuncAddr, sizeof(int32_t));
+    
     // TODO: Change base FP / other parameters for more moves.
 }
 
@@ -1216,6 +1260,38 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     evtSetValue(evt, evt->evtArguments[5], y_pos);
     evtSetValue(evt, evt->evtArguments[6], z_pos);
         
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(InfatuateChangeAlliance) {
+    // Assumes that LW(3) / LW(4) contains the targeted battle unit / part's id.
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t unit_idx = ttyd::battle_sub::BattleTransID(evt, evt->lwData[3]);
+    int32_t part_idx = evt->lwData[4];
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, unit_idx);
+    auto* part = ttyd::battle::BattleGetUnitPartsPtr(unit_idx, part_idx);
+    
+    // If not a boss enemy, undo Confusion status and change alliance.
+    if (unit->current_kind != BattleUnitType::BONETAIL &&
+        unit->current_kind != BattleUnitType::ATOMIC_BOO) {
+        uint32_t dummy = 0;
+        ttyd::battle_damage::BattleSetStatusDamage(
+            &dummy, unit, part, 0x100 /* ignore status vulnerability */,
+            5 /* Confusion */, 100, 0, 0, 0);
+        unit->alliance = 0;
+    }
+    // Call the function this user_func replaced with its original params.
+    return ttyd::battle_event_cmd::btlevtcmd_AudienceDeclareACResult(
+        evt, isFirstCall);
+}
+
+EVT_DEFINE_USER_FUNC(GetPercentOfMaxHP) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    evtSetValue(
+        evt, evt->evtArguments[1], unit->current_hp * 100 / unit->max_hp);
     return 2;
 }
 

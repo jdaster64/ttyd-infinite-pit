@@ -7,6 +7,7 @@ struct BattleWeapon;
 }
 namespace ttyd::battle_unit {
 struct BattleWorkUnit;
+struct BattleWorkUnitPart;
 }
 namespace ttyd::npcdrv {
 struct FbatBattleInformation;
@@ -215,7 +216,8 @@ extern "C" {
 // BattleGetPartyPtr
 // BattleGetMarioPtr
 // BattleGetSystemPtr
-// BattleGetUnitPartsPtr
+battle_unit::BattleWorkUnitPart* BattleGetUnitPartsPtr(
+    int32_t unit_idx, int32_t part_idx);
 // BattleSetUnitPtr
 battle_unit::BattleWorkUnit* BattleGetUnitPtr(
     BattleWork* battleWork, int32_t idx);

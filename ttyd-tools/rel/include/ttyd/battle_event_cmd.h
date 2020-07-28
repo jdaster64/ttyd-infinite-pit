@@ -94,7 +94,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_WeaponAftereffect, 1)
 // btlevtcmd_ac_timing_flag_onoff
 // btlevtcmd_ACSuccessEffect
 // btlevtcmd_AudienceDeclareAcrobatResult
-// btlevtcmd_AudienceDeclareACResult
+EVT_DECLARE_USER_FUNC(btlevtcmd_AudienceDeclareACResult, 2)
 // btlevtcmd_GetResultCountAC
 // btlevtcmd_GetResultACDefence
 // btlevtcmd_GetResultPrizeLv
@@ -301,7 +301,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetConsumeItem, 1)
 // btlevtcmd_SetPos
 // btlevtcmd_ChangeParty
 // btlevtcmd_ReplaceParts
-// btlevtcmd_KillUnit
+EVT_DECLARE_USER_FUNC(btlevtcmd_KillUnit, 2)
 // btlevtcmd_SpawnUnit
 // btlevtcmd_DrawLots
 // btlevtcmd_GetRandomValue

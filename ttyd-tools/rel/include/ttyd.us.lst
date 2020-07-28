@@ -872,8 +872,9 @@
 
 // battle.o
 // .text
+800f8874:BattleGetUnitPartsPtr
 800f88cc:BattleGetUnitPtr
-// 800f8f04:BattleInit
+800f8f04:BattleInit
 // .data
 8041eb90:g_BattleWork
 
@@ -891,7 +892,7 @@
 // 800fba1c:_checkDamageCode_EmergencyRevival
 // 800fbadc:BattlePreCheckDamage
 // 800fbd8c:BattleSetStatusDamageFromWeapon
-// 800fbed8:BattleSetStatusDamage
+800fbed8:BattleSetStatusDamage
 // 800fcf54:_getRegistStatus
 800fd030:_getSickStatusParam
 // 800fd490:_getSickStatusRate
@@ -902,8 +903,10 @@
 
 // battle_event_cmd.o
 801054e8:btlevtcmd_WeaponAftereffect
+8010749c:btlevtcmd_AudienceDeclareACResult
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
+80113304:btlevtcmd_KillUnit
 
 // battle_mario.o
 // .text

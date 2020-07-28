@@ -64,4 +64,12 @@ void ApplyMiscPatches();
 // such as the model name, battle id, and initial position.
 EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
 
+// If Vivian's Infatuate lands successfully, tries changing the effect from
+// Confuse to the enemy permanently swapping its alliance.
+// (Also runs the replaced code from btlevtcmd_AudienceDeclareACResult).
+EVT_DECLARE_USER_FUNC(InfatuateChangeAlliance, 2)
+
+// Returns the percentage of max HP a battle unit currently has.
+EVT_DECLARE_USER_FUNC(GetPercentOfMaxHP, 2)
+
 }
