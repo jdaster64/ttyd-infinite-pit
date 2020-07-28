@@ -48,6 +48,7 @@
 #include <ttyd/unit_party_chuchurina.h>
 #include <ttyd/unit_party_nokotarou.h>
 #include <ttyd/unit_party_sanders.h>
+#include <ttyd/unit_party_vivian.h>
 #include <ttyd/unit_party_yoshi.h>
 #include <ttyd/win_main.h>
 #include <ttyd/win_party.h>
@@ -853,6 +854,9 @@ const char* GetReplacementMessage(const char* msg_key) {
     } else if (!strcmp(msg_key, "btl_hlp_cmd_operation_super_charge")) {
         return "Briefly increases DEF by\n"
                "more than Defending.";
+    } else if (!strcmp(msg_key, "msg_ptr_meromero_kiss")) {
+        return "Blow a kiss to an enemy to try\n"
+               "to win them to your side.";
     }
 
     return nullptr;
@@ -1121,8 +1125,15 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kGaleForceKillHookAddr),
         GaleForceKillPatch, sizeof(GaleForceKillPatch));
         
-    // Call a custom function on successfully hitting an enemy w/Infatuate.
-    // TODO: This is stupidly imbalanced as is; will leave in for testing.
+    // Make Infatuate single-target and slightly cheaper.
+    ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.
+        target_class_flags = 0x01101260;
+    ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.base_fp_cost = 3;
+    // Disable checking for the next enemy in the attack's event script.
+    *reinterpret_cast<int32_t*>(0x8038df34) = 0x0002001a;
+    // Call a custom function on successfully hitting an enemy w/Infatuate
+    // that makes the enemy permanently switch alliances (won't work on bosses).
+    // TODO: Disable confusion message text if possible?
     const int32_t kInfatuateChangeAllianceHookAddr = 0x8038de50;
     const int32_t kInfatuateChangeAllianceFuncAddr =
         reinterpret_cast<int32_t>(InfatuateChangeAlliance);
