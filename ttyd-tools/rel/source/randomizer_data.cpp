@@ -6,6 +6,8 @@
 #include "randomizer_state.h"
 
 #include <ttyd/battle_database_common.h>
+#include <ttyd/item_data.h>
+#include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
 #include <ttyd/npcdrv.h>
 #include <ttyd/npc_data.h>
@@ -20,10 +22,13 @@ namespace mod::pit_randomizer {
 
 namespace {
 
+using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::npcdrv::NpcSetupInfo;
 using ::ttyd::npcdrv::NpcTribeDescription;
 using namespace ::ttyd::battle_database_common;  // for convenience
 using namespace ::ttyd::npc_event;               // for convenience
+
+namespace ItemType = ::ttyd::item_data::ItemType;
 
 // Events to run for a particular class of NPC (e.g. Goomba-like enemies).
 struct NpcEntTypeInfo {
@@ -534,6 +539,124 @@ int32_t PickRandomItem(
     // Should not be reached, as that would mean the random function returned
     // a larger index than there are bits in the bitfield.
     return -1;
+}
+
+int16_t PickChestReward() {
+    static constexpr const int16_t kRewards[] = {
+        // Mario / inventory upgrades.
+        ItemType::STRANGE_SACK, ItemType::SUPER_BOOTS, ItemType::ULTRA_BOOTS,
+        ItemType::SUPER_HAMMER, ItemType::ULTRA_HAMMER,
+        // Star Powers.
+        ItemType::MAGICAL_MAP, ItemType::DIAMOND_STAR, ItemType::EMERALD_STAR,
+        ItemType::GOLD_STAR, ItemType::RUBY_STAR, ItemType::SAPPHIRE_STAR,
+        ItemType::GARNET_STAR, ItemType::CRYSTAL_STAR,
+        // Unique badges.
+        ItemType::CHILL_OUT, ItemType::DOUBLE_DIP, ItemType::DOUBLE_DIP,
+        ItemType::DOUBLE_DIP_P, ItemType::DOUBLE_DIP_P, ItemType::FEELING_FINE,
+        ItemType::FEELING_FINE_P, ItemType::LUCKY_START, ItemType::QUICK_CHANGE,
+        ItemType::RETURN_POSTAGE, ItemType::SPIKE_SHIELD, ItemType::ZAP_TAP,
+        // Partners (represented by dummy values).
+        -1, -2, -3, -4, -5, -6, -7
+    };
+    static_assert(sizeof(kRewards) == 32 * sizeof(int16_t));
+    
+    uint8_t weights[34];
+    for (int32_t i = 0; i < 34; ++i) weights[i] = 10;
+    
+    RandomizerState& state = g_Randomizer->state_;
+    const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    // Modify the chance of getting a partner based on the current floor
+    // and the number of partners currently obtained.
+    int32_t num_partners = 0;
+    for (int32_t i = 0; i < 8; ++i) {
+        num_partners += pouch.party_data[i].flags & 1;
+    }
+    
+    if (state.floor_ == 29 && num_partners == 0) {
+        // Floor 30; force a partner if you don't already have one.
+        for (int32_t i = 0; i < 32; ++i) {
+            if (kRewards[i] >= 0) weights[i] = 0;
+        }
+        weights[32] = 0;
+        weights[33] = 0;
+    } else {
+        // Determine the weight for a partner based on how many you have
+        // currently and how deep in the Pit you are.
+        int32_t partner_weight = 0;
+        if (num_partners < 7) {
+            partner_weight =
+                (60 + state.floor_ - 30 * num_partners) / (7 - num_partners);
+            if (partner_weight > 100) partner_weight = 100;
+            if (partner_weight < 0) partner_weight = 0;
+        }
+        
+        // Disable rewards that shouldn't be received out of order or that
+        // have already been claimed, and assign partner weight to partners.
+        for (int32_t i = 0; i < 32; ++i) {
+            if (state.reward_flags_ & (1 << i)) {
+                weights[i] = 0;
+                continue;
+            }
+            switch (kRewards[i]) {
+                case ItemType::ULTRA_BOOTS:
+                    if (pouch.jump_level < 2) weights[i] = 0;
+                    break;
+                case ItemType::ULTRA_HAMMER:
+                    if (pouch.hammer_level < 2) weights[i] = 0;
+                    break;
+                case ItemType::DIAMOND_STAR:
+                case ItemType::EMERALD_STAR:
+                    if (pouch.max_sp < 100) weights[i] = 0;
+                    break;
+                case ItemType::GOLD_STAR:
+                    if (pouch.max_sp < 200) weights[i] = 0;
+                    break;
+                case ItemType::RUBY_STAR:
+                case ItemType::SAPPHIRE_STAR:
+                case ItemType::GARNET_STAR:
+                    if (pouch.max_sp < 300) weights[i] = 0;
+                    break;
+                case ItemType::CRYSTAL_STAR:
+                    if (pouch.max_sp < 500) weights[i] = 0;
+                    break;
+                case -1:
+                case -2:
+                case -3:
+                case -4:
+                case -5:
+                case -6:
+                case -7:
+                    weights[i] = partner_weight;
+                default:
+                    break;
+            }
+        }
+        
+        // Set weights for a Shine Sprite (32) or random pool badge (33).
+        weights[32] = state.floor_ > 30 ? 20 : 0;
+        weights[33] = 20;
+    }
+    
+    int32_t sum_weights = 0;
+    for (int32_t i = 0; i < 34; ++i) sum_weights += weights[i];
+    
+    int32_t weight = state.Rand(sum_weights);
+    int32_t reward_idx = 0;
+    for (; (weight -= weights[reward_idx]) >= 0; ++reward_idx);
+    
+    int16_t reward;
+    if (reward_idx < 32) {
+        // Assign the selected reward and mark it as collected.
+        reward = kRewards[reward_idx];
+        state.reward_flags_ |= (1 << reward_idx);
+    } else if (reward_idx == 32) {
+        // Shine Sprite item.
+        reward = ItemType::GOLD_BAR_X3;
+    } else {
+        // Pick a random pool badge.
+        reward = PickRandomItem(/* seeded = */ true, 0, 0, 1, 0);
+    }
+    return reward;
 }
 
 }

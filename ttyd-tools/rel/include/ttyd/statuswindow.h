@@ -29,12 +29,14 @@ extern "C" {
 // valueCheck
 // statusGetValue
 void statusWinDisp();
-// gaugeDisp
+void gaugeDisp(double x, double y, int32_t star_power);
 // statusWinMain
 // statusWinReInit
 // statusWinInit
 
 // .data
+extern uint16_t gauge_back[8];
+extern uint16_t gauge_wakka[16];
 extern void* g_StatusWindowWork;
 
 }

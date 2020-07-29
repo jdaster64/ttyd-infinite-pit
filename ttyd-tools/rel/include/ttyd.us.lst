@@ -107,6 +107,8 @@
 
 // icondrv.o
 80019120:iconNumberDispGx
+8001a918:iconDispGx
+8001a93c:iconDispGxAlpha
 
 // seqdrv.o
 8002e1e4:seqCheckSeq
@@ -1020,7 +1022,10 @@
 // statuswindow.o
 // .text
 8013cb24:statusWinDisp
+8013d440:gaugeDisp
 // .data
+8041768c:gauge_back
+8041769c:gauge_wakka
 8041ebec:g_StatusWindowWork
 
 // mario_party.o

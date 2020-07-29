@@ -48,7 +48,11 @@ bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
 void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
 
 // Displays the Star Power in 0.01 units numerically below the status window.
-void DisplayStarPowerInStatusWindow();
+void DisplayStarPowerNumber();
+
+// Display the orbs representing the Star Power (replaces the vanilla logic
+// since it wasn't built around receiving Star Powers out of order).
+void DisplayStarPowerOrbs(double x, double y, int32_t star_power);
 
 // Returns a string to display in place of the usual one for a given key,
 // or nullptr if the default should be printed.
@@ -66,6 +70,13 @@ void ApplyMiscPatches();
 // Fetches information required for dynamically spawning an enemy NPC,
 // such as the model name, battle id, and initial position.
 EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
+
+// Returns the item or partner to spawn from the chest on a Pit reward floor.
+EVT_DECLARE_USER_FUNC(GetChestReward, 1)
+
+// If the item is a Crystal Star, gives the player +1.00 max SP and
+// the respective Star Power.
+EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 
 // If Vivian's Infatuate lands successfully, tries changing the effect from
 // Confuse to the enemy permanently swapping its alliance.

@@ -21,6 +21,6 @@ struct RandomizerState {
     uint32_t Rand(uint32_t range);
 } __attribute__((__packed__));
 
-static_assert(sizeof(RandomizerState) <= 0x30);
+static_assert(sizeof(RandomizerState) <= 0x38);
 
 }

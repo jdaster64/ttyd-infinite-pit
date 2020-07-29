@@ -33,5 +33,9 @@ void GetBattleConditionString(char* out_buf);
 int32_t PickRandomItem(
     bool seeded, int32_t normal_item_weight, int32_t recipe_item_weight,
     int32_t badge_weight, int32_t no_item_weight = 0);
+    
+// Picks a reward for a chest, updating the randomizer state accordingly.
+// Reward is either an item/badge (if the result > 0) or a partner (-1 to -7).
+int16_t PickChestReward();
 
 }

@@ -48,6 +48,7 @@ int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
 void (*g_seqSetSeq_trampoline)(SeqIndex, const char*, const char*) = nullptr;
 void (*g_statusWinDisp_trampoline)(void) = nullptr;
+void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo =
@@ -153,7 +154,13 @@ void Randomizer::Init() {
     g_statusWinDisp_trampoline = patch::hookFunction(
         ttyd::statuswindow::statusWinDisp, []() {
             g_statusWinDisp_trampoline();
-            DisplayStarPowerInStatusWindow();
+            DisplayStarPowerNumber();
+        });
+        
+    g_gaugeDisp_trampoline = patch::hookFunction(
+        ttyd::statuswindow::gaugeDisp, [](double x, double y, int32_t sp) {
+            // Replaces the original logic completely.
+            DisplayStarPowerOrbs(x, y, sp);
         });
         
     ApplyWeaponLevelSelectionPatches();

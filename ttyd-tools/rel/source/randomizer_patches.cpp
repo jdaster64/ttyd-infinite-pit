@@ -110,6 +110,7 @@ using ::ttyd::evtmgr_cmd::evtGetValue;
 using ::ttyd::evtmgr_cmd::evtSetValue;
 using ::ttyd::item_data::itemDataTable;
 using ::ttyd::item_data::ItemData;
+using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::mariost::g_MarioSt;
 using ::ttyd::system::getMarioStDvdRoot;
 using ::ttyd::win_party::WinPartyData;
@@ -166,33 +167,47 @@ EVT_END()
 // Event that handles a chest being opened.
 EVT_BEGIN(ChestOpenEvt)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
-USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
-// TODO: Call a user func to select the "item" to spawn.
-// In the event the "item" is actually a partner...
-USER_FUNC(ttyd::evt_mario::evt_mario_normalize)
-USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
-WAIT_MSEC(500)
-// TODO: Parameterize which partner to spawn.
-USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, 1)
-// TODO: Reposition partner by box? At origin is fine...
-USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, 1, 0, 0, 0)
-RUN_EVT_ID(PartnerFanfareEvt, LW(11))
-USER_FUNC(ttyd::evt_eff::evt_eff,
-          PTR("sub_bg"), PTR("itemget"), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-USER_FUNC(ttyd::evt_msg::evt_msg_toge, 1, 0, 0, 0)
-// Prints a custom message; the "joined party" messages aren't loaded anyway.
-USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("pit_reward_party_join"), 0, 0)
-CHK_EVT(LW(11), LW(12))
-IF_EQUAL(LW(12), 1)
-    DELETE_EVT(LW(11))
-    USER_FUNC(ttyd::evt_snd::evt_snd_bgmoff, 0x201)
+USER_FUNC(GetChestReward, LW(1))
+IF_SMALL(LW(1), 0)
+    // Multiply by -1 (turning placeholders into valid party slots 1-7).
+    MUL(LW(1), -1)
+    USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
+    USER_FUNC(ttyd::evt_mario::evt_mario_normalize)
+    USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
+    WAIT_MSEC(500)
+    USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, LW(1))
+    // TODO: Reposition partner by box? At origin is fine...
+    USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, 1, 0, 0, 0)
+    RUN_EVT_ID(PartnerFanfareEvt, LW(11))
+    USER_FUNC(ttyd::evt_eff::evt_eff,
+              PTR("sub_bg"), PTR("itemget"), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_toge, 1, 0, 0, 0)
+    // Prints a custom message; the "joined party" messages aren't loaded anyway.
+    USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("pit_reward_party_join"), 0, 0)
+    CHK_EVT(LW(11), LW(12))
+    IF_EQUAL(LW(12), 1)
+        DELETE_EVT(LW(11))
+        USER_FUNC(ttyd::evt_snd::evt_snd_bgmoff, 0x201)
+    END_IF()
+    USER_FUNC(ttyd::evt_eff::evt_eff_softdelete, PTR("sub_bg"))
+    USER_FUNC(ttyd::evt_snd::evt_snd_bgmon, 0x120, 0)
+    USER_FUNC(ttyd::evt_snd::evt_snd_bgmon_f, 0x300, PTR("BGM_STG0_100DN1"), 1500)
+    WAIT_MSEC(500)
+    USER_FUNC(ttyd::evt_party::evt_party_run, 0)
+    USER_FUNC(ttyd::evt_party::evt_party_run, 1)
+ELSE()
+    // Spawn the item normally.
+    USER_FUNC(
+        ttyd::evt_mobj::evt_mobj_get_position, PTR("box"), LW(10), LW(11), LW(12))
+    USER_FUNC(
+        ttyd::evt_item::evt_item_entry, PTR("item"),
+        LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
+    USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
+    USER_FUNC(ttyd::evt_item::evt_item_get_item, PTR("item"))
+    // If the item was a Crystal Star / Magical Map, unlock its Star Power.
+    // TODO: The pause menu does not properly display SP moves out of order.
+    USER_FUNC(AddItemStarPower, LW(1))
 END_IF()
-USER_FUNC(ttyd::evt_eff::evt_eff_softdelete, PTR("sub_bg"))
-USER_FUNC(ttyd::evt_snd::evt_snd_bgmon, 0x120, 0)
-USER_FUNC(ttyd::evt_snd::evt_snd_bgmon_f, 0x300, PTR("BGM_STG0_100DN1"), 1500)
-WAIT_MSEC(500)
-USER_FUNC(ttyd::evt_party::evt_party_run, 0)
-USER_FUNC(ttyd::evt_party::evt_party_run, 1)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
 RETURN()
 EVT_END()
@@ -815,7 +830,7 @@ void* EnemyUseAdditionalItemsCheck(BattleWorkUnit* unit) {
     }
 }
 
-void DisplayStarPowerInStatusWindow() {
+void DisplayStarPowerNumber() {
     // Don't display SP if Mario hasn't gotten any Star Powers yet.
     if (ttyd::mario_pouch::pouchGetMaxAP() < 100) return;
     
@@ -831,6 +846,35 @@ void DisplayStarPowerInStatusWindow() {
     gc::mtx::PSMTXTrans(&matrix, 192.f, menu_height - 100.f, 0.f);
     ttyd::icondrv::iconNumberDispGx(
         &matrix, current_AP, /* is_small = */ 1, &unknown_param);
+}
+
+void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
+    int32_t max_star_power = ttyd::mario_pouch::pouchGetMaxAP();
+    if (star_power > max_star_power) star_power = max_star_power;
+    if (star_power < 0) star_power = 0;
+    
+    int32_t full_orbs = star_power / 100;
+    int32_t remainder = star_power % 100;
+    int32_t part_frame = remainder * 15 / 99;
+    if (remainder > 0 && star_power > 0 && part_frame == 0) part_frame = 1;
+    
+    if (part_frame != 0) {
+        gc::vec3 pos = { 
+            static_cast<float>(x + 32.f * full_orbs),
+            static_cast<float>(y),
+            0.f };
+        ttyd::icondrv::iconDispGx(
+            1.f, &pos, 0x10, ttyd::statuswindow::gauge_wakka[part_frame]);
+    }
+    for (int32_t i = 0; i < max_star_power / 100; ++i) {
+        gc::vec3 pos = {
+            static_cast<float>(x + 32.f * i), 
+            static_cast<float>(y + 12.f),
+            0.f };
+        uint16_t icon = i < full_orbs ?
+            ttyd::statuswindow::gauge_back[i] : 0x1c7;
+        ttyd::icondrv::iconDispGx(1.f, &pos, 0x10, icon);
+    }
 }
 
 const char* GetReplacementMessage(const char* msg_key) {
@@ -1421,6 +1465,28 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     evtSetValue(evt, evt->evtArguments[5], y_pos);
     evtSetValue(evt, evt->evtArguments[6], z_pos);
         
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetChestReward) {
+    evtSetValue(evt, evt->evtArguments[0], PickChestReward());
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(AddItemStarPower) {
+    int16_t item = evtGetValue(evt, evt->evtArguments[0]);
+    if (item == ItemType::MAGICAL_MAP ||
+        (item >= ItemType::DIAMOND_STAR && item <= ItemType::CRYSTAL_STAR)) {
+        PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        pouch.max_sp += 100;
+        pouch.current_sp = pouch.max_sp;
+        if (item == ItemType::MAGICAL_MAP) {
+            pouch.star_powers_obtained |= 1;
+        } else {
+            pouch.star_powers_obtained |= 
+                (1 << (item + 1 - ItemType::DIAMOND_STAR));
+        }
+    }
     return 2;
 }
 

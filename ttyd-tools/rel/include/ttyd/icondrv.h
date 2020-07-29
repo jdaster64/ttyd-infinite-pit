@@ -22,8 +22,9 @@ uint32_t iconNumberDispGx(
 // iconGetTexObj
 // iconDispGxCol
 // iconDispGx2
-// iconDispGx
-// iconDispGxAlpha
+void iconDispGx(double unk0, gc::vec3* pos, int16_t unk2, uint16_t icon);
+void iconDispGxAlpha
+    (double unk0, gc::vec3* pos, int16_t unk2, uint16_t icon, uint8_t alpha);
 // iconDisp
 // iconChange
 // iconDelete
