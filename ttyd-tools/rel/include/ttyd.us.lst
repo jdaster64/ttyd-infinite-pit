@@ -1364,6 +1364,26 @@
 801f956c:_check_hp_recover_item
 801f9658:BattleEnemyUseItemCheck
 
+// evt_badgeshop.o
+// .text
+// 801fae60:getBadgeBottakuru100TableMaxCount
+// .data
+80419d90:badge_special_table
+80419db8:badge_special_table_stage_1_clear
+80419dc8:badge_special_table_stage_2_clear
+80419dd8:badge_special_table_stage_3_clear
+80419de8:badge_special_table_stage_4_clear
+80419df8:badge_special_table_stage_5_clear
+80419e08:badge_special_table_stage_6_clear
+803ad038:badge_starmaniac_table
+803ad078:badge_bottakuru_table
+80419e18:badge_bottakuru100_table
+80419e34:badge_bteresa_table
+80419e48:badge_bteresa_table_card_special
+80419e5c:badge_bteresa_table_card_silver
+80419e70:badge_bteresa_table_card_gold
+80419e84:badge_bteresa_table_card_platinum
+
 // runtime.c
 802648BC:_savefpr_14
 802648C0:_savefpr_15

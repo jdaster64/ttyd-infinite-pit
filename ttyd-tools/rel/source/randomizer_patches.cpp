@@ -18,6 +18,7 @@
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
+#include <ttyd/evt_badgeshop.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
@@ -388,6 +389,25 @@ void OnModuleLoaded(OSModuleInfo* module) {
             module_ptr + kPitCharlietonSpawnChanceOffset) = 1000;
         *reinterpret_cast<int32_t*>(
             module_ptr + kPitMoverLastSpawnFloorOffset) = 0;
+            
+        // Replace Charlieton's stock with items from the random pool.
+        for (int32_t i = 0; i < 6; ++i) {
+            bool found = true;
+            while (found) {
+                found = false;
+                // Two normal items, two recipe items, two badges.
+                int32_t item = PickRandomItem(
+                    /* seeded = */ true, i < 2, i & 2, i >= 4, 0);
+                // Make sure no duplicate items exist.
+                for (int32_t j = 0; j < i; ++j) {
+                    if (ttyd::evt_badgeshop::badge_bottakuru100_table[j]
+                            == item) {
+                        found = true;
+                    }
+                }
+                ttyd::evt_badgeshop::badge_bottakuru100_table[i] = item;
+            }
+        }
         
         g_PitModulePtr = module_ptr;
     } else {
@@ -1443,8 +1463,11 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
         // Action command unsuccessful, or inventory cannot hold the item.
         evtSetValue(evt, evt->evtArguments[1], 0);
     } else {
+        // Remove the unit's held item.
         unit->held_item = 0;
         
+        // Remove the corresponding held/stolen item from the NPC setup,
+        // if this was one of the initial enemies in the loadout.
         if (!ttyd::battle_unit::BtlUnit_CheckUnitFlag(unit, 0x40000000)) {
             if (unit->group_index >= 0) {
                 battleWork->fbat_info->wBattleInfo->wHeldItems
@@ -1459,6 +1482,7 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
             }
         }
         
+        // If a badge was stolen, re-equip the target unit's remaining badges.
         if (item >= ItemType::POWER_JUMP && item < ItemType::MAX_ITEM_TYPE) {
             int32_t kind = unit->current_kind;
             if (kind == BattleUnitType::MARIO) {
