@@ -19,6 +19,7 @@
 #include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_title.h>
+#include <ttyd/statuswindow.h>
 #include <ttyd/system.h>
 
 #include <cstdint>
@@ -46,6 +47,7 @@ int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
 void (*g_seqSetSeq_trampoline)(SeqIndex, const char*, const char*) = nullptr;
+void (*g_statusWinDisp_trampoline)(void) = nullptr;
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo =
@@ -146,6 +148,12 @@ void Randomizer::Init() {
                 evt_code = EnemyUseAdditionalItemsCheck(unit);
             }
             return evt_code;
+        });
+        
+    g_statusWinDisp_trampoline = patch::hookFunction(
+        ttyd::statuswindow::statusWinDisp, []() {
+            g_statusWinDisp_trampoline();
+            DisplayStarPowerInStatusWindow();
         });
         
     ApplyWeaponLevelSelectionPatches();

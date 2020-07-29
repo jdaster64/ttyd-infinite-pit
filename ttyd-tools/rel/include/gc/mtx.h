@@ -4,7 +4,9 @@
 
 #include <cstdint>
 
-namespace gc {
+namespace gc::mtx {
+    
+extern "C" {
 
 void PSMTXIdentity(mtx34* out);
 void PSMTXCopy(mtx34* src, mtx34* dst);
@@ -45,5 +47,7 @@ void PSMTXTrans(mtx34* out, double x, double y, double z);
 // C_VECReflect
 // PSVECSquareDistance
 // PSVECDistance
+
+}
 
 }

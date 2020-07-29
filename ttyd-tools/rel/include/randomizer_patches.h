@@ -47,6 +47,9 @@ bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
 // Checks for enemies to use additional types of items.
 void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
 
+// Displays the Star Power in 0.01 units numerically below the status window.
+void DisplayStarPowerInStatusWindow();
+
 // Returns a string to display in place of the usual one for a given key,
 // or nullptr if the default should be printed.
 const char* GetReplacementMessage(const char* msg_key);

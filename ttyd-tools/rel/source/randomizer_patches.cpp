@@ -7,6 +7,8 @@
 #include "randomizer_data.h"
 
 #include <gc/OSLink.h>
+#include <gc/mtx.h>
+#include <gc/types.h>
 #include <ttyd/battle.h>
 #include <ttyd/battle_damage.h>
 #include <ttyd/battle_database_common.h>
@@ -33,6 +35,7 @@
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
 #include <ttyd/filemgr.h>
+#include <ttyd/icondrv.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario.h>
 #include <ttyd/mario_party.h>
@@ -43,6 +46,7 @@
 #include <ttyd/seq_mapchange.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/sound.h>
+#include <ttyd/statuswindow.h>
 #include <ttyd/system.h>
 #include <ttyd/unit_bomzou.h>
 #include <ttyd/unit_party_christine.h>
@@ -809,6 +813,24 @@ void* EnemyUseAdditionalItemsCheck(BattleWorkUnit* unit) {
         default:
             return nullptr;
     }
+}
+
+void DisplayStarPowerInStatusWindow() {
+    // Don't display SP if Mario hasn't gotten any Star Powers yet.
+    if (ttyd::mario_pouch::pouchGetMaxAP() < 100) return;
+    
+    // Don't try to display SP if the status bar is not on-screen.
+    float menu_height = *reinterpret_cast<float*>(
+        reinterpret_cast<uintptr_t>(ttyd::statuswindow::g_StatusWindowWork)
+        + 0x24);
+    if (menu_height < 100.f || menu_height > 330.f) return;
+    
+    gc::mtx34 matrix;
+    int32_t unknown_param = -1;
+    int32_t current_AP = ttyd::mario_pouch::pouchGetAP();
+    gc::mtx::PSMTXTrans(&matrix, 192.f, menu_height - 100.f, 0.f);
+    ttyd::icondrv::iconNumberDispGx(
+        &matrix, current_AP, /* is_small = */ 1, &unknown_param);
 }
 
 const char* GetReplacementMessage(const char* msg_key) {

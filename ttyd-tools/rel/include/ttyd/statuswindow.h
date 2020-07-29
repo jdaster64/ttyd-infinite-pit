@@ -28,14 +28,14 @@ extern "C" {
 // valueUpdate
 // valueCheck
 // statusGetValue
-// statusWinDisp
+void statusWinDisp();
 // gaugeDisp
 // statusWinMain
 // statusWinReInit
 // statusWinInit
 
 // .data
-void* g_StatusWindowWork;
+extern void* g_StatusWindowWork;
 
 }
 
