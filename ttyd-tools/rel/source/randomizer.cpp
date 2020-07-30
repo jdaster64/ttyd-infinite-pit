@@ -120,6 +120,7 @@ void Randomizer::Init() {
     g_npcSetupBattleInfo_trampoline = patch::hookFunction(
         ttyd::npcdrv::npcSetupBattleInfo, [](NpcEntry* npc, void* battleInfo) {
             g_npcSetupBattleInfo_trampoline(npc, battleInfo);
+            // TODO: Figure out if there's a way to call this only once / floor!
             SetBattleCondition(&npc->battleInfo);
         });
         

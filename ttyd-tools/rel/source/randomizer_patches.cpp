@@ -747,6 +747,8 @@ void UseShineSprite() {
 
 void CheckBattleCondition() {
     auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
+    // Did not win the fight.
+    if (fbat_info->wResult != 1) return;
     // If condition is a success and rule is not 0, add a bonus item.
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
         ttyd::npcdrv::NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
@@ -768,7 +770,7 @@ void DisplayBattleCondition() {
     char buf[128];
     GetBattleConditionString(buf);
     DrawCenteredTextWindow(
-        buf, 0, 60, 0xFFu, false, 0x000000FFu, 0.9f, 0xFFFFFFE5u, 15, 10);
+        buf, 0, 60, 0xFFu, false, 0x000000FFu, 0.75f, 0xFFFFFFE5u, 15, 10);
 }
 
 // Global variable for the last type of item consumed;

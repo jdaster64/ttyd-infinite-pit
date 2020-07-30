@@ -5,6 +5,7 @@
 #include "randomizer.h"
 #include "randomizer_state.h"
 
+#include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
@@ -14,7 +15,7 @@
 #include <ttyd/npc_event.h>
 #include <ttyd/system.h>
 
-#include <cstdint>
+#include <cinttypes>
 #include <cstdio>
 #include <cstring>
 
@@ -454,16 +455,154 @@ void BuildBattle(
     // TODO: other battle setup data tweaks (audience makeup, etc.)?
 }
 
+struct BattleCondition {
+    const char* description;
+    uint8_t     type;
+    uint8_t     param_min;
+    int8_t      param_max;  // if -1, not a range.
+    uint8_t     weight = 10;
+};
+
+using namespace ttyd::battle_actrecord::ConditionType;
+static constexpr const BattleCondition kBattleConditions[] = {
+    { "Don't ever use Jump moves!", JUMP_LESS, 1, -1 },
+    { "Use fewer than %" PRId32 " Jump moves!", JUMP_LESS, 2, 3, 5 },
+    { "Don't ever use Hammer moves!", HAMMER_LESS, 1, -1 },
+    { "Use fewer than %" PRId32 " Hammer moves!", HAMMER_LESS, 2, 3, 5 },
+    { "Don't use Special moves!", SPECIAL_MOVES_LESS, 1, -1 },
+    { "Use a Special move!", SPECIAL_MOVES_MORE, 1, -1 },
+    { "Don't take damage with Mario!", MARIO_TOTAL_DAMAGE_LESS, 1, -1 },
+    { "Don't take damage with your partner!", PARTNER_TOTAL_DAMAGE_LESS, 1, -1 },
+    { "Take less than %" PRId32 " total damage!", TOTAL_DAMAGE_LESS, 1, 5 },
+    { "Take at least %" PRId32 " total damage!", TOTAL_DAMAGE_MORE, 1, 5 },
+    { "Take damage at least %" PRId32 " times!", HITS_MORE, 3, 5 },
+    { "Win with Mario at %" PRId32 " or more HP!", MARIO_FINAL_HP_MORE, 1, -1 },
+    { "Win with Mario at 5 HP or less!", MARIO_FINAL_HP_LESS, 6, -1 },
+    { "Win with Mario in Peril!", MARIO_FINAL_HP_LESS, 2, -1 },
+    { "Don't use any items!", ITEMS_LESS, 1, -1, 30 },
+    { "Don't ever swap partners!", SWAP_PARTNERS_LESS, 1, -1 },
+    { "Have Mario attack the audience!", MARIO_ATTACK_AUDIENCE_MORE, 1, -1, 3 },
+    { "Appeal at least once!", APPEAL_MORE, 1, -1 },
+    { "Don't use any FP!", FP_LESS, 1, -1 },
+    { "Don't use more than %" PRId32 " FP!", FP_LESS, 4, 11 },
+    { "Use at least %" PRId32 " FP!", FP_MORE, 1, 4 },
+    { "Mario must only Appeal and Defend!", MARIO_INACTIVE_TURNS, 255, -1 },
+    { "Your partner must only Appeal and Defend!", PARTNER_INACTIVE_TURNS, 255, -1 },
+    { "Appeal/Defend only for %" PRId32 " turns!", INACTIVE_TURNS, 2, 5 },
+    { "Never use attacks with Mario!", MARIO_NO_ATTACK_TURNS, 255, -1 },
+    { "Never use attacks with your partner!", PARTNER_NO_ATTACK_TURNS, 255, -1 },
+    { "Don't use attacks for %" PRId32 " turns!", NO_ATTACK_TURNS, 2, 5 },
+    { "Mario can only Defend or use Jump moves!", JUMPMAN, 1, -1, 3 },
+    { "Mario can only Defend or use Hammer moves!", HAMMERMAN, 1, -1, 3 },
+    { "Finish the fight within %" PRId32 " turns!", TURNS_LESS, 2, 5, 20 },
+};
+char g_ConditionTextBuf[64];
+
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    // TODO: Put actual logic here (testing = don't jump more than once).
-    npc_info->ruleCondition = 1;
-    npc_info->ruleParameter0 = 2;
-    npc_info->ruleParameter1 = 2;
+    // TODO: Don't set conditions on _every_ floor.
+    // TODO: Select a reward item.
+    
+    constexpr const int32_t kNumConditions = 
+        sizeof(kBattleConditions) / sizeof(BattleCondition);
+    BattleCondition conditions[kNumConditions];
+    memcpy(conditions, kBattleConditions, sizeof(kBattleConditions));
+    
+    RandomizerState& state = g_Randomizer->state_;
+    const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    int32_t num_partners = 0;
+    for (int32_t i = 0; i < 8; ++i) {
+        num_partners += pouch.party_data[i].flags & 1;
+    }
+    
+    // Disable conditions that rely on Star Power or having 1 or more partners.
+    for (auto& condition : conditions) {
+        switch (condition.type) {
+            case SPECIAL_MOVES_LESS:
+            case SPECIAL_MOVES_MORE:
+            case APPEAL_MORE:
+                if (!pouch.star_powers_obtained) condition.weight = 0;
+                break;
+            case PARTNER_TOTAL_DAMAGE_LESS:
+            case MARIO_INACTIVE_TURNS:
+            case MARIO_NO_ATTACK_TURNS:
+            case PARTNER_INACTIVE_TURNS:
+            case PARTNER_NO_ATTACK_TURNS:
+            case JUMPMAN:
+            case HAMMERMAN:
+                if (num_partners < 1) condition.weight = 0;
+                break;
+            case SWAP_PARTNERS_LESS:
+                if (num_partners < 2) condition.weight = 0;
+                break;
+            case MARIO_ATTACK_AUDIENCE_MORE:
+                // This condition will be guaranteed a Shine Sprite,
+                // so there needs to be a partner (and SP needs to be unlocked).
+                if (!pouch.star_powers_obtained) condition.weight = 0;
+                if (num_partners < 1) condition.weight = 0;
+                break;
+        }
+    }
+    
+    int32_t sum_weights = 0;
+    for (int32_t i = 0; i < kNumConditions; ++i) 
+        sum_weights += conditions[i].weight;
+    
+    int32_t weight = state.Rand(sum_weights);
+    int32_t idx = 0;
+    for (; (weight -= conditions[idx].weight) >= 0; ++idx);
+    
+    // Finalize and assign selected condition's parameters.
+    int32_t param = conditions[idx].param_min;
+    if (conditions[idx].param_max > 0) {
+        param += state.Rand(conditions[idx].param_max - 
+                            conditions[idx].param_min + 1);
+    }
+    switch (conditions[idx].type) {
+        case TOTAL_DAMAGE_LESS:
+        case TOTAL_DAMAGE_MORE:
+        case FP_MORE:
+            param *= state.floor_ < 50 ? 2 : 5;
+            break;
+        case MARIO_FINAL_HP_MORE:
+            // Make it based on percentage of max HP.
+            param = state.Rand(4);
+            switch (param) {
+                case 0:
+                    // Half, rounded up.
+                    param = (ttyd::mario_pouch::pouchGetMaxHP() + 1) * 50 / 100;
+                    break;
+                case 1:
+                    param = ttyd::mario_pouch::pouchGetMaxHP() * 60 / 100;
+                    break;
+                case 2:
+                    param = ttyd::mario_pouch::pouchGetMaxHP() * 80 / 100;
+                    break;
+                case 3:
+                default:
+                    param = ttyd::mario_pouch::pouchGetMaxHP();
+                    break;
+            }
+            break;
+    }
+    npc_info->ruleCondition = conditions[idx].type;
+    npc_info->ruleParameter0 = param;
+    npc_info->ruleParameter1 = param;
+    
+    // Assign the condition text.
+    if (conditions[idx].param_max > 0 || 
+        conditions[idx].type == MARIO_FINAL_HP_MORE) {
+        // FP condition text says "no more than", rather than "less than".
+        if (conditions[idx].type == FP_LESS) --param;
+        sprintf(g_ConditionTextBuf, conditions[idx].description, param);
+    } else {
+        sprintf(g_ConditionTextBuf, conditions[idx].description);
+    }        
 }
 
 void GetBattleConditionString(char* out_buf) {
-    // TODO: Put actual descriptions here.
-    sprintf(out_buf, "Don't jump more than once!\nOr else!");
+    // TODO: Parametrize by the reward item selected on room load.
+    sprintf(
+        out_buf, "Bonus reward (%s):\n%s", "Shine Sprite", g_ConditionTextBuf);
 }
 
 int32_t PickRandomItem(
