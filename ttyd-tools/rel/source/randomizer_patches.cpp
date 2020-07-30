@@ -5,6 +5,7 @@
 #include "common_ui.h"
 #include "evt_cmd.h"
 #include "patch.h"
+#include "randomizer.h"
 #include "randomizer_data.h"
 
 #include <gc/OSLink.h>
@@ -128,9 +129,6 @@ int32_t(*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
 const char*         g_AdditionalModuleToLoad = nullptr;
 uintptr_t           g_PitModulePtr = 0;
-// TODO: Move all references of this to g_Randomizer->state_.floor_.
-int32_t             g_PitFloor = -1;
-
 bool                g_InBattle = false;
 int8_t              g_MaxMoveBadgeCounts[18];
 int8_t              g_CurMoveBadgeCounts[18];
@@ -231,9 +229,9 @@ EVT_END()
 // Event that increments a separate Pit floor counter, and updates the actual
 // floor counter to be between 81-100 as appropriate if the actual floor > 100.
 EVT_BEGIN(FloorIncrementEvt)
-GET_RAM(LW(0), PTR(&g_PitFloor))
+GET_RAM(LW(0), PTR(&g_Randomizer->state_.floor_))
 ADD(LW(0), 1)
-SET_RAM(LW(0), PTR(&g_PitFloor))
+SET_RAM(LW(0), PTR(&g_Randomizer->state_.floor_))
 ADD(GSW(1321), 1)
 IF_LARGE_EQUAL(LW(0), 100)
     SET(LW(1), LW(0))
@@ -382,9 +380,11 @@ void OnModuleLoaded(OSModuleInfo* module) {
             module_ptr + kPitFloorIncrementEvtOffset);
         
         // Update the actual pit floor in tandem with GW(1321).
-        // TODO: Remove this hack to initialize the pit floor.
-        if (g_PitFloor < 0) {
-            g_PitFloor = reinterpret_cast<uint8_t*>(g_MarioSt)[0xaa1];
+        // TODO: Remove this hack to initialize the pit floor once proper
+        // initialization code is finished.
+        if (g_Randomizer->state_.floor_ <= 0) {
+            g_Randomizer->state_.floor_ =
+                reinterpret_cast<uint8_t*>(g_MarioSt)[0xaa1];
         }
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + kPitFloorIncrementEvtOffset),
@@ -522,7 +522,8 @@ int32_t LoadMap() {
         // Determine the enemies to spawn on this floor, and load a second
         // relocatable module for support enemies if necessary.
         if (g_PitModulePtr) {
-            const char* area = ModuleNameFromId(SelectEnemies(g_PitFloor));
+            const char* area = 
+                ModuleNameFromId(SelectEnemies(g_Randomizer->state_.floor_));
             if (area) {
                 g_AdditionalModuleToLoad = area;
                 return 1;
@@ -893,7 +894,7 @@ const char* GetReplacementMessage(const char* msg_key) {
         return "<system>\n<p>\nYou can't leave the Infinite Pit!\n<k>";
     } else if (!strcmp(msg_key, "msg_jon_kanban_1")) {
         sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
-                g_PitFloor + 1);
+                g_Randomizer->state_.floor_ + 1);
         return buf;
     } else if (!strcmp(msg_key, "in_cake")) {
         return "Strawberry Cake";
@@ -1443,10 +1444,11 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     ttyd::npcdrv::NpcTribeDescription* npc_tribe_description;
     ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
     BuildBattle(
-        g_PitModulePtr, g_PitFloor, &npc_tribe_description, &npc_setup_info);
+        g_PitModulePtr, g_Randomizer->state_.floor_, &npc_tribe_description, 
+        &npc_setup_info);
     int8_t* enemy_100 = 
         reinterpret_cast<int8_t*>(g_PitModulePtr + kPitEnemy100Offset);
-    int8_t battle_setup_idx = enemy_100[g_PitFloor % 100];
+    int8_t battle_setup_idx = enemy_100[g_Randomizer->state_.floor_ % 100];
     const int32_t x_sign = ttyd::system::irand(2) ? 1 : -1;
     const int32_t x_pos = ttyd::system::irand(50) + 80;
     const int32_t y_pos = 0;    // TODO: Pick Y-coordinate based on species.
