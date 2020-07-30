@@ -17,7 +17,6 @@
 #include <ttyd/dispdrv.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/msgdrv.h>
-#include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_title.h>
 #include <ttyd/statuswindow.h>
@@ -36,13 +35,11 @@ using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::dispdrv::CameraId;
 using ::ttyd::evtmgr::EvtEntry;
-using ::ttyd::npcdrv::NpcEntry;
 using ::ttyd::seqdrv::SeqIndex;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
-void (*g_npcSetupBattleInfo_trampoline)(NpcEntry*, void*) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 void (*g__rule_disp_trampoline)(void) = nullptr;
 int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
@@ -53,6 +50,7 @@ void (*g_statusWinDisp_trampoline)(void) = nullptr;
 void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 
 void DrawTitleScreenInfo() {
+    // TODO: Update with final text before release.
     const char* kTitleInfo =
         "Pit of Infinite Trials v0.00 by jdaster64\nPUT GITHUB LINK HERE";
     DrawCenteredTextWindow(
@@ -115,13 +113,6 @@ void Randomizer::Init() {
             const char* replacement = GetReplacementMessage(msg_key);
             if (replacement) return replacement;
             return g_msgSearch_trampoline(msg_key);
-        });
-        
-    g_npcSetupBattleInfo_trampoline = patch::hookFunction(
-        ttyd::npcdrv::npcSetupBattleInfo, [](NpcEntry* npc, void* battleInfo) {
-            g_npcSetupBattleInfo_trampoline(npc, battleInfo);
-            // TODO: Figure out if there's a way to call this only once / floor!
-            SetBattleCondition(&npc->battleInfo);
         });
         
     g_BtlActRec_JudgeRuleKeep_trampoline = patch::hookFunction(

@@ -106,6 +106,7 @@ using ::ttyd::item_data::itemDataTable;
 using ::ttyd::item_data::ItemData;
 using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::mariost::g_MarioSt;
+using ::ttyd::npcdrv::NpcEntry;
 using ::ttyd::system::getMarioStDvdRoot;
 using ::ttyd::win_party::WinPartyData;
 
@@ -298,7 +299,7 @@ IF_STR_EQUAL(LW(1), PTR(kBonetailName))
     USER_FUNC(ttyd::evt_npc::evt_npc_set_ry, PTR(kPitNpcName), 0)
     RUN_EVT(REL_PTR(ModuleId::JON, kPitBonetailFirstEvtOffset))
 END_IF()
-USER_FUNC(ttyd::evt_npc::evt_npc_set_battle_info, PTR(kPitNpcName), LW(3))
+USER_FUNC(SetEnemyNpcBattleInfo, PTR(kPitNpcName), LW(3))
 UNCHECKED_USER_FUNC(
     REL_PTR(ModuleId::JON, kPitSetupNpcExtraParametersFuncOffset),
     PTR(kPitNpcName))
@@ -1459,6 +1460,16 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     evtSetValue(evt, evt->evtArguments[5], y_pos);
     evtSetValue(evt, evt->evtArguments[6], z_pos);
         
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
+    const char* name = 
+        reinterpret_cast<const char*>(evtGetValue(evt, evt->evtArguments[0]));
+    int32_t battle_id = evtGetValue(evt, evt->evtArguments[1]);
+    NpcEntry* npc = ttyd::evt_npc::evtNpcNameToPtr(evt, name);
+    ttyd::npcdrv::npcSetBattleInfo(npc, battle_id);
+    SetBattleCondition(&npc->battleInfo);
     return 2;
 }
 

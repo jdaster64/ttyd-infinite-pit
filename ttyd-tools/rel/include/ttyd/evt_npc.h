@@ -224,6 +224,11 @@ EVT_DECLARE_USER_FUNC(evt_npc_facedirection_add, 3)
 // evt_npc_stop_for_event()
 EVT_DECLARE_USER_FUNC(evt_npc_stop_for_event, 0)
 
+npcdrv::NpcEntry* evtNpcNameToPtr_NoAssert(
+    evtmgr::EvtEntry* evt, const char* name);
+npcdrv::NpcEntry* evtNpcNameToPtr(
+    evtmgr::EvtEntry* evt, const char* name);
+
 // evt_npc_start_for_event()
 EVT_DECLARE_USER_FUNC(evt_npc_start_for_event, 0)
 

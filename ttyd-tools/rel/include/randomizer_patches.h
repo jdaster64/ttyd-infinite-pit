@@ -73,6 +73,10 @@ void ApplyMiscPatches();
 // such as the model name, battle id, and initial position.
 EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
 
+// Sets final battle info on a Pit enemy, as well as setting any
+// battle conditions.
+EVT_DECLARE_USER_FUNC(SetEnemyNpcBattleInfo, 2)
+
 // Returns the item or partner to spawn from the chest on a Pit reward floor.
 EVT_DECLARE_USER_FUNC(GetChestReward, 1)
 

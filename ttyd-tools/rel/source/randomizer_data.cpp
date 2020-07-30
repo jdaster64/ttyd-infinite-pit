@@ -466,9 +466,9 @@ struct BattleCondition {
 using namespace ttyd::battle_actrecord::ConditionType;
 static constexpr const BattleCondition kBattleConditions[] = {
     { "Don't ever use Jump moves!", JUMP_LESS, 1, -1 },
-    { "Use fewer than %" PRId32 " Jump moves!", JUMP_LESS, 2, 3, 5 },
+    { "Use fewer than %" PRId32 " Jump moves!", JUMP_LESS, 2, 3 },
     { "Don't ever use Hammer moves!", HAMMER_LESS, 1, -1 },
-    { "Use fewer than %" PRId32 " Hammer moves!", HAMMER_LESS, 2, 3, 5 },
+    { "Use fewer than %" PRId32 " Hammer moves!", HAMMER_LESS, 2, 3 },
     { "Don't use Special moves!", SPECIAL_MOVES_LESS, 1, -1 },
     { "Use a Special move!", SPECIAL_MOVES_MORE, 1, -1 },
     { "Don't take damage with Mario!", MARIO_TOTAL_DAMAGE_LESS, 1, -1 },
