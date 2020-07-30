@@ -34,11 +34,15 @@ void GetTextDimensions(
 }
     
 void DrawText(
-    const char* text, float x, float y, uint8_t alpha, uint32_t color, 
-    float scale, int32_t alignment) {
+    const char* text, float x, float y, uint8_t alpha, bool edge, 
+    uint32_t color, float scale, int32_t alignment) {
     ttyd::fontmgr::FontDrawStart_alpha(alpha);
     ttyd::fontmgr::FontDrawColor(reinterpret_cast<uint8_t *>(&color));
-    ttyd::fontmgr::FontDrawEdge();
+    if (edge) {
+        ttyd::fontmgr::FontDrawEdge();
+    } else {
+        ttyd::fontmgr::FontDrawEdgeOff();
+    }
     ttyd::fontmgr::FontDrawScale(scale);
     
     if (alignment < 0 || alignment >= 9) alignment = 0;
@@ -88,7 +92,7 @@ void DrawWindow(
 }
     
 void DrawCenteredTextWindow(
-    const char* text, float x, float y, uint8_t text_alpha, 
+    const char* text, float x, float y, uint8_t text_alpha, bool text_edge,
     uint32_t text_color, float text_scale, uint32_t window_color, 
     float window_pad, float window_corner_radius) {
     float width, height;
@@ -98,7 +102,7 @@ void DrawCenteredTextWindow(
                x - width / 2 - window_pad, y + height / 2 + window_pad,
                width + 2 * window_pad, height + 2 * window_pad,
                window_corner_radius);
-    DrawText(text, x, y, text_alpha, text_color, text_scale, 4);
+    DrawText(text, x, y, text_alpha, text_edge, text_color, text_scale, 4);
 }
 
 }

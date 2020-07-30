@@ -38,6 +38,8 @@ void UseShineSprite();
 // Checks whether the battle condition was satisfied, and if so,
 // adds a bonus item to the "recovered items" pool.
 void CheckBattleCondition();
+// Displays text associated with the battle condition.
+void DisplayBattleCondition();
 
 // Runs extra code on consuming an item and getting the item to be consumed,
 // allowing for enemies to use generic cooking items.

@@ -2,6 +2,7 @@
 
 #include "common_functions.h"
 #include "common_types.h"
+#include "common_ui.h"
 #include "evt_cmd.h"
 #include "patch.h"
 #include "randomizer_data.h"
@@ -69,9 +70,6 @@ extern "C" {
     void CharlietonPitPriceListPatchEnd();
     void CharlietonPitPriceItemPatchStart();
     void CharlietonPitPriceItemPatchEnd();
-    // battle_condition_patches.s
-    void StartRuleDisp();
-    void BranchBackRuleDisp();
     // map_change_patches.s
     void StartMapLoad();
     void BranchBackMapLoad();
@@ -84,10 +82,6 @@ extern "C" {
     void BranchBackFixItemWinPartySelectOrder();
     void StartUsePartyRankup();
     void BranchBackUsePartyRankup();
-    
-    void getBattleConditionString(char* out_buf) {
-        mod::pit_randomizer::GetBattleConditionString(out_buf);
-    }
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); } 
@@ -770,6 +764,13 @@ void CheckBattleCondition() {
     }
 }
 
+void DisplayBattleCondition() {
+    char buf[128];
+    GetBattleConditionString(buf);
+    DrawCenteredTextWindow(
+        buf, 0, 60, 0xFFu, false, 0x000000FFu, 0.9f, 0xFFFFFFE5u, 15, 10);
+}
+
 // Global variable for the last type of item consumed;
 // this is necessary to allow enemies to use cooked items.
 int32_t g_EnemyItem = 0;
@@ -1327,28 +1328,6 @@ void ApplyItemAndAttackPatches() {
 }
 
 void ApplyMiscPatches() {
-    // Apply patches to _rule_disp code to print a custom string w/conditions.
-    const int32_t kRuleDispBeginHookAddress = 0x8011c384;
-    const int32_t kRuleDispEndHookAddress = 0x8011c428;
-    mod::patch::writeBranch(
-        reinterpret_cast<void*>(kRuleDispBeginHookAddress),
-        reinterpret_cast<void*>(StartRuleDisp));
-    mod::patch::writeBranch(
-        reinterpret_cast<void*>(BranchBackRuleDisp),
-        reinterpret_cast<void*>(kRuleDispEndHookAddress));
-    // Individual instruction patches to make the string display longer and
-    // only be dismissable by the B button.
-    const int32_t kLengthenRuleDispTimeOpAddr = 0x8011c5ec;
-    const uint32_t kLengthenRuleDispTimeOpcode = 0x3800012c;  // li r0, 300
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kLengthenRuleDispTimeOpAddr),
-        &kLengthenRuleDispTimeOpcode, sizeof(uint32_t));
-    const int32_t kDismissRuleDispButtonOpAddr = 0x8011c62c;
-    const uint32_t kDismissRuleDispButtonOpcode = 0x38600200;  // li r3, 200
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kDismissRuleDispButtonOpAddr),
-        &kDismissRuleDispButtonOpcode, sizeof(uint32_t));
-
     // Apply patches to seq_mapChangeMain code to run additional logic when
     // loading or unloading a map.
     const int32_t kMapLoadBeginHookAddress = 0x80007ef0;
@@ -1402,6 +1381,19 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kItemWindowCloseHookAddr),
         &kAlwaysUseItemsInMenuOpcode, sizeof(kAlwaysUseItemsInMenuOpcode));
+    
+    // Individual instruction patches to make the battle condition message
+    // display longer and only be dismissable by the B button.
+    const int32_t kLengthenRuleDispTimeOpAddr = 0x8011c5ec;
+    const uint32_t kLengthenRuleDispTimeOpcode = 0x3800012c;  // li r0, 300
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kLengthenRuleDispTimeOpAddr),
+        &kLengthenRuleDispTimeOpcode, sizeof(uint32_t));
+    const int32_t kDismissRuleDispButtonOpAddr = 0x8011c62c;
+    const uint32_t kDismissRuleDispButtonOpcode = 0x38600200;  // li r3, 0x200
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kDismissRuleDispButtonOpAddr),
+        &kDismissRuleDispButtonOpcode, sizeof(uint32_t));
         
     // Patch Charlieton's sell price scripts, making them scale from 1x to 3x.
     const int32_t kCharlietonPitListHookAddr = 0x8023c120;

@@ -912,6 +912,9 @@
 8010b3d4:btlevtcmd_GetConsumeItem
 80113304:btlevtcmd_KillUnit
 
+// battle_seq.o
+8011c350:_rule_disp
+
 // battle_mario.o
 // .text
 80115648:_get_mario_hammer_lv
