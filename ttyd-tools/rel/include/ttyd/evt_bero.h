@@ -10,21 +10,21 @@ extern "C" {
     
 struct BeroEntry {
     const char* name;
-    uint32_t unk_04;
-    int32_t unk_08;
-    int32_t unk_0c;
-    int32_t unk_10;
-    int32_t unk_14;
-    int32_t unk_18;
-    int32_t unk_1c;
-    int32_t unk_20;
-    void* entry_evt_code;
+    uint32_t    unk_04;
+    int32_t     unk_08;
+    int32_t     unk_0c;
+    int32_t     unk_10;
+    int32_t     unk_14;
+    int32_t     unk_18;
+    void*       entry_evt_code;         // default_entevt
+    int32_t     unk_20;
+    void*       out_evt_code;           // default_outevt
     const char* target_map;
     const char* target_bero;
-    int16_t unk_30;
-    int16_t unk_32;
-    void* unk_close_evt_code;
-    void* unk_open_evt_code;
+    int16_t     unk_30;
+    int16_t     unk_32;
+    void*       unk_close_evt_code;
+    void*       unk_open_evt_code;
 } __attribute__((__packed__));
 
 static_assert(sizeof(BeroEntry) == 0x3c);
@@ -65,7 +65,7 @@ static_assert(sizeof(BeroEntry) == 0x3c);
 // evt_bero_get_start_position
 EVT_DECLARE_USER_FUNC(evt_bero_exec_wait, 1)
 // evt_bero_exec_get
-// evt_bero_exec_onoff
+EVT_DECLARE_USER_FUNC(evt_bero_exec_onoff, 2)
 // evt_bero_get_entername
 // evt_bero_mapchange
 // bero_id_filter

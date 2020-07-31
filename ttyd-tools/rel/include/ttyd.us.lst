@@ -539,6 +539,7 @@
 
 // evt_bero.o
 8007a9c0:evt_bero_exec_wait
+8007aa34:evt_bero_exec_onoff
 
 // windowdrv.o
 // 8007AD30:getWakuTexObj

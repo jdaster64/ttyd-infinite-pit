@@ -370,7 +370,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
             module_ptr + kPitRewardFloorReturnBeroEntryOffset);
         return_bero->target_map = nullptr;
         return_bero->target_bero = return_bero->name;
-        return_bero->entry_evt_code = reinterpret_cast<void*>(
+        return_bero->out_evt_code = reinterpret_cast<void*>(
             const_cast<int32_t*>(DisabledBeroEvt));
         
         // Change destination of boss room pipe to be the usual 80+ floor.
@@ -378,7 +378,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
             module_ptr + kPitBossFloorReturnBeroEntryOffset);
         boss_bero->target_map = "jon_02";
         boss_bero->target_bero = "dokan_2";
-        boss_bero->entry_evt_code = reinterpret_cast<void*>(
+        boss_bero->out_evt_code = reinterpret_cast<void*>(
             module_ptr + kPitFloorIncrementEvtOffset);
         
         // Update the actual pit floor in tandem with GW(1321).
