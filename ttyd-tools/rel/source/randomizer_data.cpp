@@ -485,7 +485,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
     { "Win with Mario in Peril!", MARIO_FINAL_HP_LESS, 2, -1 },
     { "Don't use any items!", ITEMS_LESS, 1, -1, 30 },
     { "Don't ever swap partners!", SWAP_PARTNERS_LESS, 1, -1 },
-    { "Have Mario attack the audience!", MARIO_ATTACK_AUDIENCE_MORE, 1, -1, 3 },
+    { "Have Mario attack an audience member!", MARIO_ATTACK_AUDIENCE_MORE, 1, -1, 3 },
     { "Appeal to the crowd at least %" PRId32 " times!", APPEAL_MORE, 3, 5 },
     { "Don't use any FP!", FP_LESS, 1, -1 },
     { "Don't use more than %" PRId32 " FP!", FP_LESS, 4, 11 },

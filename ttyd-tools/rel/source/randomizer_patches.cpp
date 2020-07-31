@@ -998,6 +998,17 @@ const char* GetReplacementMessage(const char* msg_key) {
     } else if (!strcmp(msg_key, "msg_ptr_meromero_kiss")) {
         return "Blow a kiss to an enemy to try\n"
                "to win them to your side.";
+    } else if (!strcmp(msg_key, "msg_super_coin")) {
+        return "A mysterious, powerful object.\n"
+               "Use it to power up your partner!";
+    } else if (!strcmp(msg_key, "msg_custom_super_boots")) {
+        return "A stronger pair of boots.";
+    } else if (!strcmp(msg_key, "msg_custom_ultra_boots")) {
+        return "An even stronger pair of boots.";
+    } else if (!strcmp(msg_key, "msg_custom_super_hammer")) {
+        return "A more powerful hammer.";
+    } else if (!strcmp(msg_key, "msg_custom_ultra_hammer")) {
+        return "An even more powerful hammer.";
     }
 
     return nullptr;
@@ -1090,6 +1101,12 @@ void ApplyItemAndAttackPatches() {
     // Because, let's be honest.
     itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
     
+    // Changed pickup messages for Super / Ultra boots and hammer.
+    itemDataTable[ItemType::SUPER_BOOTS].description = "msg_custom_super_boots";
+    itemDataTable[ItemType::ULTRA_BOOTS].description = "msg_custom_ultra_boots";
+    itemDataTable[ItemType::SUPER_HAMMER].description = "msg_custom_super_hammer";
+    itemDataTable[ItemType::ULTRA_HAMMER].description = "msg_custom_ultra_hammer";
+    
     // New badges (Toughen Up, Toughen Up P).
     itemDataTable[ItemType::SUPER_CHARGE].bp_cost = 1;
     itemDataTable[ItemType::SUPER_CHARGE].icon_id = kSquareDiamondIconId;
@@ -1103,7 +1120,6 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::SUPER_CHARGE_P].menu_description = "msg_toughen_up_p";
     
     // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
-    // TODO: Update descriptions to be more useful?
     memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
            &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
@@ -1187,7 +1203,7 @@ void ApplyItemAndAttackPatches() {
     ttyd::battle_item_data::ItemWeaponData_CookingItem.target_weighting_flags =
         ttyd::battle_item_data::ItemWeaponData_Kinoko.target_weighting_flags;
         
-    // Make Point Swap and Trial Stew only target Mario's team.
+    // Make Point Swap and Trial Stew only target Mario or his partner.
     ttyd::battle_item_data::ItemWeaponData_Irekaeeru.target_class_flags = 
         0x01100070;
     ttyd::battle_item_data::ItemWeaponData_LastDinner.target_class_flags = 
