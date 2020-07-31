@@ -233,9 +233,7 @@ EVT_END()
 // Event that increments a separate Pit floor counter, and updates the actual
 // floor counter to be between 81-100 as appropriate if the actual floor > 100.
 EVT_BEGIN(FloorIncrementEvt)
-GET_RAM(LW(0), PTR(&g_Randomizer->state_.floor_))
-ADD(LW(0), 1)
-SET_RAM(LW(0), PTR(&g_Randomizer->state_.floor_))
+USER_FUNC(IncrementInfinitePitFloor, LW(0))
 ADD(GSW(1321), 1)
 IF_LARGE_EQUAL(LW(0), 100)
     SET(LW(1), LW(0))
@@ -1539,6 +1537,11 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     NpcEntry* npc = ttyd::evt_npc::evtNpcNameToPtr(evt, name);
     ttyd::npcdrv::npcSetBattleInfo(npc, battle_id);
     SetBattleCondition(&npc->battleInfo);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
+    evtSetValue(evt, evt->evtArguments[0], ++g_Randomizer->state_.floor_);
     return 2;
 }
 
