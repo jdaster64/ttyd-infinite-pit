@@ -12,6 +12,7 @@
 #include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_enemy_item.h>
 #include <ttyd/battle_event_cmd.h>
+#include <ttyd/battle_information.h>
 #include <ttyd/battle_seq.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/dispdrv.h>
@@ -35,6 +36,7 @@ using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::dispdrv::CameraId;
 using ::ttyd::evtmgr::EvtEntry;
+using ::ttyd::npcdrv::FbatBattleInformation;
 using ::ttyd::seqdrv::SeqIndex;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
@@ -42,6 +44,7 @@ bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 void (*g__rule_disp_trampoline)(void) = nullptr;
+void (*g_BattleInformationSetDropMaterial_trampoline)(FbatBattleInformation*) = nullptr;
 int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
@@ -125,6 +128,13 @@ void Randomizer::Init() {
         ttyd::battle_seq::_rule_disp, []() {
             // Replaces the original logic completely.
             DisplayBattleCondition();
+        });
+        
+    g_BattleInformationSetDropMaterial_trampoline = patch::hookFunction(
+        ttyd::battle_information::BattleInformationSetDropMaterial,
+        [](FbatBattleInformation* fbat_info) {
+            // Replaces the original logic completely.
+            GetDropMaterials(fbat_info);
         });
         
     g_btlevtcmd_ConsumeItem_trampoline = patch::hookFunction(

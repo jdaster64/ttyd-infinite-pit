@@ -5,11 +5,13 @@
 #include "randomizer.h"
 #include "randomizer_state.h"
 
+#include <ttyd/battle.h>
 #include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
+#include <ttyd/msgdrv.h>
 #include <ttyd/npcdrv.h>
 #include <ttyd/npc_data.h>
 #include <ttyd/npc_event.h>
@@ -429,12 +431,14 @@ void BuildBattle(
         custom_unit.position.x = kEnemyPartyCenterX + (i-1) * 40.0f;
     }
     g_CustomBattleParty.num_enemies         = g_NumEnemies;
-    g_CustomBattleParty.enemy_data          = g_CustomUnits;
-    g_CustomBattleParty.held_item_weight    = 100;
+    g_CustomBattleParty.enemy_data          = g_CustomUnits; 
     g_CustomBattleParty.random_item_weight  = 0;
     g_CustomBattleParty.no_item_weight      = 0;
     g_CustomBattleParty.hp_drop_table       = enemy_info[0]->hp_drop_table;
     g_CustomBattleParty.fp_drop_table       = enemy_info[0]->fp_drop_table;
+    
+    // Actually used as the index of the enemy whose item should be dropped.
+    g_CustomBattleParty.held_item_weight = g_Randomizer->state_.Rand(g_NumEnemies);
     
     // Make the current floor's battle point to the constructed party setup.
     int8_t* enemy_100 =
@@ -482,7 +486,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
     { "Don't use any items!", ITEMS_LESS, 1, -1, 30 },
     { "Don't ever swap partners!", SWAP_PARTNERS_LESS, 1, -1 },
     { "Have Mario attack the audience!", MARIO_ATTACK_AUDIENCE_MORE, 1, -1, 3 },
-    { "Appeal at least once!", APPEAL_MORE, 1, -1 },
+    { "Appeal to the crowd at least %" PRId32 " times!", APPEAL_MORE, 3, 5 },
     { "Don't use any FP!", FP_LESS, 1, -1 },
     { "Don't use more than %" PRId32 " FP!", FP_LESS, 4, 11 },
     { "Use at least %" PRId32 " FP!", FP_MORE, 1, 4 },
@@ -499,15 +503,23 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    // TODO: Don't set conditions on _every_ floor.
-    // TODO: Select a reward item.
+    // Set conditions on about 1 in 5 battles randomly (and not on Bonetail).
+    RandomizerState& state = g_Randomizer->state_;
+    if (state.floor_ % 10 == 9 || state.Rand(5)) return;
     
+    // Use the unused "random_item_weight" field to store the item reward.
+    int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
+    *item_reward = PickRandomItem(
+        /* seeded = */ true, 20, 20, 40, state.floor_ < 30 ? 0 : 20);
+    // If the "none" case was picked, make it a Shine Sprite.
+    if (*item_reward <= 0) *item_reward = ItemType::GOLD_BAR_X3;
+    
+    // Make a copy of the conditions array so the weights can be mutated.
     constexpr const int32_t kNumConditions = 
         sizeof(kBattleConditions) / sizeof(BattleCondition);
     BattleCondition conditions[kNumConditions];
     memcpy(conditions, kBattleConditions, sizeof(kBattleConditions));
     
-    RandomizerState& state = g_Randomizer->state_;
     const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     int32_t num_partners = 0;
     for (int32_t i = 0; i < 8; ++i) {
@@ -583,6 +595,10 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
                     break;
             }
             break;
+        case MARIO_ATTACK_AUDIENCE_MORE:
+            // Guarantee a Shine Sprite.
+            *item_reward = ItemType::GOLD_BAR_X3;
+            break;
     }
     npc_info->ruleCondition = conditions[idx].type;
     npc_info->ruleParameter0 = param;
@@ -600,9 +616,12 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
 }
 
 void GetBattleConditionString(char* out_buf) {
-    // TODO: Parametrize by the reward item selected on room load.
-    sprintf(
-        out_buf, "Bonus reward (%s):\n%s", "Shine Sprite", g_ConditionTextBuf);
+    auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
+    const int32_t item_reward =
+        fbat_info->wBattleInfo->pConfiguration->random_item_weight;
+    const char* item_name = ttyd::msgdrv::msgSearch(
+        ttyd::item_data::itemDataTable[item_reward].name);
+    sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);
 }
 
 int32_t PickRandomItem(

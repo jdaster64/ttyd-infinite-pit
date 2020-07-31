@@ -876,6 +876,7 @@
 // battle.o
 // .text
 800f831c:BtlUnit_EquipItem
+800f87a8:BattleGetMarioPtr
 800f8874:BattleGetUnitPartsPtr
 800f88cc:BattleGetUnitPtr
 800f8f04:BattleInit
@@ -911,6 +912,16 @@
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
 80113304:btlevtcmd_KillUnit
+
+// battle_information.o
+801141bc:BattleInformationSetDropMaterial
+80114500:BattleInformationGetResult
+80114508:BattleInformationSetResult
+80114510:BattleInfomationSetBattleSetupInfo
+80114518:BattleInformationInit
+80114588:BattleInformationSetFirstAttack
+80114590:BattleInformationSetParty
+80114598:BattleInformationSetMode
 
 // battle_seq.o
 8011c350:_rule_disp

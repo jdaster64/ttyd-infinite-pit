@@ -97,7 +97,9 @@ using ::gc::OSLink::OSModuleInfo;
 using ::ttyd::battle::BattleWorkCommandCursor;
 using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
+using ::ttyd::battle_database_common::BattleGroupSetup;
 using ::ttyd::battle_database_common::BattleWeapon;
+using ::ttyd::battle_database_common::PointDropData;
 using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::evt_bero::BeroEntry;
 using ::ttyd::evtmgr::EvtEntry;
@@ -107,6 +109,8 @@ using ::ttyd::item_data::itemDataTable;
 using ::ttyd::item_data::ItemData;
 using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::mariost::g_MarioSt;
+using ::ttyd::npcdrv::FbatBattleInformation;
+using ::ttyd::npcdrv::NpcBattleInfo;
 using ::ttyd::npcdrv::NpcEntry;
 using ::ttyd::system::getMarioStDvdRoot;
 using ::ttyd::win_party::WinPartyData;
@@ -749,19 +753,20 @@ void UseShineSprite() {
 
 void CheckBattleCondition() {
     auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
+    const int32_t item_reward =
+        fbat_info->wBattleInfo->pConfiguration->random_item_weight;
     // Did not win the fight.
     if (fbat_info->wResult != 1) return;
     // If condition is a success and rule is not 0, add a bonus item.
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
-        ttyd::npcdrv::NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
+        NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
         for (int32_t i = 0; i < 8; ++i) {
             // Only return a bonus item if the enemies were all defeated.
             if (npc_info->wStolenItems[i] != 0) return;
         }
         for (int32_t i = 0; i < 8; ++i) {
             if (npc_info->wBackItemIds[i] == 0) {
-                // TODO: Determine the bonus item procedurally.
-                npc_info->wBackItemIds[i] = ItemType::GOLD_BAR_X3;
+                npc_info->wBackItemIds[i] = item_reward;
                 break;
             }
         }
@@ -773,6 +778,52 @@ void DisplayBattleCondition() {
     GetBattleConditionString(buf);
     DrawCenteredTextWindow(
         buf, 0, 60, 0xFFu, false, 0x000000FFu, 0.75f, 0xFFFFFFE5u, 15, 10);
+}
+
+void GetDropMaterials(FbatBattleInformation* fbat_info) {
+    NpcBattleInfo* battle_info = fbat_info->wBattleInfo;
+    const BattleGroupSetup* party_setup = battle_info->pConfiguration;
+    const PointDropData* hp_drop = party_setup->hp_drop_table;
+    const PointDropData* fp_drop = party_setup->fp_drop_table;
+    
+    // Get natural heart and flower drops based on Mario's health, as usual.
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    const BattleWorkUnit* mario = ttyd::battle::BattleGetMarioPtr(battleWork);
+    
+    int32_t mario_hp_pct = mario->current_hp * 100 / mario->max_hp;
+    for (; true; ++hp_drop) {
+        if (mario_hp_pct <= hp_drop->max_stat_percent) {
+            if (static_cast<int32_t>(ttyd::system::irand(100))
+                    < hp_drop->overall_drop_rate) {
+                for (int32_t i = 0; i < hp_drop->drop_count; ++i) {
+                    if (static_cast<int32_t>(ttyd::system::irand(100))
+                            < hp_drop->individual_drop_rate) {
+                        ++battle_info->wHeartsDroppedBaseCount;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    int32_t mario_fp_pct = mario->current_fp * 100 / mario->max_fp;
+    for (; true; ++fp_drop) {
+        if (mario_fp_pct <= fp_drop->max_stat_percent) {
+            if (static_cast<int32_t>(ttyd::system::irand(100))
+                    < fp_drop->overall_drop_rate) {
+                for (int32_t i = 0; i < fp_drop->drop_count; ++i) {
+                    if (static_cast<int32_t>(ttyd::system::irand(100))
+                            < fp_drop->individual_drop_rate) {
+                        ++battle_info->wFlowersDroppedBaseCount;
+                    }
+                }
+            }
+            break;
+        }
+    }
+    
+    // Get item drop, based on the pre-set enemy held item index.
+    battle_info->wItemDropped = 
+        battle_info->wHeldItems[party_setup->held_item_weight];
 }
 
 // Global variable for the last type of item consumed;

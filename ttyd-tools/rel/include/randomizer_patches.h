@@ -4,6 +4,7 @@
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/evtmgr.h>
+#include <ttyd/npcdrv.h>
 
 #include <cstdint>
 
@@ -40,6 +41,9 @@ void UseShineSprite();
 void CheckBattleCondition();
 // Displays text associated with the battle condition.
 void DisplayBattleCondition();
+
+// Replaces the logic for getting HP, FP, and item drops after a battle.
+void GetDropMaterials(ttyd::npcdrv::FbatBattleInformation* fbat_info);
 
 // Runs extra code on consuming an item and getting the item to be consumed,
 // allowing for enemies to use generic cooking items.

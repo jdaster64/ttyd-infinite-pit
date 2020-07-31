@@ -5,6 +5,10 @@
 
 #include <cstdint>
 
+namespace ttyd::battle_database_common {
+struct BattleGroupSetup;
+}
+
 namespace ttyd::npcdrv {
 
 struct NpcEntry;
@@ -56,7 +60,7 @@ struct NpcBattleInfo
 	uint32_t wItemDropped;
 	uint32_t wHeartsDroppedBaseCount;
 	uint32_t wFlowersDroppedBaseCount;
-	void *pConfiguration; // Reference to unimplemented type BattleSetupConfiguration
+	battle_database_common::BattleGroupSetup *pConfiguration;
 	uint32_t wHeldItems[8];
 	uint32_t *pItemDropLists[8];
 	int32_t wStolenItems[8];
