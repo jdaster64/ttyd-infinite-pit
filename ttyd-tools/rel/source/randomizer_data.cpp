@@ -374,7 +374,7 @@ ModuleId::e SelectEnemies(int32_t floor) {
 void BuildBattle(
     uintptr_t pit_module_ptr, int32_t floor,
     NpcTribeDescription** out_npc_tribe_description,
-    NpcSetupInfo** out_npc_setup_info) {
+    NpcSetupInfo** out_npc_setup_info, int32_t* out_lead_type) {
 
     const EnemyModuleInfo* enemy_module_info[5];
     const EnemyTypeInfo* enemy_info[5];
@@ -419,8 +419,12 @@ void BuildBattle(
     g_CustomNpc[0].homingAngle      = 360.0f;
     g_CustomNpc[0].battleInfoId     = 1;
     
+    // Set output variables.
     *out_npc_tribe_description = npc_tribe;
     *out_npc_setup_info = g_CustomNpc;
+    *out_lead_type = enemy_module_info[0]->unit_type;
+    
+    // Construct the BattleGroupSetup from the previously selected enemies.
     
     // TODO: Generate custom audience weights.
     for (int32_t i = 0; i < g_NumEnemies; ++i) {

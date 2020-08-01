@@ -281,16 +281,6 @@ IF_STR_EQUAL(LW(1), PTR(kArantulaName))
     USER_FUNC(ttyd::evt_npc::evt_npc_set_home_position,
         PTR(kPitNpcName), LW(4), LW(5), LW(6))
 END_IF()
-IF_STR_EQUAL(LW(1), PTR(kChainChompName))
-    UNCHECKED_USER_FUNC(
-        REL_PTR(ModuleId::JON, kPitChainChompSetHomePosFuncOffset),
-        LW(4), LW(5), LW(6))
-END_IF()
-IF_STR_EQUAL(LW(1), PTR(kRedChompName))
-    UNCHECKED_USER_FUNC(
-        REL_PTR(ModuleId::JON, kPitChainChompSetHomePosFuncOffset),
-        LW(4), LW(5), LW(6))
-END_IF()
 IF_STR_EQUAL(LW(1), PTR(kBonetailName))
     USER_FUNC(ttyd::evt_npc::evt_npc_set_position, PTR(kPitNpcName), 0, 0, 0)
     USER_FUNC(ttyd::evt_npc::evt_npc_set_anim, PTR(kPitNpcName), PTR("GNB_H_3"))
@@ -1508,16 +1498,70 @@ void ApplyMiscPatches() {
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     ttyd::npcdrv::NpcTribeDescription* npc_tribe_description;
     ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
+    int32_t lead_enemy_type;
     BuildBattle(
         g_PitModulePtr, g_Randomizer->state_.floor_, &npc_tribe_description, 
-        &npc_setup_info);
+        &npc_setup_info, &lead_enemy_type);
     int8_t* enemy_100 = 
         reinterpret_cast<int8_t*>(g_PitModulePtr + kPitEnemy100Offset);
     int8_t battle_setup_idx = enemy_100[g_Randomizer->state_.floor_ % 100];
     const int32_t x_sign = ttyd::system::irand(2) ? 1 : -1;
     const int32_t x_pos = ttyd::system::irand(50) + 80;
-    const int32_t y_pos = 0;    // TODO: Pick Y-coordinate based on species.
     const int32_t z_pos = ttyd::system::irand(200) - 100;
+    int32_t y_pos = 0;
+    
+    // Select the NPC's y_pos based on the lead enemy type.
+    switch(lead_enemy_type) {
+        case BattleUnitType::DARK_PUFF:
+        case BattleUnitType::RUFF_PUFF:
+        case BattleUnitType::ICE_PUFF:
+        case BattleUnitType::POISON_PUFF:
+            y_pos = 10;
+            break;
+        case BattleUnitType::EMBER:
+        case BattleUnitType::LAVA_BUBBLE:
+        case BattleUnitType::PHANTOM_EMBER:
+        case BattleUnitType::WIZZERD:
+        case BattleUnitType::DARK_WIZZERD:
+        case BattleUnitType::ELITE_WIZZERD:
+        case BattleUnitType::LAKITU:
+        case BattleUnitType::DARK_LAKITU:
+            y_pos = 20;
+            break;
+        case BattleUnitType::BOO:
+        case BattleUnitType::DARK_BOO:
+        case BattleUnitType::ATOMIC_BOO:
+        case BattleUnitType::YUX:
+        case BattleUnitType::Z_YUX:
+        case BattleUnitType::X_YUX:
+            y_pos = 30;
+            break;
+        case BattleUnitType::PARAGOOMBA:
+        case BattleUnitType::PARAGLOOMBA:
+        case BattleUnitType::HYPER_PARAGOOMBA:
+        case BattleUnitType::PARATROOPA:
+        case BattleUnitType::KP_PARATROOPA:
+        case BattleUnitType::SHADY_PARATROOPA:
+        case BattleUnitType::DARK_PARATROOPA:
+        case BattleUnitType::PARABUZZY:
+        case BattleUnitType::SPIKY_PARABUZZY:
+            y_pos = 50;
+            break;
+        case BattleUnitType::SWOOPER:
+        case BattleUnitType::SWOOPULA:
+        case BattleUnitType::SWAMPIRE:
+            y_pos = 80;
+            break;
+        case BattleUnitType::PIDER:
+        case BattleUnitType::ARANTULA:
+            y_pos = 140;
+            break;
+        case BattleUnitType::CHAIN_CHOMP:
+        case BattleUnitType::RED_CHOMP:
+            npc_setup_info->territoryBase = { 
+                static_cast<float>(x_pos), 0.f, static_cast<float>(z_pos) };
+            break;
+    }
     
     evtSetValue(evt, evt->evtArguments[0], PTR(npc_tribe_description->modelName));
     evtSetValue(evt, evt->evtArguments[1], PTR(npc_tribe_description->nameJp));
