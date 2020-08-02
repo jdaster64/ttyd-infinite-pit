@@ -84,6 +84,9 @@ EVT_DECLARE_USER_FUNC(SetEnemyNpcBattleInfo, 2)
 // Increments and returns the current Pit floor (zero-indexed).
 EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 1)
 
+// Returns the number of chest rewards to spawn based on the floor number.
+EVT_DECLARE_USER_FUNC(GetNumChestRewards, 1)
+
 // Returns the item or partner to spawn from the chest on a Pit reward floor.
 EVT_DECLARE_USER_FUNC(GetChestReward, 1)
 

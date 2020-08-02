@@ -164,47 +164,59 @@ EVT_END()
 // Event that handles a chest being opened.
 EVT_BEGIN(ChestOpenEvt)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
-USER_FUNC(GetChestReward, LW(1))
-IF_SMALL(LW(1), 0)
-    // Multiply by -1 (turning placeholders into valid party slots 1-7).
-    MUL(LW(1), -1)
-    USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
-    USER_FUNC(ttyd::evt_mario::evt_mario_normalize)
-    USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
-    WAIT_MSEC(500)
-    USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, LW(1))
-    // TODO: Reposition partner by box? At origin is fine...
-    USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, 1, 0, 0, 0)
-    RUN_EVT_ID(PartnerFanfareEvt, LW(11))
-    USER_FUNC(ttyd::evt_eff::evt_eff,
-              PTR("sub_bg"), PTR("itemget"), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    USER_FUNC(ttyd::evt_msg::evt_msg_toge, 1, 0, 0, 0)
-    // Prints a custom message; the "joined party" messages aren't loaded anyway.
-    USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("pit_reward_party_join"), 0, 0)
-    CHK_EVT(LW(11), LW(12))
-    IF_EQUAL(LW(12), 1)
-        DELETE_EVT(LW(11))
-        USER_FUNC(ttyd::evt_snd::evt_snd_bgmoff, 0x201)
+USER_FUNC(GetNumChestRewards, LW(13))
+DO(0)
+    SUB(LW(13), 1)
+    IF_SMALL(LW(13), 0)
+        DO_BREAK()
     END_IF()
-    USER_FUNC(ttyd::evt_eff::evt_eff_softdelete, PTR("sub_bg"))
-    USER_FUNC(ttyd::evt_snd::evt_snd_bgmon, 0x120, 0)
-    USER_FUNC(ttyd::evt_snd::evt_snd_bgmon_f, 0x300, PTR("BGM_STG0_100DN1"), 1500)
-    WAIT_MSEC(500)
-    USER_FUNC(ttyd::evt_party::evt_party_run, 0)
-    USER_FUNC(ttyd::evt_party::evt_party_run, 1)
-ELSE()
-    // Spawn the item normally.
-    USER_FUNC(
-        ttyd::evt_mobj::evt_mobj_get_position, PTR("box"), LW(10), LW(11), LW(12))
-    USER_FUNC(
-        ttyd::evt_item::evt_item_entry, PTR("item"),
-        LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
-    USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
-    USER_FUNC(ttyd::evt_item::evt_item_get_item, PTR("item"))
-    // If the item was a Crystal Star / Magical Map, unlock its Star Power.
-    // TODO: The pause menu does not properly display SP moves out of order.
-    USER_FUNC(AddItemStarPower, LW(1))
-END_IF()
+    USER_FUNC(GetChestReward, LW(1))
+    // If reward < 0, then reward a partner (-1 to -7 = partners 1 to 7).
+    IF_SMALL(LW(1), 0)
+        MUL(LW(1), -1)
+        WAIT_MSEC(100)  // If the second reward
+        USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
+        USER_FUNC(ttyd::evt_mario::evt_mario_normalize)
+        USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
+        WAIT_MSEC(500)
+        USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, LW(1))
+        // TODO: Reposition partner by box? At origin is fine...
+        USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, LW(1), 0, 0, 0)
+        RUN_EVT_ID(PartnerFanfareEvt, LW(11))
+        USER_FUNC(
+            ttyd::evt_eff::evt_eff,
+            PTR("sub_bg"), PTR("itemget"), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        USER_FUNC(ttyd::evt_msg::evt_msg_toge, 1, 0, 0, 0)
+        USER_FUNC(
+            ttyd::evt_msg::evt_msg_print, 0, PTR("pit_reward_party_join"), 0, 0)
+        CHK_EVT(LW(11), LW(12))
+        IF_EQUAL(LW(12), 1)
+            DELETE_EVT(LW(11))
+            USER_FUNC(ttyd::evt_snd::evt_snd_bgmoff, 0x201)
+        END_IF()
+        USER_FUNC(ttyd::evt_eff::evt_eff_softdelete, PTR("sub_bg"))
+        USER_FUNC(ttyd::evt_snd::evt_snd_bgmon, 0x120, 0)
+        USER_FUNC(
+            ttyd::evt_snd::evt_snd_bgmon_f, 0x300, PTR("BGM_STG0_100DN1"), 1500)
+        WAIT_MSEC(500)
+        USER_FUNC(ttyd::evt_party::evt_party_run, 0)
+        USER_FUNC(ttyd::evt_party::evt_party_run, 1)
+    ELSE()
+        // Reward is an item; spawn it item normally.
+        USER_FUNC(
+            ttyd::evt_mobj::evt_mobj_get_position,
+            PTR("box"), LW(10), LW(11), LW(12))
+        USER_FUNC(
+            ttyd::evt_item::evt_item_entry,
+            PTR("item"), LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
+        WAIT_MSEC(300)  // If the second reward
+        USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
+        USER_FUNC(ttyd::evt_item::evt_item_get_item, PTR("item"))
+        // If the item was a Crystal Star / Magical Map, unlock its Star Power.
+        // TODO: The pause menu does not properly display SP moves out of order.
+        USER_FUNC(AddItemStarPower, LW(1))
+    END_IF()
+WHILE()
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
 RETURN()
 EVT_END()
@@ -1586,6 +1598,13 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 
 EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
     evtSetValue(evt, evt->evtArguments[0], ++g_Randomizer->state_.floor_);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
+    int32_t num_rewards = 1;
+    if (g_Randomizer->state_.floor_ % 50 == 49) num_rewards = 2;
+    evtSetValue(evt, evt->evtArguments[0], num_rewards);
     return 2;
 }
 
