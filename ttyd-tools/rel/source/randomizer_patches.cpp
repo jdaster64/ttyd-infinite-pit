@@ -49,6 +49,7 @@
 #include <ttyd/seqdrv.h>
 #include <ttyd/sound.h>
 #include <ttyd/statuswindow.h>
+#include <ttyd/swdrv.h>
 #include <ttyd/system.h>
 #include <ttyd/unit_bomzou.h>
 #include <ttyd/unit_party_christine.h>
@@ -133,6 +134,7 @@ int32_t(*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
 const char*         g_AdditionalModuleToLoad = nullptr;
 uintptr_t           g_PitModulePtr = 0;
+bool                g_PromptSave = false;
 bool                g_InBattle = false;
 int8_t              g_MaxMoveBadgeCounts[18];
 int8_t              g_CurMoveBadgeCounts[18];
@@ -162,6 +164,7 @@ RETURN()
 EVT_END()
 
 // Event that handles a chest being opened.
+// Rewards the player with an item/partner, or two rewards on boss floors.
 EVT_BEGIN(ChestOpenEvt)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
 USER_FUNC(GetNumChestRewards, LW(13))
@@ -222,7 +225,7 @@ RETURN()
 EVT_END()
 
 // Wrapper for modified chest-opening event.
-EVT_BEGIN(ChestOpenEvtHook) 
+EVT_BEGIN(ChestOpenEvtHook)
 RUN_CHILD_EVT(ChestOpenEvt)
 RETURN()
 EVT_END()
@@ -242,23 +245,33 @@ SET(LW(0), 0)
 RETURN()
 EVT_END()
 
-// Event that increments a separate Pit floor counter, and updates the actual
-// floor counter to be between 81-100 as appropriate if the actual floor > 100.
+// Event that runs before advancing to the next floor.
+// On reward floors, checks to see if the player has claimed their reward, then
+// prompts the player to save.  If conditions are met to continue, increments
+// the floor counter in the randomizer's state, as well as GSW(1321).
 EVT_BEGIN(FloorIncrementEvt)
-USER_FUNC(IncrementInfinitePitFloor, LW(0))
-ADD(GSW(1321), 1)
-IF_LARGE_EQUAL(LW(0), 100)
-    SET(LW(1), LW(0))
-    MOD(LW(1), 10)
-    IF_EQUAL(LW(1), 0)
-        DIV(LW(0), 10)
-        MOD(LW(0), 10)
-        IF_EQUAL(LW(0), 9)
-            SET(GSW(1321), 90)
-        ELSE()
-            SET(GSW(1321), 80)
-        END_IF()
+SET(LW(0), GSW(1321))
+ADD(LW(0), 1)
+MOD(LW(0), 10)
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(CheckRewardClaimed, LW(0))
+    IF_EQUAL(LW(0), 0)
+        // If reward not claimed, disable player from continuing.
+        SET(LW(0), 1)
+        USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
+        WAIT_MSEC(50)
+        USER_FUNC(
+            ttyd::evt_msg::evt_msg_print, 0, PTR("pit_chest_unclaimed"), 0, 0)
+        WAIT_MSEC(50)
+        USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
+    ELSE()
+        // TODO: Check for prompting the user to save.
+        USER_FUNC(IncrementInfinitePitFloor)
     END_IF()
+ELSE()
+    // Set LW(0) back to 0 to allow going through pipe.
+    SET(LW(0), 0)
+    USER_FUNC(IncrementInfinitePitFloor)
 END_IF()
 RETURN()
 EVT_END()
@@ -425,6 +438,14 @@ void OnModuleLoaded(OSModuleInfo* module) {
                 }
                 ttyd::evt_badgeshop::badge_bottakuru100_table[i] = item;
             }
+        }
+        
+        // If not reward floor, reset Pit-related flags, and reset save prompt.
+        if (g_Randomizer->state_.floor_ % 10 != 9) {
+            for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
+                ttyd::swdrv::swClear(i);
+            }
+            g_PromptSave = true;
         }
         
         g_PitModulePtr = module_ptr;
@@ -943,6 +964,8 @@ const char* GetReplacementMessage(const char* msg_key) {
         return "<system>\n<p>\nYou got a new party member!\n<k>";
     } else if (!strcmp(msg_key, "pit_disabled_return")) {
         return "<system>\n<p>\nYou can't leave the Infinite Pit!\n<k>";
+    } else if (!strcmp(msg_key, "pit_chest_unclaimed")) {
+        return "<system>\n<p>\nYou haven't claimed your\nreward!\n<k>";
     } else if (!strcmp(msg_key, "msg_jon_kanban_1")) {
         sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
                 g_Randomizer->state_.floor_ + 1);
@@ -1596,11 +1619,6 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     return 2;
 }
 
-EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
-    evtSetValue(evt, evt->evtArguments[0], ++g_Randomizer->state_.floor_);
-    return 2;
-}
-
 EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
     int32_t num_rewards = 1;
     if (g_Randomizer->state_.floor_ % 50 == 49) num_rewards = 2;
@@ -1610,6 +1628,34 @@ EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
 
 EVT_DEFINE_USER_FUNC(GetChestReward) {
     evtSetValue(evt, evt->evtArguments[0], PickChestReward());
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
+    bool reward_claimed = false;
+    for (uint32_t i = 0x13d3; i <= 0x13dc; ++i) {
+        if (ttyd::swdrv::swGet(i)) reward_claimed = true;
+    }
+    evtSetValue(evt, evt->evtArguments[0], reward_claimed);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(CheckPromptSave) {
+    evtSetValue(evt, evt->evtArguments[0], g_PromptSave);
+    g_PromptSave = false;
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
+    int32_t actual_floor = ++g_Randomizer->state_.floor_;
+    // Update the floor number used by the game.
+    // Floors 101+ are treated as looping 81-90 nine times + 91-100.
+    int32_t gsw_floor = actual_floor;
+    if (actual_floor >= 100) {
+        gsw_floor = actual_floor % 10;
+        gsw_floor += ((actual_floor / 10) % 10 == 9) ? 90 : 80;
+    }
+    ttyd::swdrv::swByteSet(1321, gsw_floor);
     return 2;
 }
 

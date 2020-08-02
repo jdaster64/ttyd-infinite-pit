@@ -590,6 +590,13 @@
 8008558c:setupDataCheck
 80085648:setupDataLoad
 
+// swdrv.o
+8008582c:swByteGet
+80085850:swByteSet
+80085874:swClear
+800858b4:swGet
+800858fc:swSet
+
 // seq_logo.o
 // 800859f8:progDisp
 // unused:arcLoad

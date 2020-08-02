@@ -81,14 +81,20 @@ EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
 // battle conditions.
 EVT_DECLARE_USER_FUNC(SetEnemyNpcBattleInfo, 2)
 
-// Increments and returns the current Pit floor (zero-indexed).
-EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 1)
-
 // Returns the number of chest rewards to spawn based on the floor number.
 EVT_DECLARE_USER_FUNC(GetNumChestRewards, 1)
 
 // Returns the item or partner to spawn from the chest on a Pit reward floor.
 EVT_DECLARE_USER_FUNC(GetChestReward, 1)
+
+// Returns whether or not the current floor's reward has been claimed.
+EVT_DECLARE_USER_FUNC(CheckRewardClaimed, 1)
+
+// Returns whether or not to prompt the player to save.
+EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
+
+// Increments the actual current Pit floor, and the corresponding GSW value.
+EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
 
 // If the item is a Crystal Star, gives the player +1.00 max SP and
 // the respective Star Power.
