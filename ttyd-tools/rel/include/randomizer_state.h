@@ -10,10 +10,15 @@ struct RandomizerState {
     uint32_t    rng_state_;
     int32_t     floor_;
     uint32_t    reward_flags_;
+    int16_t     charlieton_items_[6];
     uint32_t    debug_[4];
 
     // Initializes the randomizer state based on the current save file.
-    void InitializeRandomizerState(bool new_save);
+    // Returns whether the randomizer was successfully initialized.
+    bool Load(bool new_save);
+    // Copies the randomizer state to g_MarioSt so it can be saved.
+    void Save();
+    
     // Seeds the randomizer's RNG state with an input string.
     void SeedRng(const char* str);
     // Increments the RNG state and returns a value in a range [0, n).

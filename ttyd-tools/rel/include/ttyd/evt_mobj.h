@@ -8,6 +8,7 @@ namespace ttyd::evt_mobj {
 
 extern "C" {
 
+// .text
 // evt_mobj_koopa_pole
 // mobj_koopa_pole_evt
 // kpa_clear_jump_data
@@ -105,6 +106,9 @@ EVT_DECLARE_USER_FUNC(evt_mobj_get_position, 4)
 // evt_mobj_check
 // evt_mobj_delete
 // evt_mobj_entry
+
+// .data
+extern int32_t mobj_save_blk_sysevt[1];
 
 }
 

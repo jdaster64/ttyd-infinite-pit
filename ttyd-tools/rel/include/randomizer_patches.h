@@ -60,6 +60,9 @@ void DisplayStarPowerNumber();
 // since it wasn't built around receiving Star Powers out of order).
 void DisplayStarPowerOrbs(double x, double y, int32_t star_power);
 
+// Replaces Pit Charlieton's stock with items from the random pool.
+void ReplaceCharlietonStock();
+
 // Returns a string to display in place of the usual one for a given key,
 // or nullptr if the default should be printed.
 const char* GetReplacementMessage(const char* msg_key);

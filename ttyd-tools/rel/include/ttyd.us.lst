@@ -467,8 +467,11 @@
 8005e0c0:marioGetPtr
 
 // evt_mobj.o
+// .text
 8006b948:evt_mobj_wait_animation_end
 8006c03c:evt_mobj_get_position
+// .data
+8030b4ec:mobj_save_blk_sysevt
 
 // evt_eff.o
 8006c76c:evt_eff_softdelete
@@ -614,6 +617,9 @@
 800a9f98:evt_item_get_item
 800aa400:evt_item_entry
 
+// cardmgr.o
+800b2388:cardCopy2Main
+
 // evt_msg.o
 800d2008:evt_msg_toge
 800d2460:evt_msg_print_insert
@@ -653,6 +659,9 @@
 800eae70:evt_party_run
 800eb3f8:evt_party_get_pos
 800eb87c:evt_party_set_camid
+
+// event.o
+800ee688:stg0_00_init
 
 // evt_pouch.o
 800f07d0:evt_pouch_get_yoshiname
@@ -1410,6 +1419,18 @@
 80419e5c:badge_bteresa_table_card_silver
 80419e70:badge_bteresa_table_card_gold
 80419e84:badge_bteresa_table_card_platinum
+
+// evt_memcard.o
+// .text 
+// 8025c2bc:memcard_create
+// .data
+803b9b38:evt_memcard_nosave
+803b9b84:evt_memcard_check
+803ba08c:evt_memcard_start
+803ba10c:evt_memcard_delete
+803ba24c:evt_memcard_copy
+803ba444:evt_memcard_save
+803bac3c:unk_0x803bac3c
 
 // runtime.c
 802648BC:_savefpr_14

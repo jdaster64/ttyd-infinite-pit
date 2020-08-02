@@ -265,8 +265,15 @@ IF_EQUAL(LW(0), 0)
         WAIT_MSEC(50)
         USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
     ELSE()
-        // TODO: Check for prompting the user to save.
-        USER_FUNC(IncrementInfinitePitFloor)
+        USER_FUNC(CheckPromptSave, LW(0))
+        IF_EQUAL(LW(0), 1)
+            // If prompting the user to save, disable player from continuing.
+            RUN_CHILD_EVT(ttyd::evt_mobj::mobj_save_blk_sysevt)
+            SET(LW(0), 1)
+        ELSE()    
+            SET(LW(0), 0)
+            USER_FUNC(IncrementInfinitePitFloor)
+        END_IF()
     END_IF()
 ELSE()
     // Set LW(0) back to 0 to allow going through pipe.
@@ -420,32 +427,21 @@ void OnModuleLoaded(OSModuleInfo* module) {
             module_ptr + kPitCharlietonSpawnChanceOffset) = 1000;
         *reinterpret_cast<int32_t*>(
             module_ptr + kPitMoverLastSpawnFloorOffset) = 0;
-            
-        // Replace Charlieton's stock with items from the random pool.
-        for (int32_t i = 0; i < 6; ++i) {
-            bool found = true;
-            while (found) {
-                found = false;
-                // Two normal items, two recipe items, two badges.
-                int32_t item = PickRandomItem(
-                    /* seeded = */ true, i < 2, i & 2, i >= 4, 0);
-                // Make sure no duplicate items exist.
-                for (int32_t j = 0; j < i; ++j) {
-                    if (ttyd::evt_badgeshop::badge_bottakuru100_table[j]
-                            == item) {
-                        found = true;
-                    }
-                }
-                ttyd::evt_badgeshop::badge_bottakuru100_table[i] = item;
-            }
-        }
         
         // If not reward floor, reset Pit-related flags, and reset save prompt.
         if (g_Randomizer->state_.floor_ % 10 != 9) {
             for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
                 ttyd::swdrv::swClear(i);
             }
+            for (int32_t i = 0; i < 6; ++i) {
+                g_Randomizer->state_.charlieton_items_[i] = 0;
+            }
             g_PromptSave = true;
+        }
+        // Otherwise, reset Charlieton's stock, using items from the randomizer
+        // state if continuing from an existing save file.
+        else {
+            ReplaceCharlietonStock();
         }
         
         g_PitModulePtr = module_ptr;
@@ -954,6 +950,36 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
     }
 }
 
+void ReplaceCharlietonStock() {
+    int16_t* saved_items = g_Randomizer->state_.charlieton_items_;
+    // If there are already items from a previous save, use and clear them.
+    if (saved_items[0]) {
+        for (int32_t i = 0; i < 6; ++i) {
+            ttyd::evt_badgeshop::badge_bottakuru100_table[i] = saved_items[i];
+            saved_items[i] = 0;
+        }
+    } else {
+        for (int32_t i = 0; i < 6; ++i) {
+            bool found = true;
+            while (found) {
+                found = false;
+                // Two normal items, two recipe items, two badges.
+                int32_t item = PickRandomItem(
+                    /* seeded = */ true, i < 2, i & 2, i >= 4, 0);
+                // Make sure no duplicate items exist.
+                for (int32_t j = 0; j < i; ++j) {
+                    if (ttyd::evt_badgeshop::badge_bottakuru100_table[j]
+                            == item) {
+                        found = true;
+                    }
+                }
+                ttyd::evt_badgeshop::badge_bottakuru100_table[i] = item;
+                saved_items[i] = item;
+            }
+        }
+    }
+}
+
 const char* GetReplacementMessage(const char* msg_key) {
     // Do not use for more than one custom message at a time!
     static char buf[128];
@@ -1120,6 +1146,7 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::INK_PASTA].buy_price = 30;
     itemDataTable[ItemType::INK_PASTA].sell_price = 20;
     itemDataTable[ItemType::KOOPA_CURSE].icon_id = kKoopaCurseIconId;
+    itemDataTable[ItemType::PEEKABOO].bp_cost = 0;
     itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
     // Because, let's be honest.
     itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
@@ -1642,7 +1669,10 @@ EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
 
 EVT_DEFINE_USER_FUNC(CheckPromptSave) {
     evtSetValue(evt, evt->evtArguments[0], g_PromptSave);
-    g_PromptSave = false;
+    if (g_PromptSave) {
+        g_Randomizer->state_.Save();
+        g_PromptSave = false;
+    }
     return 2;
 }
 

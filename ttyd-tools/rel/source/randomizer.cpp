@@ -15,7 +15,9 @@
 #include <ttyd/battle_information.h>
 #include <ttyd/battle_seq.h>
 #include <ttyd/battle_unit.h>
+#include <ttyd/cardmgr.h>
 #include <ttyd/dispdrv.h>
+#include <ttyd/event.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/msgdrv.h>
 #include <ttyd/seqdrv.h>
@@ -40,6 +42,8 @@ using ::ttyd::npcdrv::FbatBattleInformation;
 using ::ttyd::seqdrv::SeqIndex;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
+void (*g_stg0_00_init_trampoline)(void) = nullptr;
+void (*g_cardCopy2Main_trampoline)(int32_t) = nullptr;
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
@@ -90,9 +94,22 @@ Randomizer::Randomizer() {}
 
 void Randomizer::Init() {
     g_Randomizer = this;
-    state_.InitializeRandomizerState(/* new_save = */ true);
     
     // Hook functions with custom logic.
+    
+    g_stg0_00_init_trampoline = patch::hookFunction(
+        ttyd::event::stg0_00_init, []() {
+            // TODO: Replace the original logic for stg0_00_init completely.
+            g_stg0_00_init_trampoline();
+            g_Randomizer->state_.Load(/* new_save = */ true);
+        });
+        
+    g_cardCopy2Main_trampoline = patch::hookFunction(
+        ttyd::cardmgr::cardCopy2Main, [](int32_t save_file_number) {
+            g_cardCopy2Main_trampoline(save_file_number);
+            // TODO: Do something if the save file cannot load successfully.
+            g_Randomizer->state_.Load(/* new_save = */ false);
+        });
     
     g_OSLink_trampoline = patch::hookFunction(
         gc::OSLink::OSLink, [](OSModuleInfo* new_module, void* bss) {
