@@ -27,7 +27,7 @@ extern "C" {
 // badgeShop_bteresaGeneration
 // badgeShop_bottakuruGeneration
 // bottakuruComp
-// badgeShop_init
+void badgeShop_init();
 // getBadgeBteresaTableMaxCount
 // getBadgeStarmaniacTableMaxCount
 // getBadgeBottakuru100TableMaxCount

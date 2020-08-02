@@ -27,6 +27,7 @@
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
 #include <ttyd/evt_item.h>
+#include <ttyd/evt_johoya.h>
 #include <ttyd/evt_mario.h>
 #include <ttyd/evt_mobj.h>
 #include <ttyd/evt_msg.h>
@@ -34,6 +35,7 @@
 #include <ttyd/evt_party.h>
 #include <ttyd/evt_pouch.h>
 #include <ttyd/evt_snd.h>
+#include <ttyd/evt_yuugijou.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
 #include <ttyd/filemgr.h>
@@ -374,6 +376,50 @@ const int32_t HammerBrosHpCheck[] = {
     IF_SMALL(LW(0), 50)
 };
 
+}
+
+void InitializeOnNewFile() {
+    // TODO: Make this not re-allocate the pouch if an alloc already exists.
+    ttyd::mario_pouch::pouchInit();
+    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    // Initialize other systems / data.
+    ttyd::evt_badgeshop::badgeShop_init();
+    ttyd::evt_yuugijou::yuugijou_init();
+    ttyd::evt_johoya::johoya_init();
+    
+    ttyd::mario::marioSetCharMode(0);
+    ttyd::statuswindow::statusWinForceUpdate();
+    ttyd::mariost::g_MarioSt->lastFrameRetraceLocalTime = 0ULL;
+    ttyd::mariost::g_MarioSt->flags &= ~1U;
+    
+    // Initializes the randomizer's state and copies it to the pouch.
+    g_Randomizer->state_.Load(/* new_save = */ true);
+    g_Randomizer->state_.Save();
+    
+    // Update any stats / equipment / flags as necessary.
+    ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
+    ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);
+    ttyd::mario_pouch::pouchSetCoin(0);
+    ttyd::mario_pouch::pouchGetItem(ItemType::PEEKABOO);
+    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::PEEKABOO);
+    ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
+    ttyd::mario_pouch::pouchGetItem(ItemType::W_EMBLEM);
+    ttyd::mario_pouch::pouchGetItem(ItemType::FP_PLUS);
+    ttyd::mario_pouch::pouchGetItem(ItemType::HP_PLUS);
+    pouch.unallocated_bp = 6;
+    pouch.total_bp = 6;
+    ttyd::mario_pouch::pouchReviseMarioParam();
+    // Assign Yoshi a random color.
+    ttyd::mario_pouch::pouchSetPartyColor(4, g_Randomizer->state_.Rand(7));
+    
+    // Set story progress / some tutorial flags.
+    ttyd::swdrv::swInit();
+    ttyd::swdrv::swByteSet(0, 405);     // post-game story progress
+    ttyd::swdrv::swSet(0xe9);           // Save Block tutorial
+    ttyd::swdrv::swSet(0xea);           // Heart Block tutorial
+    ttyd::swdrv::swSet(0xeb);           // Item tutorial
+    ttyd::swdrv::swSet(0xec);           // Save Block tutorial-related
+    ttyd::swdrv::swSet(0x15d9);         // Star piece in Pit room collected
 }
 
 void OnModuleLoaded(OSModuleInfo* module) {
@@ -996,6 +1042,18 @@ const char* GetReplacementMessage(const char* msg_key) {
         sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
                 g_Randomizer->state_.floor_ + 1);
         return buf;
+    } else if (!strcmp(msg_key, "msg_jon_kanban_3")) {
+        sprintf(buf, "<kanban>\nYour seed: %s\n"
+            "(Name your file \"random\" or \"\xde\"\n"
+            "to have one picked randomly.)<k>",
+            ttyd::mariost::g_MarioSt->saveFileName);
+        return buf;
+    } else if (!strcmp(msg_key, "tik_06_02")) {
+        sprintf(buf, "<kanban>\n"
+            "Thanks for playing the PM:TTYD\n"
+            "Infinite Pit mod! Check the \n"
+            "sign in back for your seed.\n<k>");
+        return buf;
     } else if (!strcmp(msg_key, "in_cake")) {
         return "Strawberry Cake";
     } else if (!strcmp(msg_key, "msg_cake")) {
@@ -1449,6 +1507,17 @@ void ApplyItemAndAttackPatches() {
 }
 
 void ApplyMiscPatches() {
+    // Skip the calls to blank out all GSW(F)s when loading a new file.
+    const int32_t kGswfInitHookAddr1 = 0x800f6358;      // loading new file
+    const int32_t kGswfInitHookAddr2 = 0x800f3ecc;      // continuing new file
+    const uint32_t kSkipGswfInitOpcode = 0x48000010;    // b 0x10
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kGswfInitHookAddr1),
+        &kSkipGswfInitOpcode, sizeof(kSkipGswfInitOpcode));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kGswfInitHookAddr2),
+        &kSkipGswfInitOpcode, sizeof(kSkipGswfInitOpcode));
+    
     // Apply patches to seq_mapChangeMain code to run additional logic when
     // loading or unloading a map.
     const int32_t kMapLoadBeginHookAddress = 0x80007ef0;

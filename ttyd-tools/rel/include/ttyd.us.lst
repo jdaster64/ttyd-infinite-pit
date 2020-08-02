@@ -599,6 +599,7 @@
 80085874:swClear
 800858b4:swGet
 800858fc:swSet
+80085980:swInit
 
 // seq_logo.o
 // 800859f8:progDisp
@@ -627,6 +628,8 @@
 
 // mario_pouch.o
 // .text
+800d2e28:pouchSetPartyColor
+800d328c:pouchEquipBadgeID
 800d3300:pouchEquipCheckBadge
 800d35a8:pouchReviseMarioParam
 800d3bb8:pouchGetMaxAP
@@ -640,7 +643,9 @@
 800d3d00:pouchSetHP
 800d3d24:pouchGetMaxHP
 800d3d30:pouchGetHP
+800d3dd4:pouchSetCoin
 800d50cc:pouchGetItem
+800d59c8:pouchInit
 800d5eb0:pouchGetPtr
 // .data
 80315380:_party_max_hp_table
@@ -1052,6 +1057,7 @@
 
 // statuswindow.o
 // .text
+8013c110:statusWinForceUpdate
 8013cb24:statusWinDisp
 8013d440:gaugeDisp
 // .data
@@ -1402,6 +1408,7 @@
 
 // evt_badgeshop.o
 // .text
+801fad00:badgeShop_init
 // 801fae60:getBadgeBottakuru100TableMaxCount
 // .data
 80419d90:badge_special_table
@@ -1419,6 +1426,12 @@
 80419e5c:badge_bteresa_table_card_silver
 80419e70:badge_bteresa_table_card_gold
 80419e84:badge_bteresa_table_card_platinum
+
+// evt_johoya.o
+801fb068:johoya_init
+
+// evt_yuugijou.o
+80229bcc:yuugijou_init
 
 // evt_memcard.o
 // .text 
@@ -1545,7 +1558,7 @@
 8029dd30:PSMTXCopy
 8029e230:PSMTXTrans
 
-// OSLink.c
+// os.a OSLink.c
 8029A340:OSNotifyLink
 8029A344:OSNotifyUnlink
 8029A348:Relocate
@@ -1554,6 +1567,13 @@
 8029A908:Undo
 8029AB40:OSUnlink
 8029AD14:__OSModuleInit
+
+// os.a OSTime.c
+8029d84c:OSGetTime
+8029d864:OSGetTick
+8029d86c:__OSGetSystemTime
+8029d8d0:GetDates
+8029da6c:OSTicksToCalendarTime
 
 // si.a
 802bd7b8:SIBusy

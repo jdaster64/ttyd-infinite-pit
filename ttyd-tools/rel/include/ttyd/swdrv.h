@@ -17,7 +17,7 @@ void swClear(uint32_t swfIndex);
 uint32_t swGet(uint32_t swfIndex);
 void swSet(uint32_t swfIndex);
 // swReInit
-// swInit
+void swInit();
 
 }
 

@@ -14,7 +14,7 @@ extern "C" {
 // statusAPBlink
 // statusGetApPos
 // statusWinForceUpdateCoin
-// statusWinForceUpdate
+void statusWinForceUpdate();
 // statusWinCheckUpdate
 // statusWinCheck
 // statusWinDispOff

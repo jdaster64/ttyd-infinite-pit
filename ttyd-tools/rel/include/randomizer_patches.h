@@ -9,7 +9,10 @@
 #include <cstdint>
 
 namespace mod::pit_randomizer {
-
+    
+// Initializes various game data when loading a new file; analogous to /
+// replaces the behavior of stg0_00_init.
+void InitializeOnNewFile();
 // Code that runs after linking a new module.
 void OnModuleLoaded(gc::OSLink::OSModuleInfo* module);
 // Replaces the existing logic for loading a map.

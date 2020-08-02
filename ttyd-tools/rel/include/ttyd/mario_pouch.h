@@ -65,7 +65,7 @@ static_assert(sizeof(PouchData) == 0x5d4);
 
 // pouchGetYoshiName
 // pouchSetYoshiName
-// pouchSetPartyColor
+void pouchSetPartyColor(int32_t party_member, int32_t color);  // 4 = Yoshi
 // pouchGetPartyColor
 // pouchCheckMail
 // pouchOpenMail
@@ -79,7 +79,7 @@ static_assert(sizeof(PouchData) == 0x5d4);
 // pouchMajinaiInit
 // pouchArriveBadge
 // unk050[US|JP] zz_800d3234_
-// pouchEquipBadgeID
+int32_t pouchEquipBadgeID(int16_t badge_id);
 // pouchEquipCheckBadgeIndex
 int32_t pouchEquipCheckBadge(int16_t badge_id);
 // pouchUnEquipBadgeIndex
@@ -113,7 +113,7 @@ int16_t pouchGetHP();
 // pouchGetStarPiece
 // pouchSetSuperCoin
 // pouchGetSuperCoin
-// pouchSetCoin
+int16_t pouchSetCoin(int16_t coins);
 // pouchAddCoin
 // pouchGetCoin
 // pouchSortItem
@@ -137,7 +137,7 @@ uint32_t pouchGetItem(int32_t item_type);
 // pouchKeepItem
 // pouchHaveItem
 // pouchKeyItem
-// pouchInit
+void pouchInit();
 PouchData* pouchGetPtr();
 
 // Rank 0, 1, 2, max HP per party member.

@@ -27,6 +27,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 
 namespace mod::pit_randomizer {
     
@@ -99,9 +100,8 @@ void Randomizer::Init() {
     
     g_stg0_00_init_trampoline = patch::hookFunction(
         ttyd::event::stg0_00_init, []() {
-            // TODO: Replace the original logic for stg0_00_init completely.
-            g_stg0_00_init_trampoline();
-            g_Randomizer->state_.Load(/* new_save = */ true);
+            // Replaces existing logic, includes loading the randomizer state.
+            InitializeOnNewFile();
         });
         
     g_cardCopy2Main_trampoline = patch::hookFunction(
@@ -124,8 +124,14 @@ void Randomizer::Init() {
         ttyd::seqdrv::seqSetSeq, 
         [](SeqIndex seq, const char* mapName, const char* beroName) {
             OnEnterExitBattle(/* is_start = */ seq == SeqIndex::kBattle);
-            // TODO: Initialize for randomizer if seq/map/bero = start of game.
-            g_seqSetSeq_trampoline(seq, mapName, beroName);
+            // If loading a new file, load the player into the pre-Pit room.
+            if (seq == SeqIndex::kMapChange && !strcmp(mapName, "aaa_00") &&
+                !strcmp(beroName, "prologue")) {
+                g_seqSetSeq_trampoline(
+                    SeqIndex::kMapChange, "tik_06", "e_bero");
+            } else {
+                g_seqSetSeq_trampoline(seq, mapName, beroName);
+            }
         });
         
     g_msgSearch_trampoline = patch::hookFunction(
