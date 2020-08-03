@@ -79,7 +79,7 @@ void DrawDebuggingFunctions() {
     } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
         enemyTypeToTest -= 10;
     }
-    if (enemyTypeToTest > 105) enemyTypeToTest = 105;
+    if (enemyTypeToTest > 101) enemyTypeToTest = 101;
     if (enemyTypeToTest < 1) enemyTypeToTest = 1;
     
     // Print the current enemy type to the screen at all times.
