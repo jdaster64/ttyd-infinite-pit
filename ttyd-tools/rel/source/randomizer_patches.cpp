@@ -400,6 +400,8 @@ void InitializeOnNewFile() {
     ttyd::mario::marioSetCharMode(0);
     ttyd::statuswindow::statusWinForceUpdate();
     ttyd::mariost::g_MarioSt->lastFrameRetraceLocalTime = 0ULL;
+    // Makes Mario spawn walking into the room normally if loading a new file,
+    // rather than in place in the center of the room.
     ttyd::mariost::g_MarioSt->flags &= ~1U;
     
     // Initializes the randomizer's state and copies it to the pouch.
@@ -805,7 +807,7 @@ void UseShineSprite() {
             ++pouch_data->attack_level;
             ++pouch_data->tech_level;
         } else {
-            // TODO: Save the number of HP ups to the randomizer_state.
+            // Increase the Ultra Rank's max HP by 5.
             if (hp_table[2] < 200) hp_table[2] += 5;
         }
         pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
@@ -816,6 +818,8 @@ void UseShineSprite() {
             ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
         pouch_data->current_hp += 5 * hp_plus_p_cnt;
         pouch_data->max_hp += 5 * hp_plus_p_cnt;
+        // Save the partner upgrade count to the randomizer state.
+        ++g_Randomizer->state_.partner_upgrades_[selected_partner_id];
     }
 }
 
@@ -823,7 +827,7 @@ void CheckBattleCondition() {
     auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
     const int32_t item_reward =
         fbat_info->wBattleInfo->pConfiguration->random_item_weight;
-    // Did not win the fight.
+    // Did not win the fight (e.g. ran away).
     if (fbat_info->wResult != 1) return;
     // If condition is a success and rule is not 0, add a bonus item.
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {

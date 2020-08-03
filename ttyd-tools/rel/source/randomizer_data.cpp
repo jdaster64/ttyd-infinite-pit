@@ -129,8 +129,8 @@ const NpcEntTypeInfo kNpcInfo[] = {
 };
 
 const EnemyTypeInfo kEnemyInfo[] = {
-    { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 75, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 55, kHpTables[2], kFpTables[2], -1 },
+    { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 80, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 60, kHpTables[2], kFpTables[2], -1 },
     { BattleUnitType::BANDIT, 274, 12, 6, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::BIG_BANDIT, 129, 15, 6, 0, 1, 5, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::BADGE_BANDIT, 275, 18, 6, 0, 3, 6, kHpTables[0], kFpTables[0], -1 },
@@ -168,7 +168,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::HYPER_BALD_CLEFT, 288, 10, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::DARK_CRAW, 308, 20, 9, 0, 6, 8, kHpTables[3], kFpTables[0], -1 },
     { BattleUnitType::CRAZEE_DAYZEE, 252, 14, 5, 0, 2, 6, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 75, kHpTables[2], kFpTables[4], -1 },
+    { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 80, kHpTables[2], kFpTables[4], -1 },
     { BattleUnitType::FUZZY, 248, 11, 5, 0, 1, 2, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::GREEN_FUZZY, 249, 13, 6, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::FLOWER_FUZZY, 250, 13, 6, 0, 2, 6, kHpTables[0], kFpTables[2], -1 },
@@ -389,7 +389,7 @@ const int8_t kBaseWeights[11][9] = {
 };
 // The target sum of enemy level_offsets for each floor group.
 const int8_t kTargetLevelSums[11] = {
-    10, 14, 18, 22, 25, 28, 31, 34, 37, 40, 50
+    12, 15, 18, 22, 25, 28, 31, 34, 37, 40, 50
 };
 
 // Global structures for holding constructed battle information.
@@ -493,14 +493,14 @@ ModuleId::e SelectEnemies(int32_t floor) {
             const EnemyModuleInfo& emi = kEnemyModuleInfo[idx];
             level_sum += kEnemyInfo[emi.enemy_type_stats_idx].level_offset;
             
-            // If level_sum is sufficiently high for the floor,
-            // occasionally decide to not add any further enemies
-            // (w/the chance of stopping early starting at 50% of target_sum).
-            const int32_t end_chance =
-                (level_sum - target_sum / 2) * 200 / target_sum;
-            if (slot < 4 && static_cast<int32_t>(state.Rand(100)) < end_chance) {
-                for (++slot; slot < 5; ++slot) g_Enemies[slot] = -1;
-                break;
+            // If level_sum is sufficiently high for the floor and not on the
+            // fifth enemy, decide whether to add any further enemies.
+            if (level_sum >= target_sum / 2 && slot < 4) {
+                const int32_t end_chance = level_sum * 100 / target_sum;
+                if (static_cast<int32_t>(state.Rand(100)) < end_chance) {
+                    for (++slot; slot < 5; ++slot) g_Enemies[slot] = -1;
+                    break;
+                }
             }
             
             // Add large additional weight for repeat enemy in subsequent slots,
@@ -654,7 +654,7 @@ void BuildBattle(
     battle_setup->flag_off_loadouts[1].group_data = nullptr;
     battle_setup->flag_off_loadouts[1].stage_data = nullptr;
     // If floor > 100, fix the background to always display the floor 80+ bg.
-    if (floor > 100) {
+    if (floor >= 100) {
         battle_setup->flag_off_loadouts[0].stage_data =
             pit_battle_setups[50].flag_off_loadouts[0].stage_data;
     }
@@ -714,8 +714,11 @@ bool GetEnemyStats(
         } else {
             // Enemies' level will always be the same amount higher than Mario,
             // typically giving 3 ~ 10 EXP depending on strength and group size.
+            // Bosses / special enemies don't get the additional levels.
+            int32_t level_offset = 
+                ei->level_offset + (ei->level_offset > 10 ? 0 : 5);
             *out_level =
-                ttyd::mario_pouch::pouchGetPtr()->level + ei->level_offset + 5;
+                ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
         }
     }
     

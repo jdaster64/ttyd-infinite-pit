@@ -1,5 +1,7 @@
 #include "randomizer_state.h"
 
+#include "randomizer.h"
+
 #include <gc/OSTime.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
@@ -23,6 +25,20 @@ RandomizerState* GetSavedStateLocation() {
         &ttyd::mario_pouch::pouchGetPtr()->stored_items[1]);
 }
 
+// Updates partners' Ultra Rank max HP based how many times each partner
+// has had a Shine Sprite used on them (each after the second adds +5 max HP).
+void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
+    static constexpr const int16_t kDefaultUltraRankMaxHp[] = {
+        30, 25, 40, 30, 35, 30, 25
+    };
+    int16_t* hp_table = ttyd::mario_pouch::_party_max_hp_table + 4;
+    for (int32_t i = 0; i < 7; ++i) {
+        const int32_t addl_hp = partner_upgrades[i] > 2 ? 
+            (partner_upgrades[i] - 2) * 5 : 0;
+        hp_table[i * 4 + 2] = kDefaultUltraRankMaxHp[i] + addl_hp;
+    }
+}
+
 }
 
 bool RandomizerState::Load(bool new_save) {
@@ -31,17 +47,19 @@ bool RandomizerState::Load(bool new_save) {
         
         if (saved_state->version_ == 1) {
             memcpy(this, saved_state, sizeof(RandomizerState));
+            InitPartyMaxHpTable(partner_upgrades_);
             return true;
+        } else {
+            // Version is not compatible with the randomizer; fail to load.
+            return false;
         }
-        // TODO: Failing gracefully w/fallthrough for testing purposes;
-        // failing to load should cause a Game Over in the actual game.
     }
     version_ = 1;
-    for (int32_t i = 0; i < 7; ++i) partner_upgrades_[i] = 0;
     floor_ = 0;
     reward_flags_ = 0x00000000;
     for (int32_t i = 0; i < 6; ++i) charlieton_items_[i] = 0;
-    debug_[0] = 2;
+    for (int32_t i = 0; i < 7; ++i) partner_upgrades_[i] = 0;
+    InitPartyMaxHpTable(partner_upgrades_);
     
     // Seed the rng based on the filename.
     // If the filename is a few variants of "random" or a single 'star',
@@ -63,7 +81,7 @@ bool RandomizerState::Load(bool new_save) {
         // Copy generated filename to MarioSt.
         strcpy(const_cast<char*>(filename), filenameChars);
     }
-    SeedRng(filename);
+    SeedRng(filename);    
     return true;
 }
 

@@ -57,6 +57,9 @@ void (*g_seqSetSeq_trampoline)(SeqIndex, const char*, const char*) = nullptr;
 void (*g_statusWinDisp_trampoline)(void) = nullptr;
 void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 
+bool g_CueGameOver = false;
+bool g_DrawDebug = false;
+
 void DrawTitleScreenInfo() {
     // TODO: Update with final text before release.
     const char* kTitleInfo =
@@ -65,7 +68,7 @@ void DrawTitleScreenInfo() {
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
 }
 
-// TODO: REMOVE, for TESTING ONLY.
+// Handles printing stuff to the screen for debugging purposes; no longer used.
 void DrawDebuggingFunctions() {
     uint32_t& enemyTypeToTest = g_Randomizer->state_.debug_[0];
     
@@ -107,8 +110,10 @@ void Randomizer::Init() {
     g_cardCopy2Main_trampoline = patch::hookFunction(
         ttyd::cardmgr::cardCopy2Main, [](int32_t save_file_number) {
             g_cardCopy2Main_trampoline(save_file_number);
-            // TODO: Do something if the save file cannot load successfully.
-            g_Randomizer->state_.Load(/* new_save = */ false);
+            // If invalid randomizer file loaded, give the player a Game Over.
+            if (!g_Randomizer->state_.Load(/* new_save = */ false)) {
+                g_CueGameOver = true;
+            }
         });
     
     g_OSLink_trampoline = patch::hookFunction(
@@ -124,14 +129,20 @@ void Randomizer::Init() {
         ttyd::seqdrv::seqSetSeq, 
         [](SeqIndex seq, const char* mapName, const char* beroName) {
             OnEnterExitBattle(/* is_start = */ seq == SeqIndex::kBattle);
-            // If loading a new file, load the player into the pre-Pit room.
-            if (seq == SeqIndex::kMapChange && !strcmp(mapName, "aaa_00") &&
+            // Check for failed file load.
+            if (g_CueGameOver) {
+                seq = SeqIndex::kGameOver;
+                mapName = reinterpret_cast<const char*>(1);
+                beroName = 0;
+                g_CueGameOver = false;
+            } else if (
+                seq == SeqIndex::kMapChange && !strcmp(mapName, "aaa_00") && 
                 !strcmp(beroName, "prologue")) {
-                g_seqSetSeq_trampoline(
-                    SeqIndex::kMapChange, "tik_06", "e_bero");
-            } else {
-                g_seqSetSeq_trampoline(seq, mapName, beroName);
+                // If loading a new file, load the player into the pre-Pit room.
+                mapName = "tik_06";
+                beroName = "e_bero";
             }
+            g_seqSetSeq_trampoline(seq, mapName, beroName);
         });
         
     g_msgSearch_trampoline = patch::hookFunction(
@@ -214,8 +225,7 @@ void Randomizer::Draw() {
             RegisterDrawCallback(DrawTitleScreenInfo, CameraId::k2d);
         }
     }
-    // TODO: REMOVE, for TESTING ONLY.
-    if (InMainGameModes()) {
+    if (InMainGameModes() && g_DrawDebug) {
         RegisterDrawCallback(DrawDebuggingFunctions, CameraId::k2d);
     }
 }
