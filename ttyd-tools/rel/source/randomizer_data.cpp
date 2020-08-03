@@ -130,36 +130,36 @@ const NpcEntTypeInfo kNpcInfo[] = {
 
 const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 80, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 60, kHpTables[2], kFpTables[2], -1 },
-    { BattleUnitType::BANDIT, 274, 12, 6, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::BIG_BANDIT, 129, 15, 6, 0, 1, 5, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::BADGE_BANDIT, 275, 18, 6, 0, 3, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::BILL_BLASTER, 254, 10, 0, 3, 0, 6, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::BOMBSHELL_BILL_BLASTER, 256, 15, 0, 5, 0, 10, kHpTables[2], kFpTables[0], -1 },
-    { BattleUnitType::BULLET_BILL, 255, 4, 7, 1, 4, 0, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::BOMBSHELL_BILL, 257, 6, 9, 2, 6, 0, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::BOB_OMB, 283, 10, 6, 2, 2, 4, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::BULKY_BOB_OMB, 304, 12, 4, 2, 2, 4, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::BOB_ULK, 305, 15, 5, 2, 4, 6, kHpTables[3], kFpTables[0], -1 },
-    { BattleUnitType::DULL_BONES, 39, 8, 5, 2, 1, 2, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::RED_BONES, 36, 12, 6, 2, 1, 5, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::DRY_BONES, 196, 12, 6, 3, 3, 7, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::DARK_BONES, 197, 20, 8, 3, 5, 10, kHpTables[1], kFpTables[2], -1 },
-    { BattleUnitType::BOO, 146, 13, 6, 0, 2, 5, kHpTables[0], kFpTables[1], -1 },
-    { BattleUnitType::DARK_BOO, 147, 17, 8, 0, 4, 7, kHpTables[0], kFpTables[1], -1 },
+    { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 60, kHpTables[2], kFpTables[2], 2 },
+    { BattleUnitType::BANDIT, 274, 12, 6, 0, 2, 4, kHpTables[0], kFpTables[0], 5 },
+    { BattleUnitType::BIG_BANDIT, 129, 15, 6, 0, 1, 5, kHpTables[0], kFpTables[0], 5 },
+    { BattleUnitType::BADGE_BANDIT, 275, 18, 6, 0, 3, 6, kHpTables[0], kFpTables[0], 5 },
+    { BattleUnitType::BILL_BLASTER, 254, 10, 0, 3, 0, 6, kHpTables[1], kFpTables[0], 9 },
+    { BattleUnitType::BOMBSHELL_BILL_BLASTER, 256, 15, 0, 5, 0, 10, kHpTables[2], kFpTables[0], 9 },
+    { BattleUnitType::BULLET_BILL, 255, 4, 7, 1, 4, 0, kHpTables[0], kFpTables[0], 9 },
+    { BattleUnitType::BOMBSHELL_BILL, 257, 6, 9, 2, 6, 0, kHpTables[0], kFpTables[0], 9 },
+    { BattleUnitType::BOB_OMB, 283, 10, 7, 2, 2, 5, kHpTables[1], kFpTables[0], 9 },
+    { BattleUnitType::BULKY_BOB_OMB, 304, 12, 4, 2, 2, 5, kHpTables[1], kFpTables[0], 9 },
+    { BattleUnitType::BOB_ULK, 305, 15, 5, 2, 4, 7, kHpTables[3], kFpTables[0], 9 },
+    { BattleUnitType::DULL_BONES, 39, 8, 5, 2, 1, 2, kHpTables[0], kFpTables[0], 4 },
+    { BattleUnitType::RED_BONES, 36, 12, 6, 2, 1, 5, kHpTables[0], kFpTables[0], 4 },
+    { BattleUnitType::DRY_BONES, 196, 12, 6, 3, 3, 7, kHpTables[0], kFpTables[2], 4 },
+    { BattleUnitType::DARK_BONES, 197, 20, 8, 3, 5, 10, kHpTables[1], kFpTables[2], 4 },
+    { BattleUnitType::BOO, 146, 13, 6, 0, 2, 5, kHpTables[0], kFpTables[1], 2 },
+    { BattleUnitType::DARK_BOO, 147, 17, 8, 0, 4, 7, kHpTables[0], kFpTables[1], 2 },
     { BattleUnitType::BRISTLE, 258, 6, 6, 4, 1, 4, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::DARK_BRISTLE, 259, 9, 9, 4, 8, 8, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::HAMMER_BRO, 206, 16, 6, 2, 3, 9, kHpTables[2], kFpTables[1], -1 },
-    { BattleUnitType::BOOMERANG_BRO, 294, 16, 5, 2, 2, 9, kHpTables[2], kFpTables[1], -1 },
-    { BattleUnitType::FIRE_BRO, 293, 16, 4, 2, 1, 9, kHpTables[2], kFpTables[1], -1 },
-    { BattleUnitType::LAVA_BUBBLE, 302, 10, 6, 0, 3, 6, kHpTables[0], kFpTables[1], -1 },
-    { BattleUnitType::EMBER, 159, 13, 6, 0, 3, 6, kHpTables[0], kFpTables[1], -1 },
-    { BattleUnitType::PHANTOM_EMBER, 303, 16, 6, 0, 3, 8, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::BUZZY_BEETLE, 225, 8, 6, 6, 3, 4, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::SPIKE_TOP, 226, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::PARABUZZY, 228, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::SPIKY_PARABUZZY, 227, 8, 6, 6, 3, 6, kHpTables[2], kFpTables[0], -1 },
-    { BattleUnitType::RED_SPIKY_BUZZY, 230, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
+    { BattleUnitType::HAMMER_BRO, 206, 16, 6, 2, 3, 9, kHpTables[2], kFpTables[1], 3 },
+    { BattleUnitType::BOOMERANG_BRO, 294, 16, 5, 2, 2, 9, kHpTables[2], kFpTables[1], 3 },
+    { BattleUnitType::FIRE_BRO, 293, 16, 4, 2, 1, 9, kHpTables[2], kFpTables[1], 3 },
+    { BattleUnitType::LAVA_BUBBLE, 302, 10, 6, 0, 3, 6, kHpTables[0], kFpTables[1], 2 },
+    { BattleUnitType::EMBER, 159, 13, 6, 0, 3, 6, kHpTables[0], kFpTables[1], 2 },
+    { BattleUnitType::PHANTOM_EMBER, 303, 16, 6, 0, 3, 8, kHpTables[0], kFpTables[2], 2 },
+    { BattleUnitType::BUZZY_BEETLE, 225, 8, 6, 6, 3, 4, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::SPIKE_TOP, 226, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::PARABUZZY, 228, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::SPIKY_PARABUZZY, 227, 8, 6, 6, 3, 6, kHpTables[2], kFpTables[0], 7 },
+    { BattleUnitType::RED_SPIKY_BUZZY, 230, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], 7 },
     { BattleUnitType::CHAIN_CHOMP, 301, 10, 8, 6, 6, 6, kHpTables[3], kFpTables[0], -1 },
     { BattleUnitType::RED_CHOMP, 306, 12, 10, 6, 5, 8, kHpTables[2], kFpTables[0], -1 },
     { BattleUnitType::CLEFT, 237, 8, 6, 6, 2, 2, kHpTables[1], kFpTables[0], -1 },
@@ -167,47 +167,47 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::MOON_CLEFT, 235, 12, 8, 6, 5, 6, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::HYPER_BALD_CLEFT, 288, 10, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::DARK_CRAW, 308, 20, 9, 0, 6, 8, kHpTables[3], kFpTables[0], -1 },
-    { BattleUnitType::CRAZEE_DAYZEE, 252, 14, 5, 0, 2, 6, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 80, kHpTables[2], kFpTables[4], -1 },
+    { BattleUnitType::CRAZEE_DAYZEE, 252, 14, 5, 0, 2, 6, kHpTables[0], kFpTables[2], 6 },
+    { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 80, kHpTables[2], kFpTables[4], 6 },
     { BattleUnitType::FUZZY, 248, 11, 5, 0, 1, 2, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::GREEN_FUZZY, 249, 13, 6, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::FLOWER_FUZZY, 250, 13, 6, 0, 2, 6, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::GOOMBA, 214, 10, 6, 0, 1, 2, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::SPIKY_GOOMBA, 215, 10, 6, 0, 1, 3, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::PARAGOOMBA, 216, 10, 6, 0, 1, 3, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::HYPER_GOOMBA, 217, 15, 6, 0, 3, 5, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::HYPER_SPIKY_GOOMBA, 218, 15, 6, 0, 3, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::HYPER_PARAGOOMBA, 219, 15, 6, 0, 3, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::GLOOMBA, 220, 20, 6, 0, 2, 5, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::SPIKY_GLOOMBA, 221, 20, 6, 0, 2, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::PARAGLOOMBA, 222, 20, 6, 0, 2, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::KOOPA_TROOPA, 242, 15, 7, 2, 2, 4, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::PARATROOPA, 243, 15, 7, 2, 2, 5, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::KP_KOOPA, 246, 15, 7, 2, 2, 4, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::KP_PARATROOPA, 247, 15, 7, 2, 2, 5, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::SHADY_KOOPA, 282, 18, 7, 2, 3, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::SHADY_PARATROOPA, 291, 18, 7, 2, 3, 7, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::DARK_KOOPA, 244, 20, 8, 3, 3, 6, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::DARK_PARATROOPA, 245, 20, 8, 3, 3, 7, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::KOOPATROL, 205, 15, 8, 3, 4, 6, kHpTables[3], kFpTables[0], -1 },
-    { BattleUnitType::DARK_KOOPATROL, 307, 25, 10, 3, 5, 10, kHpTables[3], kFpTables[1], -1 },
+    { BattleUnitType::GOOMBA, 214, 10, 6, 0, 1, 2, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::SPIKY_GOOMBA, 215, 10, 6, 0, 1, 3, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::PARAGOOMBA, 216, 10, 6, 0, 1, 3, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::HYPER_GOOMBA, 217, 15, 6, 0, 3, 5, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::HYPER_SPIKY_GOOMBA, 218, 15, 6, 0, 3, 6, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::HYPER_PARAGOOMBA, 219, 15, 6, 0, 3, 6, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::GLOOMBA, 220, 20, 6, 0, 2, 5, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::SPIKY_GLOOMBA, 221, 20, 6, 0, 2, 6, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::PARAGLOOMBA, 222, 20, 6, 0, 2, 6, kHpTables[0], kFpTables[0], 10 },
+    { BattleUnitType::KOOPA_TROOPA, 242, 15, 7, 2, 2, 4, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::PARATROOPA, 243, 15, 7, 2, 2, 5, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::KP_KOOPA, 246, 15, 7, 2, 2, 4, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::KP_PARATROOPA, 247, 15, 7, 2, 2, 5, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::SHADY_KOOPA, 282, 18, 7, 2, 3, 6, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::SHADY_PARATROOPA, 291, 18, 7, 2, 3, 7, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::DARK_KOOPA, 244, 20, 8, 3, 3, 6, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::DARK_PARATROOPA, 245, 20, 8, 3, 3, 7, kHpTables[0], kFpTables[0], 8 },
+    { BattleUnitType::KOOPATROL, 205, 15, 8, 3, 4, 6, kHpTables[3], kFpTables[0], 8 },
+    { BattleUnitType::DARK_KOOPATROL, 307, 25, 10, 3, 5, 10, kHpTables[3], kFpTables[1], 8 },
     { BattleUnitType::LAKITU, 280, 13, 7, 0, 2, 4, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::DARK_LAKITU, 281, 19, 9, 0, 5, 8, kHpTables[2], kFpTables[0], -1 },
     { BattleUnitType::SPINY, 287, 8, 7, 5, 2, 1, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::SKY_BLUE_SPINY, -1, 10, 9, 5, 5, 1, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::RED_MAGIKOOPA, 318, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::WHITE_MAGIKOOPA, 319, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::GREEN_MAGIKOOPA, 320, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::MAGIKOOPA, 321, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::X_NAUT, 271, 12, 7, 0, 3, 4, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::X_NAUT_PHD, 273, 14, 8, 0, 4, 8, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::ELITE_X_NAUT, 272, 16, 9, 2, 5, 8, kHpTables[2], kFpTables[0], -1 },
+    { BattleUnitType::RED_MAGIKOOPA, 318, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::WHITE_MAGIKOOPA, 319, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::GREEN_MAGIKOOPA, 320, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::MAGIKOOPA, 321, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::X_NAUT, 271, 12, 7, 0, 3, 4, kHpTables[0], kFpTables[0], 1 },
+    { BattleUnitType::X_NAUT_PHD, 273, 14, 8, 0, 4, 8, kHpTables[0], kFpTables[2], 1 },
+    { BattleUnitType::ELITE_X_NAUT, 272, 16, 9, 2, 5, 8, kHpTables[2], kFpTables[0], 1 },
     { BattleUnitType::PIDER, 266, 14, 6, 0, 2, 5, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::ARANTULA, 267, 18, 6, 0, 5, 8, kHpTables[2], kFpTables[2], -1 },
-    { BattleUnitType::PALE_PIRANHA, 261, 14, 7, 0, 2, 5, kHpTables[0], kFpTables[1], -1 },
-    { BattleUnitType::PUTRID_PIRANHA, 262, 14, 7, 0, 2, 5, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::FROST_PIRANHA, 263, 16, 7, 0, 3, 7, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::PIRANHA_PLANT, 260, 18, 8, 0, 7, 9, kHpTables[0], kFpTables[4], -1 },
+    { BattleUnitType::PALE_PIRANHA, 261, 14, 7, 0, 2, 5, kHpTables[0], kFpTables[1], 11 },
+    { BattleUnitType::PUTRID_PIRANHA, 262, 14, 7, 0, 2, 5, kHpTables[0], kFpTables[2], 11 },
+    { BattleUnitType::FROST_PIRANHA, 263, 16, 7, 0, 3, 7, kHpTables[0], kFpTables[2], 11 },
+    { BattleUnitType::PIRANHA_PLANT, 260, 18, 8, 0, 7, 9, kHpTables[0], kFpTables[4], 11 },
     { BattleUnitType::POKEY, 233, 12, 7, 0, 3, 4, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::POISON_POKEY, 234, 15, 7, 0, 3, 6, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::DARK_PUFF, 286, 12, 7, 0, 2, 3, kHpTables[0], kFpTables[0], -1 },
@@ -223,12 +223,12 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::WIZZERD, 295, 10, 8, 3, 7, 6, kHpTables[1], kFpTables[1], -1 },
     { BattleUnitType::DARK_WIZZERD, 296, 12, 8, 4, 5, 8, kHpTables[2], kFpTables[2], -1 },
     { BattleUnitType::ELITE_WIZZERD, 297, 14, 8, 5, 7, 10, kHpTables[3], kFpTables[3], -1 },
-    { BattleUnitType::YUX, 268, 8, 5, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::Z_YUX, 269, 10, 6, 0, 4, 6, kHpTables[1], kFpTables[1], -1 },
-    { BattleUnitType::X_YUX, 270, 12, 6, 2, 3, 10, kHpTables[2], kFpTables[2], -1 },
-    { BattleUnitType::MINI_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::MINI_Z_YUX, -1, 2, 0, 0, 0, 0, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::MINI_X_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::YUX, 268, 8, 5, 0, 2, 4, kHpTables[0], kFpTables[0], 1 },
+    { BattleUnitType::Z_YUX, 269, 10, 6, 0, 4, 6, kHpTables[1], kFpTables[1], 1 },
+    { BattleUnitType::X_YUX, 270, 12, 6, 2, 3, 10, kHpTables[2], kFpTables[2], 1 },
+    { BattleUnitType::MINI_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
+    { BattleUnitType::MINI_Z_YUX, -1, 2, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
+    { BattleUnitType::MINI_X_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
     { /* invalid enemy */ },
 };
 
@@ -398,7 +398,7 @@ int32_t g_Enemies[5] = { -1, -1, -1, -1, -1 };
 NpcSetupInfo g_CustomNpc[2];
 BattleUnitSetup g_CustomUnits[6];
 BattleGroupSetup g_CustomBattleParty;
-// AudienceTypeWeights g_CustomAudienceWeights[16];
+int8_t g_CustomAudienceWeights[12];
 
 }
 
@@ -603,7 +603,9 @@ void BuildBattle(
     
     auto& state = g_Randomizer->state_;
     
-    // TODO: Generate custom audience weights.
+    for (int32_t i = 0; i < 12; ++i) g_CustomAudienceWeights[i] = 2;
+    // Make Toads slightly likelier since they're never boosted.
+    g_CustomAudienceWeights[0] = 3;
     for (int32_t i = 0; i < g_NumEnemies; ++i) {
         BattleUnitSetup& custom_unit = g_CustomUnits[i];
         memcpy(&custom_unit, unit_info[i], sizeof(BattleUnitSetup));
@@ -631,6 +633,12 @@ void BuildBattle(
         float offset = i - g_NumEnemies * 0.5f;
         custom_unit.position.x = kEnemyPartyCenterX + offset * kEnemyPartySepX;
         custom_unit.position.z = offset * kEnemyPartySepZ;
+        
+        // If the enemy is related to a particular type of audience member,
+        // increase that audience type's weight.
+        if (enemy_info[i]->audience_type_boosted >= 0) {
+            g_CustomAudienceWeights[enemy_info[i]->audience_type_boosted] += 2;
+        }
     }
     g_CustomBattleParty.num_enemies         = g_NumEnemies;
     g_CustomBattleParty.enemy_data          = g_CustomUnits; 
@@ -658,8 +666,12 @@ void BuildBattle(
         battle_setup->flag_off_loadouts[0].stage_data =
             pit_battle_setups[50].flag_off_loadouts[0].stage_data;
     }
-    
-    // TODO: other battle setup data tweaks (audience makeup, etc.)?
+    // Set the battle's audience weights based on the custom ones set above.
+    for (int32_t i = 0; i < 12; ++i) {
+        auto& weights = battle_setup->audience_type_weights[i];
+        weights.min_weight = g_CustomAudienceWeights[i];
+        weights.max_weight = g_CustomAudienceWeights[i];
+    }
 }
 
 // Stat weights as percentages for certain Pit floors (00s, 10s, 20s, ... 90s).
