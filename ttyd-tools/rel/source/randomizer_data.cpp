@@ -149,9 +149,9 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::DARK_BOO, 147, 17, 8, 0, 4, 7, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::BRISTLE, 258, 6, 6, 4, 1, 4, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::DARK_BRISTLE, 259, 9, 9, 4, 8, 8, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::HAMMER_BRO, 206, 16, 6, 2, 3, 8, kHpTables[2], kFpTables[1], -1 },
-    { BattleUnitType::BOOMERANG_BRO, 294, 16, 5, 2, 2, 8, kHpTables[2], kFpTables[1], -1 },
-    { BattleUnitType::FIRE_BRO, 293, 16, 4, 2, 1, 8, kHpTables[2], kFpTables[1], -1 },
+    { BattleUnitType::HAMMER_BRO, 206, 16, 6, 2, 3, 9, kHpTables[2], kFpTables[1], -1 },
+    { BattleUnitType::BOOMERANG_BRO, 294, 16, 5, 2, 2, 9, kHpTables[2], kFpTables[1], -1 },
+    { BattleUnitType::FIRE_BRO, 293, 16, 4, 2, 1, 9, kHpTables[2], kFpTables[1], -1 },
     { BattleUnitType::LAVA_BUBBLE, 302, 10, 6, 0, 3, 6, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::EMBER, 159, 13, 6, 0, 3, 6, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::PHANTOM_EMBER, 303, 16, 6, 0, 3, 8, kHpTables[0], kFpTables[2], -1 },
@@ -195,9 +195,9 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::DARK_LAKITU, 281, 19, 9, 0, 5, 8, kHpTables[2], kFpTables[0], -1 },
     { BattleUnitType::SPINY, 287, 8, 7, 5, 2, 2, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::SKY_BLUE_SPINY, -1, 10, 9, 5, 5, 4, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::RED_MAGIKOOPA, 318, 15, 7, 0, 4, 6, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::WHITE_MAGIKOOPA, 319, 15, 7, 0, 4, 6, kHpTables[0], kFpTables[3], -1 },
-    { BattleUnitType::GREEN_MAGIKOOPA, 320, 15, 7, 0, 4, 6, kHpTables[0], kFpTables[3], -1 },
+    { BattleUnitType::RED_MAGIKOOPA, 318, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
+    { BattleUnitType::WHITE_MAGIKOOPA, 319, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
+    { BattleUnitType::GREEN_MAGIKOOPA, 320, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
     { BattleUnitType::MAGIKOOPA, 321, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
     { BattleUnitType::X_NAUT, 271, 12, 7, 0, 3, 4, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::X_NAUT_PHD, 273, 14, 8, 0, 4, 8, kHpTables[0], kFpTables[2], -1 },
@@ -602,12 +602,21 @@ void BuildBattle(
         
         // Special case: Goombas in modules GON and GRA need to be linked to
         // their correct unit_kind, since they weren't actually used in battles.
-        if (g_Enemies[i] == 51) {
+        int32_t etype = g_Enemies[i];
+        if (etype == 51) {
             custom_unit.unit_kind_params =
                 reinterpret_cast<BattleUnitKind*>(0x805ba9a0 + 0x1dcd8);
-        } else if (g_Enemies[i] == 57) {
+        } else if (etype == 57) {
             custom_unit.unit_kind_params =
                 reinterpret_cast<BattleUnitKind*>(0x805ba9a0 + 0xa0e8);
+        }
+        
+        // Make Swoopers never hang from ceiling, and Magikoopas sometimes fly,
+        // but only if they're not the front enemy in the lineup.
+        if (etype == 82 || etype == 96 || etype == 41 || etype == 50) {
+            custom_unit.unit_work[0] = 0;
+        } else if (etype == 76 || etype == 77 || etype == 78 || etype == 67) {
+            custom_unit.unit_work[0] = state.Rand(i > 0 ? 2 : 1);
         }
         
         // Position the enemies in standard spacing.

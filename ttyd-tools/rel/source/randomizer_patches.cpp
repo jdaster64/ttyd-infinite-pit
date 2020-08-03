@@ -449,13 +449,8 @@ void OnModuleLoaded(OSModuleInfo* module) {
         boss_bero->out_evt_code = reinterpret_cast<void*>(
             module_ptr + kPitFloorIncrementEvtOffset);
         
-        // Update the actual pit floor in tandem with GW(1321).
-        // TODO: Remove this hack to initialize the pit floor once proper
-        // initialization code is finished.
-        if (g_Randomizer->state_.floor_ <= 0) {
-            g_Randomizer->state_.floor_ =
-                reinterpret_cast<uint8_t*>(g_MarioSt)[0xaa1];
-        }
+        // Update the actual Pit floor alongside GSW(1321); also, check for
+        // unclaimed rewards and prompt the player to save on X0 floors.
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + kPitFloorIncrementEvtOffset),
             FloorIncrementEvtHook, sizeof(FloorIncrementEvtHook));
@@ -484,7 +479,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
             }
             g_PromptSave = true;
         }
-        // Otherwise, reset Charlieton's stock, using items from the randomizer
+        // Otherwise, modify Charlieton's stock, using items from the randomizer
         // state if continuing from an existing save file.
         else {
             ReplaceCharlietonStock();
@@ -493,7 +488,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
         g_PitModulePtr = module_ptr;
     } else {
         if (module_id == ModuleId::TIK) {
-            // Make tik_06 (Pit room)'s right exit loop back to itself.
+            // Make tik_06 (pre-Pit room)'s right exit loop back to itself.
             BeroEntry* tik_06_e_bero = reinterpret_cast<BeroEntry*>(
                 module_ptr + kTik06RightBeroEntryOffset);
             tik_06_e_bero->target_map = "tik_06";
