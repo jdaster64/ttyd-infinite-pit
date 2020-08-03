@@ -45,6 +45,25 @@ void CheckBattleCondition();
 // Displays text associated with the battle condition.
 void DisplayBattleCondition();
 
+// Changes an enemy's HP and level, as well as a few other minor changes.
+void AlterUnitKindParams(
+    ttyd::battle_database_common::BattleUnitKind* unit_kind_params);
+// Temporarily changes an enemy's ATK or DEF power, and returns the result
+// of damage calculation with those changes in effect.
+int32_t AlterDamageCalculation(
+    ttyd::battle_unit::BattleWorkUnit* attacker,
+    ttyd::battle_unit::BattleWorkUnit* target,
+    ttyd::battle_unit::BattleWorkUnitPart* target_part,
+    ttyd::battle_database_common::BattleWeapon* weapon,
+    uint32_t* unk0, uint32_t unk1);
+// Does the same, but with FP damage.
+int32_t AlterFpDamageCalculation(
+    ttyd::battle_unit::BattleWorkUnit* attacker,
+    ttyd::battle_unit::BattleWorkUnit* target,
+    ttyd::battle_unit::BattleWorkUnitPart* target_part,
+    ttyd::battle_database_common::BattleWeapon* weapon,
+    uint32_t* unk0, uint32_t unk1);
+
 // Replaces the logic for getting HP, FP, and item drops after a battle.
 void GetDropMaterials(ttyd::npcdrv::FbatBattleInformation* fbat_info);
 
@@ -69,6 +88,9 @@ void ReplaceCharlietonStock();
 // Returns a string to display in place of the usual one for a given key,
 // or nullptr if the default should be printed.
 const char* GetReplacementMessage(const char* msg_key);
+
+// Apply patches related to changing enemy stats.
+void ApplyEnemyStatChangePatches();
 
 // Apply patches related to selecting the power of badge moves in battle.
 void ApplyWeaponLevelSelectionPatches();

@@ -47,17 +47,17 @@ struct NpcEntTypeInfo {
 // Stats for a particular kind of enemy (e.g. Hyper Goomba).
 struct EnemyTypeInfo {
     BattleUnitType::e unit_type;
-    int32_t         npc_tribe_idx;
+    int16_t         npc_tribe_idx;
     // How quickly the enemy's HP, ATK and DEF scale with the floor number.
-    float           hp_scale;
-    float           atk_scale;
-    float           def_scale;
+    int16_t         hp_scale;
+    int16_t         atk_scale;
+    int16_t         def_scale;
     // The reference point used as the enemy's "base" attack power; other
     // attacks will have the same difference in power as in the original game.
     // (e.g. a Hyper Goomba will charge by its attack power + 4).
-    int32_t         atk_base;
+    int16_t         atk_base;
     // The enemy's level will be this much higher than Mario's at base.
-    int32_t         level_offset;
+    int16_t         level_offset;
     // The enemy's HP and FP drop yields (this info isn't in BattleUnitSetup).
     PointDropData*  hp_drop_table;
     PointDropData*  fp_drop_table;
@@ -72,8 +72,8 @@ struct EnemyModuleInfo {
     BattleUnitType::e   unit_type;
     ModuleId::e         module;
     int32_t             battle_unit_setup_offset;
-    int32_t             npc_ent_type_info_idx;
-    int32_t             enemy_type_stats_idx;
+    int16_t             npc_ent_type_info_idx;
+    int16_t             enemy_type_stats_idx;
 };
 
 PointDropData* kHpTables[] = {
@@ -129,8 +129,8 @@ const NpcEntTypeInfo kNpcInfo[] = {
 };
 
 const EnemyTypeInfo kEnemyInfo[] = {
-    { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 80, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 60, kHpTables[2], kFpTables[2], -1 },
+    { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 75, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 55, kHpTables[2], kFpTables[2], -1 },
     { BattleUnitType::BANDIT, 274, 12, 6, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::BIG_BANDIT, 129, 15, 6, 0, 1, 5, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::BADGE_BANDIT, 275, 18, 6, 0, 3, 6, kHpTables[0], kFpTables[0], -1 },
@@ -168,7 +168,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::HYPER_BALD_CLEFT, 288, 10, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::DARK_CRAW, 308, 20, 9, 0, 6, 8, kHpTables[3], kFpTables[0], -1 },
     { BattleUnitType::CRAZEE_DAYZEE, 252, 14, 5, 0, 2, 6, kHpTables[0], kFpTables[2], -1 },
-    { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 80, kHpTables[2], kFpTables[4], -1 },
+    { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 75, kHpTables[2], kFpTables[4], -1 },
     { BattleUnitType::FUZZY, 248, 11, 5, 0, 1, 2, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::GREEN_FUZZY, 249, 13, 6, 0, 2, 4, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::FLOWER_FUZZY, 250, 13, 6, 0, 2, 6, kHpTables[0], kFpTables[2], -1 },
@@ -193,8 +193,8 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::DARK_KOOPATROL, 307, 25, 10, 3, 5, 10, kHpTables[3], kFpTables[1], -1 },
     { BattleUnitType::LAKITU, 280, 13, 7, 0, 2, 4, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::DARK_LAKITU, 281, 19, 9, 0, 5, 8, kHpTables[2], kFpTables[0], -1 },
-    { BattleUnitType::SPINY, 287, 8, 7, 5, 2, 2, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::SKY_BLUE_SPINY, -1, 10, 9, 5, 5, 4, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::SPINY, 287, 8, 7, 5, 2, 1, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::SKY_BLUE_SPINY, -1, 10, 9, 5, 5, 1, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::RED_MAGIKOOPA, 318, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
     { BattleUnitType::WHITE_MAGIKOOPA, 319, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
     { BattleUnitType::GREEN_MAGIKOOPA, 320, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], -1 },
@@ -369,7 +369,7 @@ const int32_t kPresetLoadouts[][5] = {
     { 42, 31, 42, 31, -1 },     // Chain Chomps
     { 68, 67, 66, -1, -1 },     // Koopatrol, Magikoopa, Hammer Bro
     { 84, 85, 86, -1, -1 },     // X-Nauts
-    { 88, 84, 87, 84, 89 },     // Yuxes (with X-Nauts as padding)
+    { 88, 85, 87, 86, 89 },     // Yuxes + X-Nauts
     { 61, 2, 61, 2, 61 },       // Dayzees
 };
 
@@ -386,6 +386,10 @@ const int8_t kBaseWeights[11][9] = {
     { 0, 0, 1, 3, 6, 8, 10, 10, 8 },
     { 0, 0, 1, 2, 5, 7, 10, 10, 10 },
     { 0, 0, 1, 2, 5, 7, 10, 10, 10 },
+};
+// The target sum of enemy level_offsets for each floor group.
+const int8_t kTargetLevelSums[11] = {
+    10, 14, 18, 22, 25, 28, 31, 34, 37, 40, 50
 };
 
 // Global structures for holding constructed battle information.
@@ -462,6 +466,8 @@ ModuleId::e SelectEnemies(int32_t floor) {
                 (emi.module == ModuleId::JON || emi.module == secondary_area)) {
                 int32_t floor_group = floor < 110 ? floor / 10 : 10;
                 base_wt = kBaseWeights[floor_group][ei.level_offset - 2];
+                // Double the base weight if the enemy is from secondary area.
+                if (emi.module == secondary_area && floor >= 30) base_wt <<= 1;
             }
             
             // The 6th slot is used for reference as an unchanging base weight.
@@ -472,7 +478,8 @@ ModuleId::e SelectEnemies(int32_t floor) {
         
         // Pick enemies in weighted fashion, with preference towards repeats.
         int32_t level_sum = 0;
-        const int32_t target_sum = 15 + 3 * (floor / 10);
+        const int32_t target_sum =
+            floor < 100 ? kTargetLevelSums[floor / 10] : kTargetLevelSums[10];
         for (int32_t slot = 0; slot < 5; ++slot) {
             int32_t sum_weights = 0;
             for (int32_t i = 0; i < kNumEnemyTypes; ++i) 
@@ -486,12 +493,13 @@ ModuleId::e SelectEnemies(int32_t floor) {
             const EnemyModuleInfo& emi = kEnemyModuleInfo[idx];
             level_sum += kEnemyInfo[emi.enemy_type_stats_idx].level_offset;
             
-            // If level_sum is sufficiently high for the floor, randomly
-            // decide to not add any further enemies.
+            // If level_sum is sufficiently high for the floor,
+            // occasionally decide to not add any further enemies
+            // (w/the chance of stopping early starting at 50% of target_sum).
             const int32_t end_chance =
                 (level_sum - target_sum / 2) * 200 / target_sum;
-            if (static_cast<int32_t>(state.Rand(100)) < end_chance) {
-                for (; slot < 5; ++slot) g_Enemies[slot] = -1;
+            if (slot < 4 && static_cast<int32_t>(state.Rand(100)) < end_chance) {
+                for (++slot; slot < 5; ++slot) g_Enemies[slot] = -1;
                 break;
             }
             
@@ -652,6 +660,66 @@ void BuildBattle(
     }
     
     // TODO: other battle setup data tweaks (audience makeup, etc.)?
+}
+
+// Stat weights as percentages for certain Pit floors (00s, 10s, 20s, ... 90s).
+// After level 100, ATK and DEF rise by 50% every 100 floors, and HP by 100%.
+const int8_t kStatPercents[10] = { 20, 25, 35, 40, 50, 55, 65, 75, 90, 100 };
+
+bool GetEnemyStats(
+    int32_t unit_type, int32_t* out_hp, int32_t* out_atk, 
+    int32_t* out_def, int32_t* out_level, int32_t base_attack_power) {
+    constexpr const int32_t kNumEnemyTypes =
+        sizeof(kEnemyInfo) / sizeof(EnemyTypeInfo);
+    // Look up the enemy type info w/matching unit_type.
+    const EnemyTypeInfo* ei = nullptr;
+    for (int32_t i = 0; i < kNumEnemyTypes; ++i) {
+        if (kEnemyInfo[i].unit_type == unit_type) {
+            ei = kEnemyInfo + i;
+            break;
+        }
+    }
+    if (!ei) return false;
+    
+    int32_t floor_group = g_Randomizer->state_.floor_ / 10;
+    int32_t base_hp_pct = 
+        floor_group > 9 ?
+            100 + (floor_group - 9) * 10 : kStatPercents[floor_group];
+    int32_t base_atkdef_pct = 
+        floor_group > 9 ?
+            100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
+            
+    if (out_hp) {
+        int32_t hp = (ei->hp_scale * base_hp_pct + 50) / 100;
+        *out_hp = hp < 1 ? 1 : hp;
+    }
+    if (out_atk) {
+        int32_t atk = (ei->atk_scale * base_atkdef_pct + 50) / 100;
+        atk += base_attack_power - ei->atk_base;
+        *out_atk = atk < 1 ? 1 : atk;
+    }
+    if (out_def) {
+        if (ei->def_scale == 0) {
+            *out_def = 0;
+        } else {
+            // Enemies with def_scale > 0 should always have at least 1 DEF.
+            int32_t def = (ei->def_scale * base_atkdef_pct + 50) / 100;
+            *out_def = def < 1 ? 1 : def;
+        }
+    }
+    if (out_level) {
+        if (ei->level_offset == 0) {
+            // Enemies like Mini-Yuxes should never grant EXP.
+            *out_level = 0;
+        } else {
+            // Enemies' level will always be the same amount higher than Mario,
+            // typically giving 3 ~ 10 EXP depending on strength and group size.
+            *out_level =
+                ttyd::mario_pouch::pouchGetPtr()->level + ei->level_offset + 5;
+        }
+    }
+    
+    return true;
 }
 
 struct BattleCondition {

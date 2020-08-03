@@ -196,6 +196,7 @@ void Randomizer::Init() {
             DisplayStarPowerOrbs(x, y, sp);
         });
         
+    ApplyEnemyStatChangePatches();
     ApplyWeaponLevelSelectionPatches();
     ApplyItemAndAttackPatches();
     ApplyMiscPatches();

@@ -101,9 +101,12 @@ using ::ttyd::battle::BattleWorkCommandCursor;
 using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
 using ::ttyd::battle_database_common::BattleGroupSetup;
+using ::ttyd::battle_database_common::BattleUnitKind;
+using ::ttyd::battle_database_common::BattleUnitSetup;
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_database_common::PointDropData;
 using ::ttyd::battle_unit::BattleWorkUnit;
+using ::ttyd::battle_unit::BattleWorkUnitPart;
 using ::ttyd::evt_bero::BeroEntry;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::evtmgr_cmd::evtGetValue;
@@ -122,7 +125,14 @@ namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
-// Trampoline hooks for patching in custom logic to existing TTYD C functions.
+// Trampoline hooks for patching in custom logic to existing TTYD C functions.    
+BattleWorkUnit* (*g_BtlUnit_Entry_trampoline)(BattleUnitSetup*) = nullptr;
+int32_t (*g_BattleCalculateDamage_trampoline)(
+    BattleWorkUnit*, BattleWorkUnit*, BattleWorkUnitPart*, BattleWeapon*,
+    uint32_t*, uint32_t) = nullptr;
+int32_t (*g_BattleCalculateFpDamage_trampoline)(
+    BattleWorkUnit*, BattleWorkUnit*, BattleWorkUnitPart*, BattleWeapon*,
+    uint32_t*, uint32_t) = nullptr;
 int32_t (*g_pouchEquipCheckBadge_trampoline)(int16_t) = nullptr;
 int32_t (*g_BtlUnit_GetWeaponCost_trampoline)(
     BattleWorkUnit*, BattleWeapon*) = nullptr;
@@ -838,6 +848,91 @@ void DisplayBattleCondition() {
         buf, 0, 60, 0xFFu, false, 0x000000FFu, 0.75f, 0xFFFFFFE5u, 15, 10);
 }
 
+void AlterUnitKindParams(BattleUnitKind* unit) {
+    // If not an enemy, nothing to change.
+    if (unit->unit_type > BattleUnitType::BONETAIL) return;
+    // Used as a sentinel to see if stats have already changed for this enemy.
+    if (unit->run_rate & 1) return;
+    
+    int32_t hp, level;
+    if (!GetEnemyStats(unit->unit_type, &hp, nullptr, nullptr, &level)) return;
+    unit->max_hp = hp;
+    unit->level = level;
+    
+    // Additional global changes for enemies in this mod.
+    unit->danger_hp = 5;
+    unit->itemsteal_param = 20;
+    
+    // Set sentinel bit so enemy's stats aren't changed again until next floor.
+    unit->run_rate |= 1;
+}
+
+int32_t AlterDamageCalculation(
+    BattleWorkUnit* attacker, BattleWorkUnit* target,
+    BattleWorkUnitPart* target_part, BattleWeapon* weapon,
+    uint32_t* unk0, uint32_t unk1) {
+    int32_t base_atk = weapon->damage_function_params[0];
+    int8_t* def_ptr  = target_part->defense;
+    int32_t base_def = def_ptr[weapon->element];
+    
+    int32_t altered_atk = base_atk, altered_def = base_def;
+    // Alter ATK power for enemy attacks.
+    if (attacker->current_kind <= BattleUnitType::BONETAIL
+        && !(weapon->target_property_flags & 0x100000)  // not a recoil attack
+        && !weapon->item_id && base_atk > 0) {
+        GetEnemyStats(
+            attacker->current_kind, nullptr, &altered_atk, nullptr, nullptr,
+            base_atk);
+        if (altered_atk < 1) altered_atk = 1;
+        if (altered_atk > 99) altered_atk = 99;
+        weapon->damage_function_params[0] = altered_atk;
+    }
+    // Alter DEF power for enemies on defense.
+    if (target->current_kind <= BattleUnitType::BONETAIL
+        && base_def >= 0 && base_def < 99) {
+        if (base_def > 0) {
+            GetEnemyStats(
+                target->current_kind, nullptr, nullptr, &altered_def, nullptr);
+        }
+        if (altered_def > 99) altered_def = 99;
+        def_ptr[weapon->element] = altered_def;
+    }
+    
+    // Run vanilla damage calculation.
+    int32_t damage = g_BattleCalculateDamage_trampoline(
+        attacker, target, target_part, weapon, unk0, unk1);
+    // Change ATK and DEF back, and return calculated damage.
+    weapon->damage_function_params[0] = base_atk;
+    def_ptr[weapon->element] = base_def;
+    return damage;
+}
+
+int32_t AlterFpDamageCalculation(
+    BattleWorkUnit* attacker, BattleWorkUnit* target,
+    BattleWorkUnitPart* target_part, BattleWeapon* weapon,
+    uint32_t* unk0, uint32_t unk1) {
+    int32_t base_atk = weapon->fp_damage_function_params[0];
+    
+    int32_t altered_atk = base_atk;
+    // Alter FP damage for enemy attacks.
+    if (attacker->current_kind <= BattleUnitType::BONETAIL
+        && !weapon->item_id && base_atk > 0) {
+        GetEnemyStats(
+            attacker->current_kind, nullptr, &altered_atk, nullptr, nullptr,
+            base_atk);
+        if (altered_atk < 1) altered_atk = 1;
+        if (altered_atk > 99) altered_atk = 99;
+        weapon->fp_damage_function_params[0] = altered_atk;
+    }
+    
+    // Run vanilla damage calculation.
+    int32_t damage = g_BattleCalculateFpDamage_trampoline(
+        attacker, target, target_part, weapon, unk0, unk1);
+    // Change FP damage value back, and return calculated FP loss.
+    weapon->fp_damage_function_params[0] = base_atk;
+    return damage;
+}
+
 void GetDropMaterials(FbatBattleInformation* fbat_info) {
     NpcBattleInfo* battle_info = fbat_info->wBattleInfo;
     const BattleGroupSetup* party_setup = battle_info->pConfiguration;
@@ -1116,7 +1211,33 @@ const char* GetReplacementMessage(const char* msg_key) {
     return nullptr;
 }
 
-void ApplyWeaponLevelSelectionPatches() {
+void ApplyEnemyStatChangePatches() {
+    g_BtlUnit_Entry_trampoline = patch::hookFunction(
+        ttyd::battle_unit::BtlUnit_Entry, [](BattleUnitSetup* unit_setup) {
+            AlterUnitKindParams(unit_setup->unit_kind_params);
+            return g_BtlUnit_Entry_trampoline(unit_setup);
+        });
+        
+    g_BattleCalculateDamage_trampoline = patch::hookFunction(
+        ttyd::battle_damage::BattleCalculateDamage, [](
+            BattleWorkUnit* attacker, BattleWorkUnit* target,
+            BattleWorkUnitPart* target_part, BattleWeapon* weapon,
+            uint32_t* unk0, uint32_t unk1) {
+            return AlterDamageCalculation(
+                attacker, target, target_part, weapon, unk0, unk1);
+        });
+        
+    g_BattleCalculateFpDamage_trampoline = patch::hookFunction(
+        ttyd::battle_damage::BattleCalculateFpDamage, [](
+            BattleWorkUnit* attacker, BattleWorkUnit* target,
+            BattleWorkUnitPart* target_part, BattleWeapon* weapon,
+            uint32_t* unk0, uint32_t unk1) {
+            return AlterFpDamageCalculation(
+                attacker, target, target_part, weapon, unk0, unk1);
+        });
+}
+
+void ApplyWeaponLevelSelectionPatches() {    
     g_pouchEquipCheckBadge_trampoline = patch::hookFunction(
         ttyd::mario_pouch::pouchEquipCheckBadge, [](int16_t badge_id) {
             if (g_InBattle) {
@@ -1164,7 +1285,17 @@ void ApplyWeaponLevelSelectionPatches() {
                     int8_t badges = g_CurMoveBadgeCounts[17 - is_mario];
                     *strength = badges + 1;
                 }
-                // TODO: Alter power of enemy charge moves.
+                // If unit is an enemy and status is Charge, change its power
+                // in the same way as ATK / FP damage.
+                if (status_type == 16 && 
+                    unit->current_kind <= BattleUnitType::BONETAIL) {
+                    int32_t altered_charge;
+                    GetEnemyStats(
+                        unit->current_kind, nullptr, &altered_charge,
+                        nullptr, nullptr, *strength);
+                    if (altered_charge > 99) altered_charge = 99;
+                    *strength = altered_charge;
+                }
             });
 }
 
@@ -1685,7 +1816,8 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
         case BattleUnitType::CHAIN_CHOMP:
         case BattleUnitType::RED_CHOMP:
             npc_setup_info->territoryBase = { 
-                static_cast<float>(x_pos), 0.f, static_cast<float>(z_pos) };
+                static_cast<float>(x_pos * x_sign), 0.f, 
+                static_cast<float>(z_pos) };
             break;
     }
     
