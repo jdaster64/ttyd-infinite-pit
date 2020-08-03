@@ -60,7 +60,7 @@ void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 void DrawTitleScreenInfo() {
     // TODO: Update with final text before release.
     const char* kTitleInfo =
-        "Pit of Infinite Trials v0.00 by jdaster64\nPUT GITHUB LINK HERE";
+        "PM:TTYD Infinite Pit v0.00 by jdaster64\nPUT GITHUB LINK HERE";
     DrawCenteredTextWindow(
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
 }

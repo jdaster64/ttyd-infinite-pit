@@ -371,7 +371,22 @@ const int32_t kPresetLoadouts[][5] = {
     { 84, 85, 86, -1, -1 },     // X-Nauts
     { 88, 84, 87, 84, 89 },     // Yuxes (with X-Nauts as padding)
     { 61, 2, 61, 2, 61 },       // Dayzees
-};    
+};
+
+// Base weights per floor group (00s, 10s, ...) and level_offset (2, 3, ... 10).
+const int8_t kBaseWeights[11][9] = {
+    { 10, 10, 5, 3, 2, 0, 0, 0, 0 },
+    { 5, 10, 5, 5, 3, 0, 0, 0, 0 },
+    { 3, 5, 10, 7, 5, 1, 0, 0, 0 },
+    { 1, 1, 7, 10, 10, 3, 2, 0, 0 },
+    { 1, 1, 5, 10, 10, 5, 3, 0, 0 },
+    { 1, 1, 2, 5, 10, 10, 5, 1, 1 },
+    { 0, 0, 2, 3, 10, 10, 6, 4, 2 },
+    { 0, 0, 2, 3, 7, 10, 10, 5, 4 },
+    { 0, 0, 1, 3, 6, 8, 10, 10, 8 },
+    { 0, 0, 1, 2, 5, 7, 10, 10, 10 },
+    { 0, 0, 1, 2, 5, 7, 10, 10, 10 },
+};
 
 // Global structures for holding constructed battle information.
 int32_t g_NumEnemies = 0;
@@ -409,7 +424,7 @@ ModuleId::e SelectEnemies(int32_t floor) {
         // If only 3 enemies, occasionally mirror it across the center.
         if (g_Enemies[3] == -1) {
             // The higher the floor number, the more likely the 5-enemy version.
-            if (static_cast<int32_t>(state.Rand(100)) < floor) {
+            if (static_cast<int32_t>(state.Rand(200)) < floor) {
                 g_Enemies[3] = g_Enemies[1];
                 g_Enemies[4] = g_Enemies[0];
             }
@@ -436,21 +451,21 @@ ModuleId::e SelectEnemies(int32_t floor) {
         // enemy's level offset (such that harder enemies appear more later on).
         constexpr const int32_t kNumEnemyTypes = 
             sizeof(kEnemyModuleInfo) / sizeof(EnemyModuleInfo);
-        int16_t weights[5][kNumEnemyTypes];
+        int16_t weights[6][kNumEnemyTypes];
         for (int32_t i = 0; i < kNumEnemyTypes; ++i) {
             int32_t base_wt = 0;
             const EnemyModuleInfo& emi = kEnemyModuleInfo[i];
             const EnemyTypeInfo& ei = kEnemyInfo[emi.enemy_type_stats_idx];
             
             // If enemy is not in a loaded area, or is a special enemy, ignore.
-            if (i >= 3 &&
+            if (i >= 3 && ei.level_offset >= 2 && ei.level_offset <= 10 &&
                 (emi.module == ModuleId::JON || emi.module == secondary_area)) {
-                base_wt = (floor < 110 ? floor / 10 : 10) - ei.level_offset;
-                base_wt = base_wt > 0 ? 8 - base_wt : 8 + base_wt;
-                if (base_wt < 0) base_wt = 0;
+                int32_t floor_group = floor < 110 ? floor / 10 : 10;
+                base_wt = kBaseWeights[floor_group][ei.level_offset - 2];
             }
             
-            for (int32_t slot = 0; slot < 5; ++slot) weights[slot][i] = base_wt;
+            // The 6th slot is used for reference as an unchanging base weight.
+            for (int32_t slot = 0; slot < 6; ++slot) weights[slot][i] = base_wt;
             // Disable selecting enemies with no overworld behavior for slot 0.
             if (emi.npc_ent_type_info_idx == -1) weights[0][i] = 0;
         }
@@ -480,9 +495,10 @@ ModuleId::e SelectEnemies(int32_t floor) {
                 break;
             }
             
-            // Add large additional weight for repeat enemy in subsequent slots.
+            // Add large additional weight for repeat enemy in subsequent slots,
+            // scaled by how likely it was to be chosen to begin with.
             for (int32_t j = slot + 1; j < 5; ++j) {
-                weights[j][idx] += 80;
+                weights[j][idx] += weights[5][idx] * 20;
             }
             // If the enemy is any Yux, set the next weight for all Yuxes to 0,
             // since they appear too crowded if placed 40 units apart.

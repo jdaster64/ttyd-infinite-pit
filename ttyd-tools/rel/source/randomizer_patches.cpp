@@ -1711,6 +1711,14 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     int32_t battle_id = evtGetValue(evt, evt->evtArguments[1]);
     NpcEntry* npc = ttyd::evt_npc::evtNpcNameToPtr(evt, name);
     ttyd::npcdrv::npcSetBattleInfo(npc, battle_id);
+    
+    // Set the enemies' held items.
+    NpcBattleInfo* battle_info = &npc->battleInfo;
+    for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
+        battle_info->wHeldItems[i] =
+            PickRandomItem(/* seeded = */ true, 40, 20, 40, 0);
+    }
+    // Occasionally, set a battle condition for an optional bonus reward.
     SetBattleCondition(&npc->battleInfo);
     return 2;
 }
