@@ -29,6 +29,10 @@ extern const uint32_t kPitSetKillFlagFuncOffset;
 bool CheckSeq(ttyd::seqdrv::SeqIndex sequence);
 // Returns true if in normal gameplay (not in title, game over, etc. sequence)
 bool InMainGameModes();
+// Returns the name of the current map.
+const char* GetCurrentMap();
+// Returns the name of the map about to be loaded.
+const char* GetNextMap();
 
 // Returns the string name of a relocatable module from its id.
 const char* ModuleNameFromId(ModuleId::e module_id);

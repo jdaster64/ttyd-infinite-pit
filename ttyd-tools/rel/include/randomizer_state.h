@@ -6,10 +6,10 @@ namespace mod::pit_randomizer {
 
 struct RandomizerState {
     enum Options_Flags {
-        NUM_CHEST_REWARDS   = 0x3,      // 1 ~ 3; changes seeding
-        MERLEE              = 0x4,      // Infinite Merlee curses
-        SUPERGUARDS_COST_FP = 0x8,      // Superguards cost 1 FP
-        NO_EXP_MODE         = 0x10,     // Start at level 99 w/99 BP, no EXP
+        NUM_CHEST_REWARDS   = 0x7,      // 1 ~ 5; changes seeding
+        MERLEE              = 0x10,     // Infinite Merlee curses
+        SUPERGUARDS_COST_FP = 0x20,     // Superguards cost 1 FP
+        NO_EXP_MODE         = 0x40,     // Start at level 99 w/99 BP, no EXP
     };
 
     // Save file revision; makes it possible to add fields while maintaining

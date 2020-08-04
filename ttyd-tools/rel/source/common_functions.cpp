@@ -1,5 +1,6 @@
 #include "common_functions.h"
 
+#include <ttyd/mariost.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_mapchange.h>
 #include <ttyd/seq_title.h>
@@ -45,6 +46,14 @@ bool InMainGameModes() {
     
     return (sequence >= game) && (sequence <= game_over) && 
            !next_map_demo && !next_map_title;
+}
+
+const char* GetCurrentMap() {
+    return ttyd::mariost::g_MarioSt->currentMapName;
+}
+
+const char* GetNextMap() {
+    return ttyd::seq_mapchange::NextMap;
 }
 
 const char* ModuleNameFromId(ModuleId::e module_id) {

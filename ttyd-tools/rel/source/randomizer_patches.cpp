@@ -180,7 +180,7 @@ RETURN()
 EVT_END()
 
 // Event that handles a chest being opened, rewarding the player with
-// items / partners (1 ~ 3 based on randomizer settings, +1 for boss floors).
+// items / partners (1 ~ 5 based on randomizer settings, +1 for boss floors).
 EVT_BEGIN(ChestOpenEvt)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
 USER_FUNC(GetNumChestRewards, LW(13))
@@ -547,6 +547,17 @@ void OnModuleLoaded(OSModuleInfo* module) {
             yux->attribute_flags    &= ~0x600000;
         }
     }
+    
+    // Regardless of module loaded, reset Merlee curses if enabled.
+    if (g_Randomizer->state_.options_ & RandomizerState::MERLEE) {
+        PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        // If the player somehow managed to run out of curses, reset completely.
+        if (pouch.merlee_curse_uses_remaining < 1) {
+            pouch.turns_until_merlee_activation = -1;
+            pouch.next_merlee_curse_type = 0;
+        }
+        pouch.merlee_curse_uses_remaining = 99;
+    }    
 }
 
 int32_t LoadMap() {

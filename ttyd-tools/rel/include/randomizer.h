@@ -1,5 +1,6 @@
 #pragma once
 
+#include "randomizer_menu.h"
 #include "randomizer_state.h"
 
 #include <cstdint>
@@ -18,6 +19,7 @@ public:
     void Draw();
     
     RandomizerState state_;
+    RandomizerMenu menu_;
 };
 
 extern Randomizer* g_Randomizer;

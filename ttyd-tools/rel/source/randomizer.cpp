@@ -60,6 +60,10 @@ void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 bool g_CueGameOver = false;
 bool g_DrawDebug = false;
 
+void DrawOptionsMenu() {
+    g_Randomizer->menu_.Draw();
+}
+
 void DrawTitleScreenInfo() {
     // TODO: Update with final text before release.
     const char* kTitleInfo =
@@ -212,20 +216,31 @@ void Randomizer::Init() {
     ApplyWeaponLevelSelectionPatches();
     ApplyItemAndAttackPatches();
     ApplyMiscPatches();
+    
+    // Initialize the menu.
+    menu_.Init();
 }
 
-void Randomizer::Update() {}
+void Randomizer::Update() {
+    menu_.Update();
+}
 
 void Randomizer::Draw() {
+    // Draw title screen info.
     if (CheckSeq(ttyd::seqdrv::SeqIndex::kTitle)) {
         const uint32_t curtain_state = *reinterpret_cast<uint32_t*>(
             reinterpret_cast<uintptr_t>(ttyd::seq_title::seqTitleWorkPointer2)
             + 0x8);
         if (curtain_state >= 2 && curtain_state < 12) {
-            // Curtain is not fully down; draw title screen info.
+            // Curtain is not fully down.
             RegisterDrawCallback(DrawTitleScreenInfo, CameraId::k2d);
         }
     }
+    
+    // Draw options menu.
+    RegisterDrawCallback(DrawOptionsMenu, CameraId::k2d);
+    
+    // Draw debugging overlay, if enabled.
     if (InMainGameModes() && g_DrawDebug) {
         RegisterDrawCallback(DrawDebuggingFunctions, CameraId::k2d);
     }

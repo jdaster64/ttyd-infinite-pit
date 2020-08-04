@@ -731,7 +731,9 @@ bool GetEnemyStats(
         }
     }
     if (out_level) {
-        if (ei->level_offset == 0) {
+        if (g_Randomizer->state_.options_ & RandomizerState::NO_EXP_MODE) {
+            *out_level = 0;
+        } else if (ei->level_offset == 0) {
             // Enemies like Mini-Yuxes should never grant EXP.
             *out_level = 0;
         } else {
