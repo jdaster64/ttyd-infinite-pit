@@ -17,12 +17,11 @@ const char* GetSavefileName() {
     return ttyd::mariost::g_MarioSt->saveFileName;
 }
 
-RandomizerState* GetSavedStateLocation() {
+void* GetSavedStateLocation() {
     // Store randomizer state in stored items space, since this won't be used,
     // and the first byte of any possible stored item produces a "version" of 0.
     // Starts at index 1 to align to 4-byte boundary.
-    return reinterpret_cast<RandomizerState*>(
-        &ttyd::mario_pouch::pouchGetPtr()->stored_items[1]);
+    return &ttyd::mario_pouch::pouchGetPtr()->stored_items[1];
 }
 
 // Updates partners' Ultra Rank max HP based how many times each partner
@@ -39,27 +38,45 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
     }
 }
 
+bool LoadFromPreviousVersion(RandomizerState* state) {
+    void* saved_state = GetSavedStateLocation();
+    uint8_t version = *reinterpret_cast<uint8_t*>(saved_state);
+    if (version < 1) {
+        // Version is 0 or incompatible with the current version; fail to load.
+        return false;
+    }
+    
+    // Version is compatible; load, making any adjustments necessary.
+    if (version == 2) {
+        memcpy(state, saved_state, sizeof(RandomizerState));
+    } else if (version == 1) {
+        memcpy(state, saved_state, sizeof(RandomizerState));
+        state->hp_multiplier_ = 100;
+        state->atk_multiplier_ = 100;
+        state->options_ = 2;
+    }
+    
+    state->version_ = 2;
+    InitPartyMaxHpTable(state->partner_upgrades_);
+    return true;
+}
+
 }
 
 bool RandomizerState::Load(bool new_save) {
-    if (!new_save) {
-        RandomizerState* saved_state = GetSavedStateLocation();
-        
-        if (saved_state->version_ == 1) {
-            memcpy(this, saved_state, sizeof(RandomizerState));
-            InitPartyMaxHpTable(partner_upgrades_);
-            return true;
-        } else {
-            // Version is not compatible with the randomizer; fail to load.
-            return false;
-        }
-    }
-    version_ = 1;
+    if (!new_save) return LoadFromPreviousVersion(this);
+    
+    version_ = 2;
     floor_ = 0;
     reward_flags_ = 0x00000000;
     for (int32_t i = 0; i < 6; ++i) charlieton_items_[i] = 0;
     for (int32_t i = 0; i < 7; ++i) partner_upgrades_[i] = 0;
     InitPartyMaxHpTable(partner_upgrades_);
+    
+    // Default options: All optional flags off, 2 chests / floor.
+    hp_multiplier_ = 100;
+    atk_multiplier_ = 100;
+    options_ = 2;
     
     // Seed the rng based on the filename.
     // If the filename is a few variants of "random" or a single 'star',
@@ -86,7 +103,7 @@ bool RandomizerState::Load(bool new_save) {
 }
 
 void RandomizerState::Save() {
-    RandomizerState* saved_state = GetSavedStateLocation();
+    void* saved_state = GetSavedStateLocation();
     memcpy(saved_state, this, sizeof(RandomizerState));
 }
 

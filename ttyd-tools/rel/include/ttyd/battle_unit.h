@@ -357,7 +357,7 @@ int32_t BtlUnit_GetWeaponCost(
 // BtlUnit_GetMaxFp
 // BtlUnit_RecoverFp
 // BtlUnit_RecoverHp
-// BtlUnit_SetFp
+void BtlUnit_SetFp(BattleWorkUnit* unit, int32_t fp);
 int32_t BtlUnit_GetFp(BattleWorkUnit* unit);
 // BtlUnit_GetCoin
 // BtlUnit_GetExp

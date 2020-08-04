@@ -12,6 +12,7 @@
 #include <gc/mtx.h>
 #include <gc/types.h>
 #include <ttyd/battle.h>
+#include <ttyd/battle_ac.h>
 #include <ttyd/battle_damage.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_enemy_item.h>
@@ -137,6 +138,8 @@ int32_t (*g_BattleCalculateFpDamage_trampoline)(
 int32_t (*g_pouchEquipCheckBadge_trampoline)(int16_t) = nullptr;
 int32_t (*g_BtlUnit_GetWeaponCost_trampoline)(
     BattleWorkUnit*, BattleWeapon*) = nullptr;
+int32_t (*g_BattleActionCommandCheckDefence_trampoline)(
+    BattleWorkUnit*, BattleWeapon*) = nullptr;
 void (*g_DrawOperationWin_trampoline)() = nullptr;
 void (*g_DrawWeaponWin_trampoline)() = nullptr;
 void (*g__getSickStatusParam_trampoline)(
@@ -176,8 +179,8 @@ WAIT_MSEC(2000)
 RETURN()
 EVT_END()
 
-// Event that handles a chest being opened.
-// Rewards the player with an item/partner, or two rewards on boss floors.
+// Event that handles a chest being opened, rewarding the player with
+// items / partners (1 ~ 3 based on randomizer settings, +1 for boss floors).
 EVT_BEGIN(ChestOpenEvt)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
 USER_FUNC(GetNumChestRewards, LW(13))
@@ -190,7 +193,7 @@ DO(0)
     // If reward < 0, then reward a partner (-1 to -7 = partners 1 to 7).
     IF_SMALL(LW(1), 0)
         MUL(LW(1), -1)
-        WAIT_MSEC(100)  // If the second reward
+        WAIT_MSEC(100)  // If the second+ reward
         USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
         USER_FUNC(ttyd::evt_mario::evt_mario_normalize)
         USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
@@ -226,7 +229,7 @@ DO(0)
         USER_FUNC(
             ttyd::evt_item::evt_item_entry,
             PTR("item"), LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
-        WAIT_MSEC(300)  // If the second reward
+        WAIT_MSEC(300)  // If the second+ reward
         USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
         USER_FUNC(ttyd::evt_item::evt_item_get_item, PTR("item"))
         // If the item was a Crystal Star / Magical Map, unlock its Star Power.
@@ -1328,6 +1331,38 @@ void ApplyWeaponLevelSelectionPatches() {
                     *strength = altered_charge;
                 }
             });
+            
+    g_BattleActionCommandCheckDefence_trampoline = patch::hookFunction(
+        ttyd::battle_ac::BattleActionCommandCheckDefence,
+        [](BattleWorkUnit* unit, BattleWeapon* weapon) {
+            // Run normal logic if option turned off.
+            if (!(g_Randomizer->state_.options_ 
+                    & RandomizerState::SUPERGUARDS_COST_FP)) {
+                return g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
+            }
+            
+            int8_t superguard_frames[7];
+            bool restore_superguard_frames = false;
+            // Temporarily disable Superguarding if FP is too low.
+            int32_t fp = ttyd::battle_unit::BtlUnit_GetFp(unit);
+            if (fp < 1) {
+                restore_superguard_frames = true;
+                memcpy(superguard_frames, ttyd::battle_ac::superguard_frames, 7);
+                for (int32_t i = 0; i < 7; ++i) {
+                    ttyd::battle_ac::superguard_frames[i] = 0;
+                }
+            }
+            const int32_t defense_result =
+                g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
+            // Successful Superguard, subtract FP.
+            if (defense_result == 5) {
+                ttyd::battle_unit::BtlUnit_SetFp(unit, fp - 1);
+            }
+            if (restore_superguard_frames) {
+                memcpy(ttyd::battle_ac::superguard_frames, superguard_frames, 7);
+            }
+            return defense_result;
+        });
 }
 
 void ApplyItemAndAttackPatches() {
@@ -1890,8 +1925,10 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 }
 
 EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
-    int32_t num_rewards = 1;
-    if (g_Randomizer->state_.floor_ % 50 == 49) num_rewards = 2;
+    int32_t num_rewards = 
+        g_Randomizer->state_.options_ & RandomizerState::NUM_CHEST_REWARDS;
+    // Add a bonus reward for beating a boss (Atomic Boo or Bonetail).
+    if (g_Randomizer->state_.floor_ % 50 == 49) ++num_rewards;
     evtSetValue(evt, evt->evtArguments[0], num_rewards);
     return 2;
 }

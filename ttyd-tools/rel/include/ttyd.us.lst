@@ -906,8 +906,12 @@
 8041eb90:g_BattleWork
 
 // battle_ac.o
+// .text
 800fa1a0:BattleACPadCheckRecordTrigger
 800fa1b8:BattleActionCommandCheckDefence
+// .data
+802ee018:guard_frames
+802ee020:superguard_frames
 
 // battle_damage.o
 // 800fa678:BattleCheckCounter
@@ -1048,6 +1052,7 @@
 
 // battle_unit.o
 80126968:BtlUnit_GetWeaponCost
+80126c10:BtlUnit_SetFp
 80126c64:BtlUnit_GetFp
 80126fe8:BtlUnit_ReviseHpFp
 801277ac:BtlUnit_OffUnitFlag

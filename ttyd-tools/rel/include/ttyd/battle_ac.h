@@ -13,6 +13,7 @@ namespace ttyd::battle_ac {
 
 extern "C" {
 
+// .text
 // BattleAcGaugeSeDelete
 // BattleAcGaugeSeUpdate
 // BattleAcGaugeSeInit
@@ -34,6 +35,10 @@ int32_t BattleActionCommandCheckDefence(
 // BattleActionCommandResult
 // BattleActionCommandManager
 // BattleActionCommandManagerInit
+
+// .data
+extern int8_t guard_frames[8];
+extern int8_t superguard_frames[8];
 
 }
 
