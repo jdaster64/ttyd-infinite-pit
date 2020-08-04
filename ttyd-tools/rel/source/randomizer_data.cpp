@@ -1046,7 +1046,7 @@ int16_t PickChestReward() {
             partner_weight =
                 (60 + state.floor_ - 30 * num_partners) / (7 - num_partners);
             if (partner_weight > 100) partner_weight = 100;
-            if (partner_weight < 0) partner_weight = 0;
+            if (partner_weight < 5) partner_weight = 5;
         }
         
         // Determine the weight for Crystal Stars based on how many are yet to
