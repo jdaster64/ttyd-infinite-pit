@@ -128,6 +128,9 @@ EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
 // the respective Star Power.
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 
+// Fully heals the selected party member.
+EVT_DECLARE_USER_FUNC(FullyHealPartyMember, 1)
+
 // If Vivian's Infatuate lands successfully, tries changing the effect from
 // Confuse to the enemy permanently swapping its alliance.
 // (Also runs the replaced code from btlevtcmd_AudienceDeclareACResult).

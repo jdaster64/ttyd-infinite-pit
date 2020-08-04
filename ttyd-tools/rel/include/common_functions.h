@@ -47,4 +47,10 @@ const char* ModuleNameFromId(ModuleId::e module_id);
 void LinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt);
 void UnlinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt);
 
+// Returns the number of bits set in a given bitfield.
+int32_t CountSetBits(uint32_t x);
+// Gets a 32-bit bit mask from [start_bit, end_bit].
+// Assumes 0 <= start_bit <= end_bit <= 31.
+uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit);
+
 }

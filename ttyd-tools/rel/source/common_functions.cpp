@@ -92,4 +92,15 @@ void UnlinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt) {
     } while (op != 1);
 }
 
+int32_t CountSetBits(uint32_t x) {
+    // TODO: Is there a pop_cnt builtin?
+    x = x - ((x >> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit) {
+    return (~0U >> (31-end_bit)) - (1U << start_bit) + 1;
+}
+
 }

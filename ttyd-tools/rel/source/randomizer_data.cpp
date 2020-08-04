@@ -155,17 +155,17 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::LAVA_BUBBLE, 302, 10, 6, 0, 3, 6, kHpTables[0], kFpTables[1], 2 },
     { BattleUnitType::EMBER, 159, 13, 6, 0, 3, 6, kHpTables[0], kFpTables[1], 2 },
     { BattleUnitType::PHANTOM_EMBER, 303, 16, 6, 0, 3, 8, kHpTables[0], kFpTables[2], 2 },
-    { BattleUnitType::BUZZY_BEETLE, 225, 8, 6, 6, 3, 4, kHpTables[1], kFpTables[0], 7 },
-    { BattleUnitType::SPIKE_TOP, 226, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], 7 },
-    { BattleUnitType::PARABUZZY, 228, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], 7 },
-    { BattleUnitType::SPIKY_PARABUZZY, 227, 8, 6, 6, 3, 6, kHpTables[2], kFpTables[0], 7 },
-    { BattleUnitType::RED_SPIKY_BUZZY, 230, 8, 6, 6, 3, 5, kHpTables[1], kFpTables[0], 7 },
-    { BattleUnitType::CHAIN_CHOMP, 301, 10, 8, 6, 6, 6, kHpTables[3], kFpTables[0], -1 },
-    { BattleUnitType::RED_CHOMP, 306, 12, 10, 6, 5, 8, kHpTables[2], kFpTables[0], -1 },
-    { BattleUnitType::CLEFT, 237, 8, 6, 6, 2, 2, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::HYPER_CLEFT, 236, 10, 6, 6, 3, 6, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::MOON_CLEFT, 235, 12, 8, 6, 5, 6, kHpTables[1], kFpTables[0], -1 },
-    { BattleUnitType::HYPER_BALD_CLEFT, 288, 10, 6, 6, 3, 5, kHpTables[1], kFpTables[0], -1 },
+    { BattleUnitType::BUZZY_BEETLE, 225, 8, 6, 5, 3, 4, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::SPIKE_TOP, 226, 8, 6, 5, 3, 6, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::PARABUZZY, 228, 8, 6, 5, 3, 5, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::SPIKY_PARABUZZY, 227, 8, 6, 5, 3, 7, kHpTables[2], kFpTables[0], 7 },
+    { BattleUnitType::RED_SPIKY_BUZZY, 230, 8, 6, 5, 3, 6, kHpTables[1], kFpTables[0], 7 },
+    { BattleUnitType::CHAIN_CHOMP, 301, 10, 8, 4, 6, 6, kHpTables[3], kFpTables[0], -1 },
+    { BattleUnitType::RED_CHOMP, 306, 12, 10, 5, 5, 8, kHpTables[2], kFpTables[0], -1 },
+    { BattleUnitType::CLEFT, 237, 8, 6, 5, 2, 2, kHpTables[1], kFpTables[0], -1 },
+    { BattleUnitType::HYPER_CLEFT, 236, 10, 6, 5, 3, 6, kHpTables[1], kFpTables[0], -1 },
+    { BattleUnitType::MOON_CLEFT, 235, 12, 8, 5, 5, 6, kHpTables[1], kFpTables[0], -1 },
+    { BattleUnitType::HYPER_BALD_CLEFT, 288, 10, 6, 5, 3, 5, kHpTables[1], kFpTables[0], -1 },
     { BattleUnitType::DARK_CRAW, 308, 20, 9, 0, 6, 8, kHpTables[3], kFpTables[0], -1 },
     { BattleUnitType::CRAZEE_DAYZEE, 252, 14, 5, 0, 2, 6, kHpTables[0], kFpTables[2], 6 },
     { BattleUnitType::AMAZY_DAYZEE, 253, 20, 20, 1, 20, 80, kHpTables[2], kFpTables[4], 6 },
@@ -193,8 +193,8 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::DARK_KOOPATROL, 307, 25, 10, 3, 5, 10, kHpTables[3], kFpTables[1], 8 },
     { BattleUnitType::LAKITU, 280, 13, 7, 0, 2, 4, kHpTables[0], kFpTables[1], -1 },
     { BattleUnitType::DARK_LAKITU, 281, 19, 9, 0, 5, 8, kHpTables[2], kFpTables[0], -1 },
-    { BattleUnitType::SPINY, 287, 8, 7, 5, 2, 1, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::SKY_BLUE_SPINY, -1, 10, 9, 5, 5, 1, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::SPINY, 287, 8, 7, 4, 2, 1, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::SKY_BLUE_SPINY, -1, 10, 9, 4, 5, 1, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::RED_MAGIKOOPA, 318, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
     { BattleUnitType::WHITE_MAGIKOOPA, 319, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
     { BattleUnitType::GREEN_MAGIKOOPA, 320, 15, 7, 0, 4, 7, kHpTables[0], kFpTables[3], 3 },
@@ -220,7 +220,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::SWOOPER, 239, 14, 7, 0, 3, 5, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::SWOOPULA, 240, 14, 6, 0, 4, 5, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::SWAMPIRE, 241, 20, 8, 0, 6, 8, kHpTables[0], kFpTables[0], -1 },
-    { BattleUnitType::WIZZERD, 295, 10, 8, 3, 7, 6, kHpTables[1], kFpTables[1], -1 },
+    { BattleUnitType::WIZZERD, 295, 10, 8, 3, 7, 7, kHpTables[1], kFpTables[1], -1 },
     { BattleUnitType::DARK_WIZZERD, 296, 12, 8, 4, 5, 8, kHpTables[2], kFpTables[2], -1 },
     { BattleUnitType::ELITE_WIZZERD, 297, 14, 8, 5, 7, 10, kHpTables[3], kFpTables[3], -1 },
     { BattleUnitType::YUX, 268, 8, 5, 0, 2, 4, kHpTables[0], kFpTables[0], 1 },
@@ -624,7 +624,7 @@ void BuildBattle(
         // Make Swoopers never hang from ceiling, and Magikoopas sometimes fly,
         // but only if they're not the front enemy in the lineup.
         if (etype == 82 || etype == 96 || etype == 41 || etype == 50) {
-            custom_unit.unit_work[0] = 0;
+            custom_unit.unit_work[0] = 1;
         } else if (etype == 76 || etype == 77 || etype == 78 || etype == 67) {
             custom_unit.unit_work[0] = state.Rand(i > 0 ? 2 : 1);
         }
@@ -916,6 +916,9 @@ int32_t PickRandomItem(
     static constexpr const uint16_t kStackableBadges[] = {
         0x3fff, 0xffff, 0x0fff, 0xfff7, 0x038f, 0x0030, 0x0006
     };
+    static constexpr const uint16_t kStackableBadgesNoP[] = {
+        0x3fff, 0x5555, 0x0b55, 0xaad7, 0x0386, 0x0030, 0x0002
+    };
     
     int32_t total_weight =
         normal_item_weight + recipe_item_weight + badge_weight + no_item_weight;
@@ -943,7 +946,14 @@ int32_t PickRandomItem(
         } else {
             current_weight += badge_weight;
             if (result < current_weight) {
-                bitfield = kStackableBadges;
+                // Count available partners.
+                const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+                int32_t num_partners = 0;
+                for (int32_t i = 0; i < 8; ++i) {
+                    num_partners += pouch.party_data[i].flags & 1;
+                }
+                // Exclude 'P' badges if no partners unlocked yet.
+                bitfield = num_partners ? kStackableBadges : kStackableBadgesNoP;
                 len_bitfield = sizeof(kStackableBadges) / sizeof(uint16_t);
                 offset = 0xf0;
             } else {
@@ -979,25 +989,25 @@ int32_t PickRandomItem(
 
 int16_t PickChestReward() {
     static constexpr const int16_t kRewards[] = {
-        // Mario / inventory upgrades.
+        // Mario / inventory upgrades (items 0 - 4).
         ItemType::STRANGE_SACK, ItemType::SUPER_BOOTS, ItemType::ULTRA_BOOTS,
         ItemType::SUPER_HAMMER, ItemType::ULTRA_HAMMER,
-        // Star Powers.
+        // Star Powers (items 5 - 12).
         ItemType::MAGICAL_MAP, ItemType::DIAMOND_STAR, ItemType::EMERALD_STAR,
         ItemType::GOLD_STAR, ItemType::RUBY_STAR, ItemType::SAPPHIRE_STAR,
         ItemType::GARNET_STAR, ItemType::CRYSTAL_STAR,
-        // Unique badges.
+        // Unique badges (items 13 - 24).
         ItemType::CHILL_OUT, ItemType::DOUBLE_DIP, ItemType::DOUBLE_DIP,
         ItemType::DOUBLE_DIP_P, ItemType::DOUBLE_DIP_P, ItemType::FEELING_FINE,
         ItemType::FEELING_FINE_P, ItemType::LUCKY_START, ItemType::QUICK_CHANGE,
         ItemType::RETURN_POSTAGE, ItemType::SPIKE_SHIELD, ItemType::ZAP_TAP,
-        // Partners (represented by dummy values).
+        // Partners (represented by dummy values); (items 25 - 31).
         -1, -2, -3, -4, -5, -6, -7
     };
     static_assert(sizeof(kRewards) == 32 * sizeof(int16_t));
     
     uint8_t weights[34];
-    for (int32_t i = 0; i < 34; ++i) weights[i] = 10;
+    for (int32_t i = 0; i < 32; ++i) weights[i] = 10;
     
     RandomizerState& state = g_Randomizer->state_;
     const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
@@ -1026,6 +1036,24 @@ int16_t PickChestReward() {
             if (partner_weight < 0) partner_weight = 0;
         }
         
+        // Determine the weight for Crystal Stars based on how many are yet to
+        // be obtained; the total weight should be 10x unobtained count, split
+        // among all the ones that can be afforded.
+        int32_t sp_weight = 0;
+        switch (8 - CountSetBits(GetBitMask(5, 12) & state.reward_flags_)) {
+            case 8: sp_weight = 80 / 1; break;
+            case 7: sp_weight = 70 / 2; break;
+            case 6: sp_weight = 60 / 2; break;
+            case 5: sp_weight = 50 / 4; break;
+            case 4: sp_weight = 40 / 3; break;
+            default:    sp_weight = 10; break;
+        }
+        for (int32_t i = 5; i <= 12; ++i) weights[i] = sp_weight;
+        
+        // Halve the chance of getting unique badges; in total they
+        // shouldn't be worth all that much of the pool's weight.
+        for (int32_t i = 13; i <= 24; ++i) weights[i] = 5;
+        
         // Disable rewards that shouldn't be received out of order or that
         // have already been claimed, and assign partner weight to partners.
         for (int32_t i = 0; i < 32; ++i) {
@@ -1035,10 +1063,16 @@ int16_t PickChestReward() {
             }
             switch (kRewards[i]) {
                 case ItemType::ULTRA_BOOTS:
-                    if (pouch.jump_level < 2) weights[i] = 0;
+                    if (pouch.jump_level < 2) {
+                        weights[i] = 0;
+                        weights[i-1] += 10;     // Make Super more likely.
+                    }
                     break;
                 case ItemType::ULTRA_HAMMER:
-                    if (pouch.hammer_level < 2) weights[i] = 0;
+                    if (pouch.hammer_level < 2) {
+                        weights[i] = 0;
+                        weights[i-1] += 10;     // Make Super more likely.
+                    }
                     break;
                 case ItemType::DIAMOND_STAR:
                 case ItemType::EMERALD_STAR:

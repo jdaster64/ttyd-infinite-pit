@@ -195,6 +195,7 @@ DO(0)
         USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
         WAIT_MSEC(500)
         USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, LW(1))
+        USER_FUNC(FullyHealPartyMember, LW(1))
         // TODO: Reposition partner by box? At origin is fine...
         USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, LW(1), 0, 0, 0)
         RUN_EVT_ID(PartnerFanfareEvt, LW(11))
@@ -412,14 +413,18 @@ void InitializeOnNewFile() {
     ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
     ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);
     ttyd::mario_pouch::pouchSetCoin(0);
-    ttyd::mario_pouch::pouchGetItem(ItemType::PEEKABOO);
-    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::PEEKABOO);
     ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
     ttyd::mario_pouch::pouchGetItem(ItemType::W_EMBLEM);
+    ttyd::mario_pouch::pouchGetItem(ItemType::PEEKABOO);
+    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::PEEKABOO);
     ttyd::mario_pouch::pouchGetItem(ItemType::FP_PLUS);
+    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::FP_PLUS);
     ttyd::mario_pouch::pouchGetItem(ItemType::HP_PLUS);
-    pouch.unallocated_bp = 6;
-    pouch.total_bp = 6;
+    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::HP_PLUS);
+    pouch.current_hp = 15;
+    pouch.current_fp = 10;
+    pouch.total_bp = 9;
+    pouch.unallocated_bp = 3;
     ttyd::mario_pouch::pouchReviseMarioParam();
     // Assign Yoshi a random color.
     ttyd::mario_pouch::pouchSetPartyColor(4, g_Randomizer->state_.Rand(7));
@@ -1181,12 +1186,18 @@ const char* GetReplacementMessage(const char* msg_key) {
         return "Toughen Up P";
     } else if (!strcmp(msg_key, "msg_toughen_up")) {
         return "Wear this to add Toughen Up\n"
+               "to Mario's Tactics menu.";
+    } else if (!strcmp(msg_key, "msg_toughen_up_p")) {
+        return "Wear this to add Toughen Up\n"
+               "to partners' Tactics menu.";
+    } else if (!strcmp(msg_key, "msg_toughen_up_menu")) {
+        return "Wear this to add Toughen Up\n"
                "to Mario's Tactics menu.\n"
                "This uses 1 FP to raise DEF\n"
                "by 2 points for a turn.\n"
                "Wearing more copies raises\n"
                "the effect and FP cost.";
-    } else if (!strcmp(msg_key, "msg_toughen_up_p")) {
+    } else if (!strcmp(msg_key, "msg_toughen_up_p_menu")) {
         return "Wear this to add Toughen Up\n"
                "to partners' Tactics menu.\n"
                "This uses 1 FP to raise DEF\n"
@@ -1350,12 +1361,12 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::SUPER_CHARGE].icon_id = kSquareDiamondIconId;
     itemDataTable[ItemType::SUPER_CHARGE].name = "in_toughen_up";
     itemDataTable[ItemType::SUPER_CHARGE].description = "msg_toughen_up";
-    itemDataTable[ItemType::SUPER_CHARGE].menu_description = "msg_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE].menu_description = "msg_toughen_up_menu";
     itemDataTable[ItemType::SUPER_CHARGE_P].bp_cost = 1;
     itemDataTable[ItemType::SUPER_CHARGE_P].icon_id = kSquareDiamondPartnerId;
     itemDataTable[ItemType::SUPER_CHARGE_P].name = "in_toughen_up_p";
-    itemDataTable[ItemType::SUPER_CHARGE_P].description = "msg_toughen_up";
-    itemDataTable[ItemType::SUPER_CHARGE_P].menu_description = "msg_toughen_up_p";
+    itemDataTable[ItemType::SUPER_CHARGE_P].description = "msg_toughen_up_p";
+    itemDataTable[ItemType::SUPER_CHARGE_P].menu_description = "msg_toughen_up_p_menu";
     
     // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
     memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
@@ -1911,6 +1922,13 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
                 (1 << (item + 1 - ItemType::DIAMOND_STAR));
         }
     }
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(FullyHealPartyMember) {
+    int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
+    auto& party_data = ttyd::mario_pouch::pouchGetPtr()->party_data[idx];
+    party_data.current_hp = party_data.max_hp;
     return 2;
 }
 
