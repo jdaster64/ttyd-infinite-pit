@@ -1044,7 +1044,7 @@ int16_t PickChestReward() {
         int32_t partner_weight = 0;
         if (num_partners < 7) {
             partner_weight =
-                (60 + state.floor_ - 30 * num_partners) / (7 - num_partners);
+                (60 - 10 * num_partners + state.floor_ / 5) / (7 - num_partners);
             if (partner_weight > 100) partner_weight = 100;
             if (partner_weight < 5) partner_weight = 5;
         }
