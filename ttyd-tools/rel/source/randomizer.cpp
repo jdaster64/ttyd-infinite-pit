@@ -63,7 +63,7 @@ bool g_DrawDebug = false;
 void DrawTitleScreenInfo() {
     // TODO: Update with final text before release.
     const char* kTitleInfo =
-        "PM:TTYD Infinite Pit v0.00 r2 by jdaster64\nGuide / GitHub link: TBA";
+        "PM:TTYD Infinite Pit v0.00 r3 by jdaster64\nGuide / GitHub link: TBA";
     DrawCenteredTextWindow(
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
 }

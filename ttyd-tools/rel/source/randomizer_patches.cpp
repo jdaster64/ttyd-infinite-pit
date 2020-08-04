@@ -1460,6 +1460,14 @@ void ApplyItemAndAttackPatches() {
         0x01100070;
     ttyd::battle_item_data::ItemWeaponData_LastDinner.target_class_flags = 
         0x01100070;
+        
+    // Make Trial Stew's event use the correct weapon params.
+    const int32_t kLastDinnerEvtWeaponAddr = 0x8036caf4;
+    BattleWeapon* kLastDinnerWeaponAddr = 
+        &ttyd::battle_item_data::ItemWeaponData_LastDinner;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kLastDinnerEvtWeaponAddr),
+        &kLastDinnerWeaponAddr, sizeof(BattleWeapon*));
 
     // Make Poison Mushrooms able to target anyone, and make enemies prefer
     // to target Mario's team or characters with lower health.
