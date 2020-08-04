@@ -416,6 +416,8 @@ ModuleId::e SelectEnemies(int32_t floor) {
         for (int32_t i = 1; i < 4; ++i) g_Enemies[i] = -1;
         return ModuleId::JIN;
     }
+    // If a reward floor, no enemies to spawn.
+    if (floor % 10 == 9) return ModuleId::INVALID_MODULE;
     
     auto& state = g_Randomizer->state_;
     

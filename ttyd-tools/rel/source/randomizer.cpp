@@ -63,7 +63,7 @@ bool g_DrawDebug = false;
 void DrawTitleScreenInfo() {
     // TODO: Update with final text before release.
     const char* kTitleInfo =
-        "PM:TTYD Infinite Pit v0.00.1 by jdaster64\nGuide / GitHub link: TBA";
+        "PM:TTYD Infinite Pit v0.00 r2 by jdaster64\nGuide / GitHub link: TBA";
     DrawCenteredTextWindow(
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
 }
@@ -104,12 +104,13 @@ void Randomizer::Init() {
     g_stg0_00_init_trampoline = patch::hookFunction(
         ttyd::event::stg0_00_init, []() {
             // Replaces existing logic, includes loading the randomizer state.
-            InitializeOnNewFile();
+            OnFileLoad(/* new_file = */ true);
         });
         
     g_cardCopy2Main_trampoline = patch::hookFunction(
         ttyd::cardmgr::cardCopy2Main, [](int32_t save_file_number) {
             g_cardCopy2Main_trampoline(save_file_number);
+            OnFileLoad(/* new_file = */ false);
             // If invalid randomizer file loaded, give the player a Game Over.
             if (!g_Randomizer->state_.Load(/* new_save = */ false)) {
                 g_CueGameOver = true;

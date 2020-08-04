@@ -389,54 +389,57 @@ const int32_t HammerBrosHpCheck[] = {
 
 }
 
-void InitializeOnNewFile() {
-    // TODO: Make this not re-allocate the pouch if an alloc already exists.
-    ttyd::mario_pouch::pouchInit();
-    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-    // Initialize other systems / data.
-    ttyd::evt_badgeshop::badgeShop_init();
-    ttyd::evt_yuugijou::yuugijou_init();
-    ttyd::evt_johoya::johoya_init();
-    
-    ttyd::mario::marioSetCharMode(0);
-    ttyd::statuswindow::statusWinForceUpdate();
-    ttyd::mariost::g_MarioSt->lastFrameRetraceLocalTime = 0ULL;
-    // Makes Mario spawn walking into the room normally if loading a new file,
-    // rather than in place in the center of the room.
-    ttyd::mariost::g_MarioSt->flags &= ~1U;
-    
-    // Initializes the randomizer's state and copies it to the pouch.
-    g_Randomizer->state_.Load(/* new_save = */ true);
-    g_Randomizer->state_.Save();
-    
-    // Update any stats / equipment / flags as necessary.
-    ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
-    ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);
-    ttyd::mario_pouch::pouchSetCoin(0);
-    ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
-    ttyd::mario_pouch::pouchGetItem(ItemType::W_EMBLEM);
-    ttyd::mario_pouch::pouchGetItem(ItemType::PEEKABOO);
-    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::PEEKABOO);
-    ttyd::mario_pouch::pouchGetItem(ItemType::FP_PLUS);
-    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::FP_PLUS);
-    ttyd::mario_pouch::pouchGetItem(ItemType::HP_PLUS);
-    ttyd::mario_pouch::pouchEquipBadgeID(ItemType::HP_PLUS);
-    pouch.current_hp = 15;
-    pouch.current_fp = 10;
-    pouch.total_bp = 9;
-    pouch.unallocated_bp = 3;
-    ttyd::mario_pouch::pouchReviseMarioParam();
-    // Assign Yoshi a random color.
-    ttyd::mario_pouch::pouchSetPartyColor(4, g_Randomizer->state_.Rand(7));
-    
-    // Set story progress / some tutorial flags.
-    ttyd::swdrv::swInit();
-    ttyd::swdrv::swByteSet(0, 405);     // post-game story progress
-    ttyd::swdrv::swSet(0xe9);           // Save Block tutorial
-    ttyd::swdrv::swSet(0xea);           // Heart Block tutorial
-    ttyd::swdrv::swSet(0xeb);           // Item tutorial
-    ttyd::swdrv::swSet(0xec);           // Save Block tutorial-related
-    ttyd::swdrv::swSet(0x15d9);         // Star piece in Pit room collected
+void OnFileLoad(bool new_file) {
+    if (new_file) {
+        // TODO: Make this not re-allocate the pouch if an alloc already exists.
+        ttyd::mario_pouch::pouchInit();
+        PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        // Initialize other systems / data.
+        ttyd::evt_badgeshop::badgeShop_init();
+        ttyd::evt_yuugijou::yuugijou_init();
+        ttyd::evt_johoya::johoya_init();
+        
+        ttyd::mario::marioSetCharMode(0);
+        ttyd::statuswindow::statusWinForceUpdate();
+        ttyd::mariost::g_MarioSt->lastFrameRetraceLocalTime = 0ULL;
+        // Makes Mario spawn walking into the room normally if loading a new file,
+        // rather than in place in the center of the room.
+        ttyd::mariost::g_MarioSt->flags &= ~1U;
+        
+        // Initializes the randomizer's state and copies it to the pouch.
+        g_Randomizer->state_.Load(/* new_save = */ true);
+        g_Randomizer->state_.Save();
+        
+        // Update any stats / equipment / flags as necessary.
+        ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
+        ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);
+        ttyd::mario_pouch::pouchSetCoin(0);
+        ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
+        ttyd::mario_pouch::pouchGetItem(ItemType::W_EMBLEM);
+        ttyd::mario_pouch::pouchGetItem(ItemType::PEEKABOO);
+        ttyd::mario_pouch::pouchEquipBadgeID(ItemType::PEEKABOO);
+        ttyd::mario_pouch::pouchGetItem(ItemType::FP_PLUS);
+        ttyd::mario_pouch::pouchEquipBadgeID(ItemType::FP_PLUS);
+        ttyd::mario_pouch::pouchGetItem(ItemType::HP_PLUS);
+        ttyd::mario_pouch::pouchEquipBadgeID(ItemType::HP_PLUS);
+        pouch.current_hp = 15;
+        pouch.current_fp = 10;
+        pouch.total_bp = 9;
+        pouch.unallocated_bp = 3;
+        ttyd::mario_pouch::pouchReviseMarioParam();
+        // Assign Yoshi a random color.
+        ttyd::mario_pouch::pouchSetPartyColor(4, g_Randomizer->state_.Rand(7));
+        
+        // Set story progress / some tutorial flags.
+        ttyd::swdrv::swInit();
+        ttyd::swdrv::swByteSet(0, 405);     // post-game story progress
+        ttyd::swdrv::swSet(0xe9);           // Save Block tutorial
+        ttyd::swdrv::swSet(0xea);           // Heart Block tutorial
+        ttyd::swdrv::swSet(0xeb);           // Item tutorial
+        ttyd::swdrv::swSet(0xec);           // Save Block tutorial-related
+        ttyd::swdrv::swSet(0x15d9);         // Star piece in Pit room collected
+    }
+    g_PromptSave = false;
 }
 
 void OnModuleLoaded(OSModuleInfo* module) {
