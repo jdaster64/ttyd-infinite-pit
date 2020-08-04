@@ -223,9 +223,9 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::WIZZERD, 295, 10, 8, 3, 7, 7, kHpTables[1], kFpTables[1], -1 },
     { BattleUnitType::DARK_WIZZERD, 296, 12, 8, 4, 5, 8, kHpTables[2], kFpTables[2], -1 },
     { BattleUnitType::ELITE_WIZZERD, 297, 14, 8, 5, 7, 10, kHpTables[3], kFpTables[3], -1 },
-    { BattleUnitType::YUX, 268, 8, 5, 0, 2, 4, kHpTables[0], kFpTables[0], 1 },
-    { BattleUnitType::Z_YUX, 269, 10, 6, 0, 4, 6, kHpTables[1], kFpTables[1], 1 },
-    { BattleUnitType::X_YUX, 270, 12, 6, 2, 3, 10, kHpTables[2], kFpTables[2], 1 },
+    { BattleUnitType::YUX, 268, 7, 5, 0, 2, 6, kHpTables[0], kFpTables[0], 1 },
+    { BattleUnitType::Z_YUX, 269, 9, 6, 0, 4, 8, kHpTables[1], kFpTables[1], 1 },
+    { BattleUnitType::X_YUX, 270, 11, 6, 2, 3, 10, kHpTables[2], kFpTables[2], 1 },
     { BattleUnitType::MINI_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
     { BattleUnitType::MINI_Z_YUX, -1, 2, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
     { BattleUnitType::MINI_X_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
@@ -419,6 +419,7 @@ ModuleId::e SelectEnemies(int32_t floor) {
     // If a reward floor, no enemies to spawn.
     if (floor % 10 == 9) return ModuleId::INVALID_MODULE;
     
+    const auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
     auto& state = g_Randomizer->state_;
     
     // If floor > 50, determine whether to use one of the preset loadouts.
@@ -470,6 +471,12 @@ ModuleId::e SelectEnemies(int32_t floor) {
                 base_wt = kBaseWeights[floor_group][ei.level_offset - 2];
                 // Double the base weight if the enemy is from secondary area.
                 if (emi.module == secondary_area && floor >= 30) base_wt <<= 1;
+            }
+            
+            // Disable Yuxes if Earth Tremor or Art Attack aren't available,
+            // to reduce the chance of a seed becoming essentially unwinnable.
+            if (i >= 87 && i <= 89 && !(pouch.star_powers_obtained & 0x12)) {
+                base_wt = 0;
             }
             
             // The 6th slot is used for reference as an unchanging base weight.

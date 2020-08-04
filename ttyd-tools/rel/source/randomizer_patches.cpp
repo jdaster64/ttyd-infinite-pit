@@ -102,6 +102,7 @@ using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
 using ::ttyd::battle_database_common::BattleGroupSetup;
 using ::ttyd::battle_database_common::BattleUnitKind;
+using ::ttyd::battle_database_common::BattleUnitKindPart;
 using ::ttyd::battle_database_common::BattleUnitSetup;
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_database_common::PointDropData;
@@ -529,6 +530,18 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x31aa4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+        } else if (module_id == ModuleId::AJI) {
+            // Make all varieties of Yux able to be hit by grounded attacks,
+            // that way any partner is able to attack them.
+            auto* z_yux =
+                reinterpret_cast<BattleUnitKindPart*>(module_ptr + 0x48a14);
+            auto* x_yux =
+                reinterpret_cast<BattleUnitKindPart*>(module_ptr + 0x4f81c);
+            auto* yux =
+                reinterpret_cast<BattleUnitKindPart*>(module_ptr + 0x52e7c);
+            z_yux->attribute_flags  &= ~0x600000;
+            x_yux->attribute_flags  &= ~0x600000;
+            yux->attribute_flags    &= ~0x600000;
         }
     }
 }
