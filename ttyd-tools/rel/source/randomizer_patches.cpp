@@ -1938,8 +1938,13 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
     int32_t num_rewards = 
         g_Randomizer->state_.options_ & RandomizerState::NUM_CHEST_REWARDS;
-    // Add a bonus reward for beating a boss (Atomic Boo or Bonetail).
-    if (g_Randomizer->state_.floor_ % 50 == 49) ++num_rewards;
+    if (num_rewards > 0) {
+        // Add a bonus reward for beating a boss (Atomic Boo or Bonetail).
+        if (g_Randomizer->state_.floor_ % 50 == 49) ++num_rewards;
+    } else {
+        // Pick a number of rewards randomly from 1 ~ 5.
+        num_rewards = g_Randomizer->state_.Rand(5) + 1;
+    }
     evtSetValue(evt, evt->evtArguments[0], num_rewards);
     return 2;
 }

@@ -40,7 +40,7 @@ const char kStartRoomName[] = "tik_06";
 // Menu constants.
 const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
-const int32_t kMenuWidth            = 308;
+const int32_t kMenuWidth            = 320;
 const int32_t kMenuPadding          = 15;
 const int32_t kFadeoutStartTime     = 240;
 const int32_t kFadeoutEndTime       = 255;
@@ -209,6 +209,7 @@ void RandomizerMenu::Update() {
             break;
         }
         case kMenuSelectCommand: {
+        lblSelectCommand:
             if (time_button_held_ == 0) {
                 switch (menu_state_) {
                     case MenuState::CHANGE_PAGE: {
@@ -255,8 +256,11 @@ void RandomizerMenu::Update() {
                 switch (menu_state_) {
                     case MenuState::NUM_CHEST_REWARDS: {
                         if ((state.options_ & 
-                            RandomizerState::NUM_CHEST_REWARDS) > 1)
+                            RandomizerState::NUM_CHEST_REWARDS) > 0) {
                             --state.options_;
+                        } else {
+                            state.options_ = 5;
+                        }
                         break;
                     }
                     case MenuState::HP_MODIFIER: {
@@ -272,15 +276,19 @@ void RandomizerMenu::Update() {
                     default: break;
                 }
             }
-            break;
+            // Can also be treated as a "select" input.
+            goto lblSelectCommand;
         }
         case kMenuRightCommand: {
             if (ShouldTickOrAutotick(time_button_held_)) {
                 switch (menu_state_) {
                     case MenuState::NUM_CHEST_REWARDS: {
                         if ((state.options_ & 
-                            RandomizerState::NUM_CHEST_REWARDS) < 5)
+                            RandomizerState::NUM_CHEST_REWARDS) < 5) {
                             ++state.options_;
+                        } else {
+                            state.options_ = 0;
+                        }
                         break;
                     }
                     case MenuState::HP_MODIFIER: {
@@ -296,6 +304,8 @@ void RandomizerMenu::Update() {
                     default: break;
                 }
             }
+            // Can also be treated as a "select" input.
+            goto lblSelectCommand;
         }
         default: break;
     }
@@ -313,7 +323,7 @@ void RandomizerMenu::Draw() {
         if (alpha > 0xff) alpha = 0xff;
         DrawText(
             "Press L+Z to open the options menu, then\n"
-            "hold Z and press L or the D-Pad to control it.",
+            "hold Z and press L or the D-Pad to make selections.",
             0, -150, alpha, true, ~0U, 0.75f, /* alignment = center */ 4);
         return;
     }
@@ -344,23 +354,27 @@ void RandomizerMenu::Draw() {
     const RandomizerState& state = g_Randomizer->state_;
     
     if (menu_page_ == 1) {
+        const uint32_t num_rewards =
+            state.options_ & RandomizerState::NUM_CHEST_REWARDS;
+        const char kChestRewardNumString[2] = { 
+            static_cast<char>('0' + num_rewards), '\0'
+        };
         color = GetActiveColor(MenuState::NUM_CHEST_REWARDS, alpha);
-        sprintf(buf, "Rewards per Pit chest:");
+        sprintf(buf, "Rewards per chest:");
         DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        sprintf(buf, "%" PRId32,
-                state.options_ & RandomizerState::NUM_CHEST_REWARDS);
+        sprintf(buf, num_rewards > 0 ? kChestRewardNumString : "Random");
         DrawMenuString(buf, kValueX, kRowY, color, /* right-center */ 5);
         kRowY -= 19;
         
         color = GetActiveColor(MenuState::HP_MODIFIER, alpha);
-        sprintf(buf, "Enemy HP modifier:");
+        sprintf(buf, "Enemy HP multiplier:");
         DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
         sprintf(buf, "%" PRId32 "%s", state.hp_multiplier_, "%");
         DrawMenuString(buf, kValueX, kRowY, color, /* right-center */ 5);
         kRowY -= 19;
         
         color = GetActiveColor(MenuState::ATK_MODIFIER, alpha);
-        sprintf(buf, "Enemy ATK modifier:");
+        sprintf(buf, "Enemy ATK multiplier:");
         DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
         sprintf(buf, "%" PRId32 "%s", state.atk_multiplier_, "%");
         DrawMenuString(buf, kValueX, kRowY, color, /* right-center */ 5);
