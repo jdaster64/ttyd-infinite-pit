@@ -1438,6 +1438,14 @@
 // evt_yuugijou.o
 80229bcc:yuugijou_init
 
+// sac_zubastar.o
+// .text 
+// 80235c7c:weaponGetPower_ZubaStar
+// .data
+803b5980:weapon_zubastar
+8041db20:nice_event
+803b5a40:marioAttackEvent_ZubaStar
+
 // evt_memcard.o
 // .text 
 // 8025c2bc:memcard_create

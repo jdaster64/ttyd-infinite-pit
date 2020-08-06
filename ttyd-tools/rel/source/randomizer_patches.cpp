@@ -48,6 +48,7 @@
 #include <ttyd/mariost.h>
 #include <ttyd/memory.h>
 #include <ttyd/npcdrv.h>
+#include <ttyd/sac_zubastar.h>
 #include <ttyd/seq_mapchange.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/sound.h>
@@ -57,6 +58,7 @@
 #include <ttyd/unit_bomzou.h>
 #include <ttyd/unit_party_christine.h>
 #include <ttyd/unit_party_chuchurina.h>
+#include <ttyd/unit_party_clauda.h>
 #include <ttyd/unit_party_nokotarou.h>
 #include <ttyd/unit_party_sanders.h>
 #include <ttyd/unit_party_vivian.h>
@@ -744,6 +746,7 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                 }
             }
             idx = GetWeaponLevelSelectionIndex(weapon->item_id);
+            if (idx < 0 || g_MaxMoveBadgeCounts[idx] <= 1) continue;
             
             // If current selection, and L/R pressed, change power level.
             if (i == cursor->abs_position) {
@@ -1558,6 +1561,9 @@ void ApplyItemAndAttackPatches() {
     ttyd::battle_item_data::ItemWeaponData_Kameno_Noroi.target_class_flags =
         0x02101260;
         
+    // Make Hot Sauce charge by +3.
+    ttyd::battle_item_data::ItemWeaponData_RedKararing.charge_strength = 3;
+        
     // Add 75%-rate Dizzy status to Tornado Jump's tornadoes.
     ttyd::battle_mario::badgeWeapon_TatsumakiJumpInvolved.dizzy_time = 3;
     ttyd::battle_mario::badgeWeapon_TatsumakiJumpInvolved.dizzy_chance = 75;
@@ -1594,6 +1600,31 @@ void ApplyItemAndAttackPatches() {
     ttyd::battle_mario::badgeWeapon_IceNaguri.base_fp_cost = 2;
     ttyd::battle_mario::badgeWeapon_TatsumakiJump.base_fp_cost = 2;
     ttyd::battle_mario::badgeWeapon_FireNaguri.base_fp_cost = 4;
+    
+    // Increase attack power of Supernova to 4 per bar instead of 3.
+    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[1] = 4;
+    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[2] = 8;
+    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[3] = 12;
+    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[4] = 16;
+    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[5] = 20;
+    
+    // Double Pain doubles coin drops instead of Money Money.
+    const int32_t kMoneyMoneyHookAddr1 = 0x80046f70;
+    const int32_t kMoneyMoneyHookAddr2 = 0x80046f80;
+    const int32_t kLoadDoublePainItemIdOpcode = 0x38600120;  // li r3, 0x120
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kMoneyMoneyHookAddr1),
+        &kLoadDoublePainItemIdOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kMoneyMoneyHookAddr2),
+        &kLoadDoublePainItemIdOpcode, sizeof(int32_t));
+        
+    // Pity Flower (P) guarantees 1 FP recovery on each damaging hit.
+    const int32_t kPityFlowerChanceHookAddr = 0x800fe500;
+    const int32_t kLoadPityFlowerChanceOpcode = 0x2c030064;  // cmpwi r3, 100
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kPityFlowerChanceHookAddr),
+        &kLoadPityFlowerChanceOpcode, sizeof(int32_t));
     
     // Disable getting coins and experience from a successful Gale Force.
     const int32_t kGaleForceKillHookAddr = 0x80351ea4;
@@ -1657,10 +1688,13 @@ void ApplyItemAndAttackPatches() {
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaKiss.base_fp_cost = 5;
     
     // Misc. other party move balance changes.
+    
+    // Goombella's base attack does 2+2 at base rank instead of 1+1.
     ttyd::unit_party_christine::partyWeapon_ChristineNormalAttack.
         damage_function_params[0] = 2;
     ttyd::unit_party_christine::partyWeapon_ChristineNormalAttack.
         damage_function_params[1] = 2;
+    // Koops, Bobbery, and Flurrie's base attacks do 3 / 5 / 7 damage.
     static constexpr const int32_t kKoopsBobberyBaseAttackParams[] =
         { 1, 3, 2, 5, 3, 7 };
     static constexpr const int32_t kKoopsBobberyFirstAttackParams[] =
@@ -1671,6 +1705,10 @@ void ApplyItemAndAttackPatches() {
         kKoopsBobberyBaseAttackParams, sizeof(kKoopsBobberyBaseAttackParams));
     memcpy(
         ttyd::unit_party_sanders::partyWeapon_SandersNormalAttack.
+            damage_function_params,
+        kKoopsBobberyBaseAttackParams, sizeof(kKoopsBobberyBaseAttackParams));
+    memcpy(
+        ttyd::unit_party_clauda::partyWeapon_ClaudaNormalAttack.
             damage_function_params,
         kKoopsBobberyBaseAttackParams, sizeof(kKoopsBobberyBaseAttackParams));
     memcpy(

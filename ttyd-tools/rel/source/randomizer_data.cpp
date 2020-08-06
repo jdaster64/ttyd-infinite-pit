@@ -229,6 +229,12 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::MINI_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
     { BattleUnitType::MINI_Z_YUX, -1, 2, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
     { BattleUnitType::MINI_X_YUX, -1, 1, 0, 0, 0, 0, kHpTables[0], kFpTables[0], 1 },
+    { BattleUnitType::RED_MAGIKOOPA_CLONE, 318, 15, 7, 0, 4, 0, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::WHITE_MAGIKOOPA_CLONE, 319, 15, 7, 0, 4, 0, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::GREEN_MAGIKOOPA_CLONE, 320, 15, 7, 0, 4, 0, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::MAGIKOOPA_CLONE, 321, 15, 7, 0, 4, 0, kHpTables[0], kFpTables[3], 3 },
+    { BattleUnitType::DARK_WIZZERD_CLONE, 296, 12, 8, 4, 5, 0, kHpTables[2], kFpTables[2], -1 },
+    { BattleUnitType::ELITE_WIZZERD_CLONE, 297, 14, 8, 5, 7, 0, kHpTables[3], kFpTables[3], -1 },
     { /* invalid enemy */ },
 };
 
@@ -342,12 +348,12 @@ const EnemyModuleInfo kEnemyModuleInfo[] = {
 };
 
 const int32_t kPresetLoadouts[][5] = {
+    { 6, 92, 34, 93, -1 },      // Bones
     { 57, 58, 3, -1, -1 },      // Goomba, Hyper Goomba, Gloomba
     { 58, 59, 60, -1, -1 },     // Hyper Goomba family
     { 3, 8, 13, -1, -1 },       // Gloomba family
     { 14, 81, 28, -1, -1 },     // Bandits
     { 5, 4, 43, -1, -1 },       // Spanias
-    { 6, 92, 34, 93, -1 },      // Bones
     { 7, 79, 22, -1, -1 },      // Fuzzies
     { 9, 19, 32, -1, -1 },      // Clefts
     { 11, 101, 29, 48, -1 },    // Puffs
@@ -425,6 +431,9 @@ ModuleId::e SelectEnemies(int32_t floor) {
     // If floor > 50, determine whether to use one of the preset loadouts.
     if (floor >= 50 && state.Rand(100) < 20) {
         int32_t idx = state.Rand(sizeof(kPresetLoadouts) / (sizeof(int32_t)*5));
+        // If the Bones variants loadout selected and player doesn't have
+        // a damaging Star Power, use the Goomba variants loadout instead.
+        if (idx == 0 && !(pouch.star_powers_obtained & 0x92)) idx = 1;
         for (int32_t enemy = 0; enemy < 5; ++enemy) {
             g_Enemies[enemy] = kPresetLoadouts[idx][enemy];
         }
@@ -473,10 +482,14 @@ ModuleId::e SelectEnemies(int32_t floor) {
                 if (emi.module == secondary_area && floor >= 30) base_wt <<= 1;
             }
             
-            // Disable Yuxes if Earth Tremor or Art Attack aren't available,
-            // to reduce the chance of a seed becoming essentially unwinnable.
-            if (i >= 87 && i <= 89 && !(pouch.star_powers_obtained & 0x12)) {
-                base_wt = 0;
+            // Disable Yuxes and Dry Bones variants (other than Dull Bones)
+            // if the player doesn't have a damaging Star Power, to reduce
+            // the chance of a seed becoming essentially unwinnable.
+            if (!(pouch.star_powers_obtained & 0x92)) {
+                if (i == 34 || i == 56 || i == 92 || i == 93 ||
+                    i == 87 || i == 88 || i == 89) {
+                    base_wt = 0;
+                }
             }
             
             // The 6th slot is used for reference as an unchanging base weight.
@@ -705,7 +718,7 @@ bool GetEnemyStats(
     int32_t floor_group = g_Randomizer->state_.floor_ / 10;
     int32_t base_hp_pct = 
         floor_group > 9 ?
-            100 + (floor_group - 9) * 10 : kStatPercents[floor_group];
+            100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
     int32_t base_atkdef_pct = 
         floor_group > 9 ?
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
@@ -731,7 +744,7 @@ bool GetEnemyStats(
         }
     }
     if (out_level) {
-        if (g_Randomizer->state_.options_ & RandomizerState::NO_EXP_MODE) {
+        if (ttyd::mario_pouch::pouchGetPtr()->level >= 99) {
             *out_level = 0;
         } else if (ei->level_offset == 0) {
             // Enemies like Mini-Yuxes should never grant EXP.
@@ -927,10 +940,10 @@ int32_t PickRandomItem(
         0x2020, 0xffb8, 0x3edf, 0x97ef, 0x0bff
     };
     static constexpr const uint16_t kStackableBadges[] = {
-        0x3fff, 0xffff, 0x0fff, 0xfff7, 0x038f, 0x0030, 0x0006
+        0x3fff, 0xffff, 0x0fff, 0xfff7, 0x018f, 0x0030, 0x0006
     };
     static constexpr const uint16_t kStackableBadgesNoP[] = {
-        0x3fff, 0x5555, 0x0b55, 0xaad7, 0x0386, 0x0030, 0x0002
+        0x3fff, 0x5555, 0x0b55, 0xaad7, 0x0186, 0x0030, 0x0002
     };
     
     int32_t total_weight =
