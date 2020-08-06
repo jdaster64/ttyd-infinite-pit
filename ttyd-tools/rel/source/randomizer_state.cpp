@@ -69,7 +69,7 @@ bool RandomizerState::Load(bool new_save) {
     version_ = 2;
     floor_ = 0;
     reward_flags_ = 0x00000000;
-    for (int32_t i = 0; i < 6; ++i) charlieton_items_[i] = 0;
+    load_from_save_ = false;
     for (int32_t i = 0; i < 7; ++i) partner_upgrades_[i] = 0;
     InitPartyMaxHpTable(partner_upgrades_);
     

@@ -21,7 +21,10 @@ struct RandomizerState {
     uint32_t    rng_state_;
     int32_t     floor_;
     uint32_t    reward_flags_;
-    int16_t     charlieton_items_[6];
+    // Used for reloading a save.
+    uint32_t    saved_rng_state_;
+    uint8_t     load_from_save_;
+    uint8_t     unused_[7];
     
     // Options that can be set by the player at the start of a file.
     int16_t     hp_multiplier_;

@@ -177,6 +177,7 @@ const char*         kMoveBadgeAbbreviations[18] = {
     "Pier. B.", "H. Rattle", "Fire Drive", "Ice Smash",
     "Charge", "Charge", "Tough. Up", "Tough. Up"
 };
+constexpr const int32_t kNumCharlietonItemsPerType = 5;
 
 const char kPitNpcName[] = "\x93\x47";  // "enemy"
 const char kPiderName[] = "\x83\x70\x83\x43\x83\x5f\x81\x5b\x83\x58";
@@ -514,9 +515,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
             for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
                 ttyd::swdrv::swClear(i);
             }
-            for (int32_t i = 0; i < 6; ++i) {
-                g_Randomizer->state_.charlieton_items_[i] = 0;
-            }
+            g_Randomizer->state_.load_from_save_ = false;
             g_PromptSave = true;
         }
         // Otherwise, modify Charlieton's stock, using items from the randomizer
@@ -1191,32 +1190,46 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
 }
 
 void ReplaceCharlietonStock() {
-    int16_t* saved_items = g_Randomizer->state_.charlieton_items_;
-    // If there are already items from a previous save, use and clear them.
-    if (saved_items[0]) {
-        for (int32_t i = 0; i < 6; ++i) {
-            ttyd::evt_badgeshop::badge_bottakuru100_table[i] = saved_items[i];
-            saved_items[i] = 0;
-        }
-    } else {
-        for (int32_t i = 0; i < 6; ++i) {
-            bool found = true;
-            while (found) {
-                found = false;
-                // Two normal items, two recipe items, two badges.
-                int32_t item = PickRandomItem(
-                    /* seeded = */ true, i < 2, i & 2, i >= 4, 0);
-                // Make sure no duplicate items exist.
-                for (int32_t j = 0; j < i; ++j) {
-                    if (ttyd::evt_badgeshop::badge_bottakuru100_table[j]
-                            == item) {
-                        found = true;
-                    }
+    // Before setting stock, check if reloading an existing save file;
+    // if so, set the RNG state to what it was at the start of the floor
+    // so Charlieton's stock is the same as it was before.
+    const int32_t current_rng_state = g_Randomizer->state_.rng_state_;
+    if (g_Randomizer->state_.load_from_save_) {
+        g_Randomizer->state_.rng_state_ = g_Randomizer->state_.saved_rng_state_;
+    }
+    
+    // Fill in Charlieton's expanded inventory.
+    int32_t* inventory = ttyd::evt_badgeshop::badge_bottakuru100_table;
+    for (int32_t i = 0; i < kNumCharlietonItemsPerType * 3; ++i) {
+        bool found = true;
+        while (found) {
+            found = false;
+            int32_t item = PickRandomItem(
+                /* seeded = */ true,
+                i / kNumCharlietonItemsPerType == 0,
+                i / kNumCharlietonItemsPerType == 1, 
+                i / kNumCharlietonItemsPerType == 2, 
+                0);
+            // Make sure no duplicate items exist.
+            for (int32_t j = 0; j < i; ++j) {
+                if (inventory[j] == item) {
+                    found = true;
+                    break;
                 }
-                ttyd::evt_badgeshop::badge_bottakuru100_table[i] = item;
-                saved_items[i] = item;
             }
+            inventory[i] = item;
         }
+    }
+    
+    if (g_Randomizer->state_.load_from_save_) {
+        // If loaded from save, restore the previous RNG value so the seed
+        // matches up with where it should start on the following floor.
+        g_Randomizer->state_.rng_state_ = current_rng_state;
+    } else {
+        // Otherwise, save what the RNG was before generating the list, so the
+        // item list can be duplicated after loading a save.
+        g_Randomizer->state_.saved_rng_state_ = current_rng_state;
+        g_Randomizer->state_.load_from_save_ = true;
     }
 }
 
@@ -1833,6 +1846,14 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kCharlietonPitItemHookAddr),
         reinterpret_cast<void*>(CharlietonPitPriceItemPatchStart),
         reinterpret_cast<void*>(CharlietonPitPriceItemPatchEnd));
+        
+    // Change the length of Charlieton's shop item list.
+    const int32_t kCharlietonPitListLengthHookAddr = 0x801fae60;
+    const int32_t kLoadCharlietonPitListLengthOpcode = 
+        0x38600000 | (kNumCharlietonItemsPerType * 3);  // li r3, N
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCharlietonPitListLengthHookAddr),
+        &kLoadCharlietonPitListLengthOpcode, sizeof(uint32_t));
         
     // Enable the crash handler.
     const int32_t kCrashHandlerEnableOpAddr = 0x80009b2c;
