@@ -14,16 +14,31 @@ namespace mod::pit_randomizer {
 namespace MsgKey {
     enum e {
         BTL_HLP_CMD_OPERATION_SUPER_CHARGE = 0,
+        IN_2BAI_DAMAGE,
         IN_CAKE,
         IN_TOUGHEN_UP,
         IN_TOUGHEN_UP_P,
         LIST_ICE_CANDY,
         LIST_NANCY_FRAPPE,
+        MENU_2BAI_DAMAGE,
+        MENU_CHARGE,
+        MENU_CHARGE_P,
+        MENU_DAMAGE_FLOWER,
+        MENU_DAMAGE_FLOWER_P,
+        MENU_DAMAGE_GAESHI,
+        MENU_FIRE_NAGURI,
+        MENU_ICE_NAGURI,
+        MENU_TAMATSUKI_JUMP,
+        MENU_TSURANUKI_NAGURI,
+        MSG_2BAI_DAMAGE,
         MSG_CAKE,
         MSG_CUSTOM_SUPER_BOOTS,
         MSG_CUSTOM_SUPER_HAMMER,
         MSG_CUSTOM_ULTRA_BOOTS,
         MSG_CUSTOM_ULTRA_HAMMER,
+        MSG_DAMAGE_FLOWER,
+        MSG_DAMAGE_FLOWER_P,
+        MSG_DAMAGE_GAESHI,
         MSG_ICE_CANDY,
         MSG_JON_KANBAN_1,
         MSG_JON_KANBAN_3,
@@ -49,16 +64,31 @@ namespace {
 // in sync with the above enum, and always maintain alphabetical order.
 constexpr const char* kKeyLookups[] = {
     "btl_hlp_cmd_operation_super_charge",
+    "in_2bai_damage",
     "in_cake",
     "in_toughen_up",
     "in_toughen_up_p",
     "list_ice_candy",
     "list_nancy_frappe",
+    "menu_2bai_damage",
+    "menu_charge",
+    "menu_charge_p",
+    "menu_damage_flower",
+    "menu_damage_flower_p",
+    "menu_damage_gaeshi",
+    "menu_fire_naguri",
+    "menu_ice_naguri",
+    "menu_tamatsuki_jump",
+    "menu_tsuranuki_naguri",
+    "msg_2bai_damage",
     "msg_cake",
     "msg_custom_super_boots",
     "msg_custom_super_hammer",
     "msg_custom_ultra_boots",
     "msg_custom_ultra_hammer",
+    "msg_damage_flower",
+    "msg_damage_flower_p",
+    "msg_damage_gaeshi",
     "msg_ice_candy",
     "msg_jon_kanban_1",
     "msg_jon_kanban_3",
@@ -133,8 +163,18 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
                 "sign in back for your seed.\n<k>");
             return buf;
         }
+        case MsgKey::IN_2BAI_DAMAGE:
+            return "No Pain, No Gain";
         case MsgKey::IN_CAKE:
             return "Strawberry Cake";
+        case MsgKey::IN_TOUGHEN_UP:
+            return "Toughen Up";
+        case MsgKey::IN_TOUGHEN_UP_P:
+            return "Toughen Up P";
+        case MsgKey::MSG_2BAI_DAMAGE:
+        case MsgKey::MENU_2BAI_DAMAGE:
+            return "Doubles the damage Mario \n"
+                   "takes, but doubles coin drops.";
         case MsgKey::MSG_CAKE:
             return "Scrumptious strawberry cake \n"
                    "that heals 15 HP and 15 FP.";
@@ -160,10 +200,6 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
                    "Gives 20 FP, but might freeze!\n"
                    "Made by mixing Maple Syrup \n"
                    "with an Ice Storm.";
-        case MsgKey::IN_TOUGHEN_UP:
-            return "Toughen Up";
-        case MsgKey::IN_TOUGHEN_UP_P:
-            return "Toughen Up P";
         case MsgKey::MSG_TOUGHEN_UP:
             return "Wear this to add Toughen Up\n"
                    "to Mario's Tactics menu.";
@@ -201,6 +237,64 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
             return "A more powerful hammer.";
         case MsgKey::MSG_CUSTOM_ULTRA_HAMMER:
             return "An even more powerful hammer.";
+        case MsgKey::MENU_TAMATSUKI_JUMP:
+            return "Wear this to use Tornado\n"
+                   "Jump, a 2-FP move which can\n"
+                   "damage and dizzy airborne\n"
+                   "enemies if executed well.\n"
+                   "Wearing more copies of the\n"
+                   "badge increases its FP\n"
+                   "cost and attack power.";
+        case MsgKey::MENU_TSURANUKI_NAGURI:
+            return "Wear this to use Piercing\n"
+                   "Blow, a 2-FP move which\n"
+                   "deals damage that pierces\n"
+                   "enemy defenses.\n"
+                   "Wearing more copies of the\n"
+                   "badge increases its FP\n"
+                   "cost and attack power.";
+        case MsgKey::MENU_FIRE_NAGURI:
+            return "Wear this to use Fire Drive,\n"
+                   "a 4-FP move which deals\n"
+                   "fire damage and Burn status\n"
+                   "to all grounded enemies.\n"
+                   "Wearing more copies of the\n"
+                   "badge increases its FP\n"
+                   "cost and attack power.";
+        case MsgKey::MENU_ICE_NAGURI:
+            return "Wear this to use Ice Smash,\n"
+                   "a 2-FP move which deals\n"
+                   "ice damage and may give its\n"
+                   "target the Freeze status.\n"
+                   "Wearing more copies of the\n"
+                   "badge increases its FP\n"
+                   "cost and status duration.";
+        case MsgKey::MENU_CHARGE:
+            return "Wear this to add Charge\n"
+                   "to Mario's Tactics menu.\n"
+                   "This uses 2 FP to increase\n"
+                   "the next move's ATK by 2.\n"
+                   "Wearing more copies raises\n"
+                   "the effect and FP cost.";
+        case MsgKey::MENU_CHARGE_P:
+            return "Wear this to add Charge\n"
+                   "to partners' Tactics menu.\n"
+                   "This uses 2 FP to increase\n"
+                   "the next move's ATK by 2.\n"
+                   "Wearing more copies raises\n"
+                   "the effect and FP cost.";
+        case MsgKey::MSG_DAMAGE_GAESHI:
+        case MsgKey::MENU_DAMAGE_GAESHI:
+            return "Make direct-attackers take\n"
+                   "the same damage they deal.";
+        case MsgKey::MSG_DAMAGE_FLOWER:
+        case MsgKey::MENU_DAMAGE_FLOWER:
+            return "Recover 1 FP whenever\n"
+                   "Mario receives damage.";
+        case MsgKey::MSG_DAMAGE_FLOWER_P:
+        case MsgKey::MENU_DAMAGE_FLOWER_P:
+            return "Recover 1 FP whenever your\n"
+                   "partner receives damage.";
     }
     // Should not be reached.
     return nullptr;
