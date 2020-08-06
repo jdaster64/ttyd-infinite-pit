@@ -7,6 +7,7 @@
 #include "patch.h"
 #include "randomizer.h"
 #include "randomizer_data.h"
+#include "randomizer_strings.h"
 
 #include <gc/OSLink.h>
 #include <gc/mtx.h>
@@ -1159,104 +1160,7 @@ void ReplaceCharlietonStock() {
 }
 
 const char* GetReplacementMessage(const char* msg_key) {
-    // Do not use for more than one custom message at a time!
-    static char buf[128];
-    
-    // TODO: Consider replacing these compares with a single hash and
-    // comparison if many more strings are added.
-    if (!strcmp(msg_key, "pit_reward_party_join")) {
-        return "<system>\n<p>\nYou got a new party member!\n<k>";
-    } else if (!strcmp(msg_key, "pit_disabled_return")) {
-        return "<system>\n<p>\nYou can't leave the Infinite Pit!\n<k>";
-    } else if (!strcmp(msg_key, "pit_chest_unclaimed")) {
-        return "<system>\n<p>\nYou haven't claimed your\nreward!\n<k>";
-    } else if (!strcmp(msg_key, "msg_jon_kanban_1")) {
-        sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
-                g_Randomizer->state_.floor_ + 1);
-        return buf;
-    } else if (!strcmp(msg_key, "msg_jon_kanban_3")) {
-        sprintf(buf, "<kanban>\nYour seed: %s\n"
-            "(Name your file \"random\" or \"\xde\"\n"
-            "to have one picked randomly.)<k>",
-            ttyd::mariost::g_MarioSt->saveFileName);
-        return buf;
-    } else if (!strcmp(msg_key, "tik_06_02")) {
-        sprintf(buf, "<kanban>\n"
-            "Thanks for playing the PM:TTYD\n"
-            "Infinite Pit mod! Check the \n"
-            "sign in back for your seed.\n<k>");
-        return buf;
-    } else if (!strcmp(msg_key, "in_cake")) {
-        return "Strawberry Cake";
-    } else if (!strcmp(msg_key, "msg_cake")) {
-        return "Scrumptious strawberry cake \n"
-               "that heals 15 HP and 15 FP.";
-    } else if (!strcmp(msg_key, "msg_kame_no_noroi")) {
-        return "Has a chance of inducing Slow \n"
-               "status on all foes.";
-    } else if (!strcmp(msg_key, "msg_teki_kyouka")) {
-        return "Boosts foes' level by 5, but \n"
-               "temporarily gives them +3 ATK.";
-    } else if (!strcmp(msg_key, "msg_ice_candy")) {
-        return "A dessert made by Zess T.\n"
-               "Gives 15 FP, but might freeze!";
-    } else if (!strcmp(msg_key, "list_ice_candy")) {
-        return "A dessert made by Zess T.\n"
-               "Gives 15 FP, but might freeze!\n"
-               "Made by mixing Honey Syrup \n"
-               "with an Ice Storm.";
-    } else if (!strcmp(msg_key, "msg_nancy_frappe")) {
-        return "A dessert made by Zess T.\n"
-               "Gives 20 FP, but might freeze!";
-    } else if (!strcmp(msg_key, "list_nancy_frappe")) {
-        return "A dessert made by Zess T.\n"
-               "Gives 20 FP, but might freeze!\n"
-               "Made by mixing Maple Syrup \n"
-               "with an Ice Storm.";
-    } else if (!strcmp(msg_key, "in_toughen_up")) {
-        return "Toughen Up";
-    } else if (!strcmp(msg_key, "in_toughen_up_p")) {
-        return "Toughen Up P";
-    } else if (!strcmp(msg_key, "msg_toughen_up")) {
-        return "Wear this to add Toughen Up\n"
-               "to Mario's Tactics menu.";
-    } else if (!strcmp(msg_key, "msg_toughen_up_p")) {
-        return "Wear this to add Toughen Up\n"
-               "to partners' Tactics menu.";
-    } else if (!strcmp(msg_key, "msg_toughen_up_menu")) {
-        return "Wear this to add Toughen Up\n"
-               "to Mario's Tactics menu.\n"
-               "This uses 1 FP to raise DEF\n"
-               "by 2 points for a turn.\n"
-               "Wearing more copies raises\n"
-               "the effect and FP cost.";
-    } else if (!strcmp(msg_key, "msg_toughen_up_p_menu")) {
-        return "Wear this to add Toughen Up\n"
-               "to partners' Tactics menu.\n"
-               "This uses 1 FP to raise DEF\n"
-               "by 2 points for a turn.\n"
-               "Wearing more copies raises\n"
-               "the effect and FP cost.";
-    } else if (!strcmp(msg_key, "btl_hlp_cmd_operation_super_charge")) {
-        return "Briefly increases DEF by\n"
-               "more than Defending.";
-    } else if (!strcmp(msg_key, "msg_ptr_meromero_kiss")) {
-        return "Blow a kiss to an enemy to try\n"
-               "to win them to your side.";
-    } else if (!strcmp(msg_key, "msg_super_coin")) {
-        return "A mysterious, powerful object.\n"
-               "Use it to power up your partner!";
-    } else if (!strcmp(msg_key, "msg_custom_super_boots")) {
-        return "A stronger pair of boots.";
-    } else if (!strcmp(msg_key, "msg_custom_ultra_boots")) {
-        return "An even stronger pair of boots.";
-    } else if (!strcmp(msg_key, "msg_custom_super_hammer")) {
-        return "A more powerful hammer.";
-    } else if (!strcmp(msg_key, "msg_custom_ultra_hammer")) {
-        return "An even more powerful hammer.";
-    }
-
-    return nullptr;
+    return RandomizerStrings::LookupReplacement(msg_key);
 }
 
 void ApplyEnemyStatChangePatches() {

@@ -1,0 +1,206 @@
+#include "randomizer_strings.h"
+
+#include "randomizer.h"
+
+#include <ttyd/mariost.h>
+
+#include <cinttypes>
+#include <cstdio>
+#include <cstring>
+
+namespace mod::pit_randomizer {
+    
+namespace MsgKey {
+    enum e {
+        BTL_HLP_CMD_OPERATION_SUPER_CHARGE = 0,
+        IN_CAKE,
+        IN_TOUGHEN_UP,
+        IN_TOUGHEN_UP_P,
+        LIST_ICE_CANDY,
+        LIST_NANCY_FRAPPE,
+        MSG_CAKE,
+        MSG_CUSTOM_SUPER_BOOTS,
+        MSG_CUSTOM_SUPER_HAMMER,
+        MSG_CUSTOM_ULTRA_BOOTS,
+        MSG_CUSTOM_ULTRA_HAMMER,
+        MSG_ICE_CANDY,
+        MSG_JON_KANBAN_1,
+        MSG_JON_KANBAN_3,
+        MSG_KAME_NO_NOROI,
+        MSG_NANCY_FRAPPE,
+        MSG_PTR_MEROMERO_KISS,
+        MSG_SUPER_COIN,
+        MSG_TEKI_KYOUKA,
+        MSG_TOUGHEN_UP,
+        MSG_TOUGHEN_UP_MENU,
+        MSG_TOUGHEN_UP_P,
+        MSG_TOUGHEN_UP_P_MENU,
+        PIT_CHEST_UNCLAIMED,
+        PIT_DISABLED_RETURN,
+        PIT_REWARD_PARTY_JOIN,
+        TIK_06_02,
+    };
+}
+    
+namespace {
+
+constexpr const char* kKeyLookups[] = {
+    "btl_hlp_cmd_operation_super_charge",
+    "in_cake",
+    "in_toughen_up",
+    "in_toughen_up_p",
+    "list_ice_candy",
+    "list_nancy_frappe",
+    "msg_cake",
+    "msg_custom_super_boots",
+    "msg_custom_super_hammer",
+    "msg_custom_ultra_boots",
+    "msg_custom_ultra_hammer",
+    "msg_ice_candy",
+    "msg_jon_kanban_1",
+    "msg_jon_kanban_3",
+    "msg_kame_no_noroi",
+    "msg_nancy_frappe",
+    "msg_ptr_meromero_kiss",
+    "msg_super_coin",
+    "msg_teki_kyouka",
+    "msg_toughen_up",
+    "msg_toughen_up_menu",
+    "msg_toughen_up_p",
+    "msg_toughen_up_p_menu",
+    "pit_chest_unclaimed",
+    "pit_disabled_return",
+    "pit_reward_party_join",
+    "tik_06_02",
+};
+
+}
+    
+const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
+    // Do not use for more than one custom message at a time!
+    static char buf[128];
+    
+    // Binary search on all possible message replacements.
+    constexpr const int32_t kNumMsgKeys =
+        sizeof(kKeyLookups) / sizeof(const char*);
+    int32_t idx_min = 0;
+    int32_t idx_max = kNumMsgKeys - 1;
+    int32_t idx;
+    int32_t strcmp_result;
+    bool found = false;
+    while (idx_min <= idx_max) {
+        idx = (idx_min + idx_max) / 2;
+        strcmp_result = strcmp(msg_key, kKeyLookups[idx]);
+        if (strcmp_result < 0) {
+            idx_max = idx - 1;
+        } else if (strcmp_result > 0) {
+            idx_min = idx + 1;
+        } else {
+            found = true;
+            break;
+        }
+    }
+    if (!found) return nullptr;
+    
+    // TODO: Order of case statements shouldn't matter, but consider either
+    // ordering them alphabetically or putting logically similar ones together?
+    switch (idx) {
+        case MsgKey::PIT_REWARD_PARTY_JOIN:
+            return "<system>\n<p>\nYou got a new party member!\n<k>";
+        case MsgKey::PIT_DISABLED_RETURN:
+            return "<system>\n<p>\nYou can't leave the Infinite Pit!\n<k>";
+        case MsgKey::PIT_CHEST_UNCLAIMED:
+            return "<system>\n<p>\nYou haven't claimed your\nreward!\n<k>";
+        case MsgKey::MSG_JON_KANBAN_1: {
+            sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
+                    g_Randomizer->state_.floor_ + 1);
+            return buf;
+        }
+        case MsgKey::MSG_JON_KANBAN_3: {
+            sprintf(buf, "<kanban>\nYour seed: %s\n"
+                "(Name your file \"random\" or \"\xde\"\n"
+                "to have one picked randomly.)<k>",
+                ttyd::mariost::g_MarioSt->saveFileName);
+            return buf;
+        }
+        case MsgKey::TIK_06_02: {
+            sprintf(buf, "<kanban>\n"
+                "Thanks for playing the PM:TTYD\n"
+                "Infinite Pit mod! Check the \n"
+                "sign in back for your seed.\n<k>");
+            return buf;
+        }
+        case MsgKey::IN_CAKE:
+            return "Strawberry Cake";
+        case MsgKey::MSG_CAKE:
+            return "Scrumptious strawberry cake \n"
+                   "that heals 15 HP and 15 FP.";
+        case MsgKey::MSG_KAME_NO_NOROI:
+            return "Has a chance of inducing Slow \n"
+                   "status on all foes.";
+        case MsgKey::MSG_TEKI_KYOUKA:
+            return "Boosts foes' level by 5, but \n"
+                   "temporarily gives them +3 ATK.";
+        case MsgKey::MSG_ICE_CANDY:
+            return "A dessert made by Zess T.\n"
+                   "Gives 15 FP, but might freeze!";
+        case MsgKey::LIST_ICE_CANDY:
+            return "A dessert made by Zess T.\n"
+                   "Gives 15 FP, but might freeze!\n"
+                   "Made by mixing Honey Syrup \n"
+                   "with an Ice Storm.";
+        case MsgKey::MSG_NANCY_FRAPPE:
+            return "A dessert made by Zess T.\n"
+                   "Gives 20 FP, but might freeze!";
+        case MsgKey::LIST_NANCY_FRAPPE:
+            return "A dessert made by Zess T.\n"
+                   "Gives 20 FP, but might freeze!\n"
+                   "Made by mixing Maple Syrup \n"
+                   "with an Ice Storm.";
+        case MsgKey::IN_TOUGHEN_UP:
+            return "Toughen Up";
+        case MsgKey::IN_TOUGHEN_UP_P:
+            return "Toughen Up P";
+        case MsgKey::MSG_TOUGHEN_UP:
+            return "Wear this to add Toughen Up\n"
+                   "to Mario's Tactics menu.";
+        case MsgKey::MSG_TOUGHEN_UP_P:
+            return "Wear this to add Toughen Up\n"
+                   "to partners' Tactics menu.";
+        case MsgKey::MSG_TOUGHEN_UP_MENU:
+            return "Wear this to add Toughen Up\n"
+                   "to Mario's Tactics menu.\n"
+                   "This uses 1 FP to raise DEF\n"
+                   "by 2 points for a turn.\n"
+                   "Wearing more copies raises\n"
+                   "the effect and FP cost.";
+        case MsgKey::MSG_TOUGHEN_UP_P_MENU:
+            return "Wear this to add Toughen Up\n"
+                   "to partners' Tactics menu.\n"
+                   "This uses 1 FP to raise DEF\n"
+                   "by 2 points for a turn.\n"
+                   "Wearing more copies raises\n"
+                   "the effect and FP cost.";
+        case MsgKey::BTL_HLP_CMD_OPERATION_SUPER_CHARGE:
+            return "Briefly increases DEF by\n"
+                   "more than Defending.";
+        case MsgKey::MSG_PTR_MEROMERO_KISS:
+            return "Blow a kiss to an enemy to try\n"
+                   "to win them to your side.";
+        case MsgKey::MSG_SUPER_COIN:
+            return "A mysterious, powerful object.\n"
+                   "Use it to power up your partner!";
+        case MsgKey::MSG_CUSTOM_SUPER_BOOTS:
+            return "A stronger pair of boots.";
+        case MsgKey::MSG_CUSTOM_ULTRA_BOOTS:
+            return "An even stronger pair of boots.";
+        case MsgKey::MSG_CUSTOM_SUPER_HAMMER:
+            return "A more powerful hammer.";
+        case MsgKey::MSG_CUSTOM_ULTRA_HAMMER:
+            return "An even more powerful hammer.";
+    }
+    // Should not be reached.
+    return nullptr;
+}
+
+}
