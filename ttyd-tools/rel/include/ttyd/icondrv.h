@@ -19,7 +19,7 @@ uint32_t iconNumberDispGx(
 // iconNameToPtr
 // iconGX
 // iconGetWidthHight
-// iconGetTexObj
+void iconGetTexObj(void* tex_obj, uint16_t icon_id);
 // iconDispGxCol
 // iconDispGx2
 void iconDispGx(double unk0, gc::vec3* pos, int16_t unk2, uint16_t icon);

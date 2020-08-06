@@ -107,6 +107,7 @@
 
 // icondrv.o
 80019120:iconNumberDispGx
+8001a29c:iconGetTexObj
 8001a918:iconDispGx
 8001a93c:iconDispGxAlpha
 
@@ -1402,6 +1403,12 @@
 8018ef8c:BtlActRec_JudgeRuleKeep
 8018f77c:BtlActRec_JudgeTurnRuleKeep
 
+// eff_updown.o
+// .text
+80193ce8:polygon
+// .data
+80418560:icon_id
+
 // battle_enemy_item.o
 801f8dd0:_check_status_recover_item
 801f8fa8:_check_status_support_item
@@ -1569,6 +1576,7 @@
 // mtx.a mtx.c
 8029dd04:PSMTXIdentity
 8029dd30:PSMTXCopy
+8029dd64:PSMTXConcat
 8029e230:PSMTXTrans
 
 // os.a OSLink.c
@@ -1587,6 +1595,16 @@
 8029d86c:__OSGetSystemTime
 8029d8d0:GetDates
 8029da6c:OSTicksToCalendarTime
+
+// gx.a GXAttr.c
+802b4e04:GXSetTexCoordGen2
+802b5084:GXSetNumTexGens
+
+// gx.a GXTexture.c
+802b7880:GXLoadTexObj
+
+// gx.a GXTransform.c
+802ba2fc:GXLoadPosMtxImm
 
 // si.a
 802bd7b8:SIBusy

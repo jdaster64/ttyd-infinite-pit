@@ -10,7 +10,7 @@ extern "C" {
 
 void PSMTXIdentity(mtx34* out);
 void PSMTXCopy(mtx34* src, mtx34* dst);
-// PSMTXConcat
+void PSMTXConcat(mtx34* a, mtx34* b, mtx34* out);
 // PSMTXInverse
 // PSMTXInvXpose
 // PSMTXRotRad

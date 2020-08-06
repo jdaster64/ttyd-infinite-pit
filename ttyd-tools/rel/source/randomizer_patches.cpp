@@ -12,6 +12,9 @@
 #include <gc/OSLink.h>
 #include <gc/mtx.h>
 #include <gc/types.h>
+#include <ttyd/gx/GXAttr.h>
+#include <ttyd/gx/GXTexture.h>
+#include <ttyd/gx/GXTransform.h>
 #include <ttyd/battle.h>
 #include <ttyd/battle_ac.h>
 #include <ttyd/battle_damage.h>
@@ -24,6 +27,7 @@
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
+#include <ttyd/eff_updown.h>
 #include <ttyd/evt_badgeshop.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
@@ -78,6 +82,9 @@ extern "C" {
     void CharlietonPitPriceListPatchEnd();
     void CharlietonPitPriceItemPatchStart();
     void CharlietonPitPriceItemPatchEnd();
+    // eff_updown_disp_patches.s
+    void StartDispUpdownNumberIcons();
+    void BranchBackDispUpdownNumberIcons();
     // map_change_patches.s
     void StartMapLoad();
     void BranchBackMapLoad();
@@ -94,6 +101,12 @@ extern "C" {
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); } 
     void usePartyRankup() { mod::pit_randomizer::UseShineSprite(); }
+    void dispUpdownNumberIcons(
+        int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
+        uint32_t unk0) {
+        mod::pit_randomizer::DisplayUpDownNumberIcons(
+            number, tex_obj, icon_mtx, view_mtx, unk0);
+    }
 }
 
 namespace mod::pit_randomizer {
@@ -800,6 +813,54 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
             weapons[i].name = g_MoveBadgeTextBuffers[idx];
         }
     }
+}
+
+void DisplayUpDownNumberIcons(
+    int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx, 
+    uint32_t unk0) {
+    gc::mtx34 pos_mtx;
+    gc::mtx34 temp_mtx;
+    
+    ttyd::gx::GXAttr::GXSetNumTexGens(1);
+    ttyd::gx::GXAttr::GXSetTexCoordGen2(0, 1, 4, 60, 0, 125);
+    
+    int32_t abs_number = number < 0 ? -number : number;
+    if (abs_number > 99) abs_number = 99;
+    double x_pos = abs_number > 9 ? 10.0 : 5.0;
+    
+    do {
+        // Print digits, right-to-left.
+        ttyd::icondrv::iconGetTexObj(
+            &tex_obj, ttyd::eff_updown::icon_id[abs_number % 10]);
+        ttyd::gx::GXTexture::GXLoadTexObj(&tex_obj, 0);
+        if (number < 0) {
+            gc::mtx::PSMTXTrans(&pos_mtx, x_pos, 7.0, 1.0);
+        } else {
+            gc::mtx::PSMTXTrans(&pos_mtx, x_pos, 0.0, 1.0);
+        }
+        gc::mtx::PSMTXConcat(icon_mtx, &pos_mtx, &temp_mtx);
+        gc::mtx::PSMTXConcat(view_mtx, &temp_mtx, &temp_mtx);
+        ttyd::gx::GXTransform::GXLoadPosMtxImm(&temp_mtx, 0);
+        ttyd::eff_updown::polygon(
+            -8.0, 16.0, 16.0, 16.0, 1.0, 1.0, 0, unk0);
+        x_pos -= 10.0;
+    } while (abs_number /= 10);
+        
+    // Print plus / minus sign.
+    if (number < 0) {
+        ttyd::icondrv::iconGetTexObj(&tex_obj, 0x1f6);
+        ttyd::gx::GXTexture::GXLoadTexObj(&tex_obj, 0);
+        gc::mtx::PSMTXTrans(&pos_mtx, x_pos, 7.0, 1.0);
+    } else {
+        ttyd::icondrv::iconGetTexObj(&tex_obj, 0x1f5);
+        ttyd::gx::GXTexture::GXLoadTexObj(&tex_obj, 0);
+        gc::mtx::PSMTXTrans(&pos_mtx, x_pos, 0.0, 1.0);
+    }
+    gc::mtx::PSMTXConcat(icon_mtx, &pos_mtx, &temp_mtx);
+    gc::mtx::PSMTXConcat(view_mtx, &temp_mtx, &temp_mtx);
+    ttyd::gx::GXTransform::GXLoadPosMtxImm(&temp_mtx, 0);
+    ttyd::eff_updown::polygon(
+        -8.0, 16.0, 16.0, 16.0, 1.0, 1.0, 0, unk0);
 }
 
 void UseShineSprite() {
@@ -1512,6 +1573,18 @@ void ApplyItemAndAttackPatches() {
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[4] = 16;
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[5] = 20;
     
+    // Make per-turn Charge / Toughen Up cap at 99 instead of 9.
+    const int32_t kCheckChargeCapHookAddr   = 0x800fd468;
+    const int32_t kSetChargeCapHookAddr     = 0x800fd470;
+    const int32_t kCheckChargeCapOpcode     = 0x2c1e0064;   // cmpwi r30, 100
+    const int32_t kSetChargeCapOpcode       = 0x3bc00063;   // li r30, 99
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckChargeCapHookAddr),
+        &kCheckChargeCapOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kSetChargeCapHookAddr),
+        &kSetChargeCapOpcode, sizeof(int32_t));
+    
     // Double Pain doubles coin drops instead of Money Money.
     const int32_t kMoneyMoneyHookAddr1 = 0x80046f70;
     const int32_t kMoneyMoneyHookAddr2 = 0x80046f80;
@@ -1670,6 +1743,17 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGswfInitHookAddr2),
         &kSkipGswfInitOpcode, sizeof(kSkipGswfInitOpcode));
+    
+    // Apply patch to effUpdownDisp code to display the correct number
+    // when Charging / +ATK/DEF-ing by more than 9 points.
+    const int32_t kEffUpdownDispBeginHookAddress = 0x80193aec;
+    const int32_t kEffUpdownDispEndHookAddress = 0x80193cd4;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEffUpdownDispBeginHookAddress),
+        reinterpret_cast<void*>(StartDispUpdownNumberIcons));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackDispUpdownNumberIcons),
+        reinterpret_cast<void*>(kEffUpdownDispEndHookAddress));
     
     // Apply patches to seq_mapChangeMain code to run additional logic when
     // loading or unloading a map.

@@ -9,7 +9,8 @@
 #include <cstring>
 
 namespace mod::pit_randomizer {
-    
+
+// Enum representing indices of various strings in kKeyLookups.
 namespace MsgKey {
     enum e {
         BTL_HLP_CMD_OPERATION_SUPER_CHARGE = 0,
@@ -44,6 +45,8 @@ namespace MsgKey {
     
 namespace {
 
+// Keys for strings to be replaced / added to msgSearch. Should be kept
+// in sync with the above enum, and always maintain alphabetical order.
 constexpr const char* kKeyLookups[] = {
     "btl_hlp_cmd_operation_super_charge",
     "in_cake",

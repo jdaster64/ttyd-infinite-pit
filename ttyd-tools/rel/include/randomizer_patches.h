@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gc/mtx.h>
 #include <gc/OSLink.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_unit.h>
@@ -35,6 +36,11 @@ int32_t GetSelectedLevelWeaponCost(
 // Assumes the menu is one of the standard weapon menus (Jump, Hammer, etc.)
 // if is_strategies_menu = false.
 void CheckForSelectingWeaponLevel(bool is_strategies_menu);
+
+// Correctly displays multi-digit Charge / ATK / DEF-change number icons.
+void DisplayUpDownNumberIcons(
+    int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
+    uint32_t unk0);
 
 // Ranks up and fully heals the selected party member when using a Shine Sprite.
 void UseShineSprite();
