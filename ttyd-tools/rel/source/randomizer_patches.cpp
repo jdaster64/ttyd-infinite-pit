@@ -1484,6 +1484,10 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
     
+    // Cake restores 15 HP and FP.
+    itemDataTable[ItemType::CAKE].hp_restored = 15;
+    itemDataTable[ItemType::CAKE].fp_restored = 15;
+    
     // Reinstate Fire Pop's fire damage (base it off of Electro Pop's params).
     static BattleWeapon kFirePopParams;
     memcpy(&kFirePopParams,
