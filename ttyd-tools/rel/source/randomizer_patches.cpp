@@ -1358,99 +1358,55 @@ void ApplyWeaponLevelSelectionPatches() {
 }
 
 void ApplyItemAndAttackPatches() {
-    // Rebalanced price tiers for badges.
-    static const constexpr uint32_t kBadgePriceTiers[] = {
-        0x32222633U, 0x66262224U, 0x77662244U, 0x55778888U, 0x33555555U, 
-        0x44444773U, 0x32224581U, 0x63355553U, 0x41182216U, 0x11111564U,
-        0x04111411U, 0x10000000U, 0x00000221U
+    // Rebalanced price tiers for items & badges (TODO: placeholders!)
+    static const constexpr uint32_t kPriceTiers[] = {
+        // Items / recipes.
+        0x44444444, 0x44444444, 0x44444444, 0x44444444, 0x44444444,
+        0x44444444, 0x44444444, 0x44444444, 0x44444444, 0x44444444,
+        0x44444444, 0x44444444, 0x44444444, 0x00004444,
+        // Badges.
+        0x77777777, 0x77777777, 0x77777777, 0x77777777, 0x77777777,
+        0x77777777, 0x77777777, 0x77777777, 0x77777777, 0x77777777,
+        0x77777777, 0x77777777, 0x00000777
     };
+    // Prices corresponding to the price tiers in the above array.
+    static const constexpr uint8_t kPrices[] = {
+        5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 100, 125, 150, 200, 250
+    };
+    
     static const constexpr int16_t kSquareDiamondIconId     =  44;
     static const constexpr int16_t kSquareDiamondPartnerId  =  87;
     static const constexpr int16_t kKoopaCurseIconId        = 390;
     
-    // Individual balance / visual changes.
-    itemDataTable[ItemType::TRADE_OFF].buy_price = 50;
-    itemDataTable[ItemType::TRADE_OFF].sell_price = 25;
-    itemDataTable[ItemType::TRIAL_STEW].buy_price = 50;
-    itemDataTable[ItemType::TRIAL_STEW].sell_price = 25;
-    itemDataTable[ItemType::STRANGE_SACK].buy_price = 250;
-    itemDataTable[ItemType::ULTRA_HAMMER].buy_price = 250;
-    itemDataTable[ItemType::CAKE].buy_price = 30;
-    itemDataTable[ItemType::CAKE].sell_price = 15;
-    itemDataTable[ItemType::CAKE].hp_restored = 15;
-    itemDataTable[ItemType::CAKE].fp_restored = 15;
-    itemDataTable[ItemType::FRESH_PASTA].buy_price = 15;
-    itemDataTable[ItemType::FRESH_PASTA].sell_price = 10;
-    itemDataTable[ItemType::KOOPASTA].buy_price = 20;
-    itemDataTable[ItemType::KOOPASTA].sell_price = 15;
-    itemDataTable[ItemType::SPICY_PASTA].buy_price = 30;
-    itemDataTable[ItemType::SPICY_PASTA].sell_price = 20;
-    itemDataTable[ItemType::INK_PASTA].buy_price = 30;
-    itemDataTable[ItemType::INK_PASTA].sell_price = 20;
-    itemDataTable[ItemType::KOOPA_CURSE].icon_id = kKoopaCurseIconId;
-    itemDataTable[ItemType::PEEKABOO].bp_cost = 0;
-    itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
-    // Because, let's be honest.
-    itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
-    
-    // Changed pickup messages for Super / Ultra boots and hammer.
-    itemDataTable[ItemType::SUPER_BOOTS].description = "msg_custom_super_boots";
-    itemDataTable[ItemType::ULTRA_BOOTS].description = "msg_custom_ultra_boots";
-    itemDataTable[ItemType::SUPER_HAMMER].description = "msg_custom_super_hammer";
-    itemDataTable[ItemType::ULTRA_HAMMER].description = "msg_custom_ultra_hammer";
-    
-    // New badges (Toughen Up, Toughen Up P).
-    itemDataTable[ItemType::SUPER_CHARGE].bp_cost = 1;
-    itemDataTable[ItemType::SUPER_CHARGE].icon_id = kSquareDiamondIconId;
-    itemDataTable[ItemType::SUPER_CHARGE].name = "in_toughen_up";
-    itemDataTable[ItemType::SUPER_CHARGE].description = "msg_toughen_up";
-    itemDataTable[ItemType::SUPER_CHARGE].menu_description = "msg_toughen_up_menu";
-    itemDataTable[ItemType::SUPER_CHARGE_P].bp_cost = 1;
-    itemDataTable[ItemType::SUPER_CHARGE_P].icon_id = kSquareDiamondPartnerId;
-    itemDataTable[ItemType::SUPER_CHARGE_P].name = "in_toughen_up_p";
-    itemDataTable[ItemType::SUPER_CHARGE_P].description = "msg_toughen_up_p";
-    itemDataTable[ItemType::SUPER_CHARGE_P].menu_description = "msg_toughen_up_p_menu";
-    
-    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
-    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
-           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
-    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
-        |= ItemUseLocation::kField;
-    
-    // Set coin buy / discount / sell prices for badges to rebalanced values,
-    // badge Star Piece costs on BP cost, recipe prices based on sell price,
-    // cooking items' weapons, and fix unused items' and badges' sort order.    
-    for (int32_t i = 0; i < ItemType::MAX_ITEM_TYPE; ++i) {
+    // - Set coin buy & sell (for Refund) prices based on above tiers.
+    // - Set healing items' weapons to CookingItem if they don't have one.
+    // - Fix unused items' and badges' sort order.
+    for (int32_t i = ItemType::GOLD_BAR; i < ItemType::MAX_ITEM_TYPE; ++i) {
         ItemData& item = itemDataTable[i];
-        if (i >= ItemType::GOLD_BAR && i <= ItemType::FRESH_JUICE) {
+        
+        // Assign new price.
+        if (i >= ItemType::THUNDER_BOLT) {
+            const int32_t word_index = (i - ItemType::THUNDER_BOLT) >> 3;
+            const int32_t nybble_index = (i - ItemType::THUNDER_BOLT) & 7;
+            const int32_t tier =
+                (kPriceTiers[word_index] >> (nybble_index << 2)) & 15;
+            item.buy_price = kPrices[tier];
+            item.sell_price = kPrices[tier] * 3 / 5;
+        }
+        
+        if (i < ItemType::POWER_JUMP) {
             // For all items that restore HP or FP, assign the "cooked item"
             // weapon struct if they don't already have a weapon assigned.
             if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
                 item.weapon_params = 
                     &ttyd::battle_item_data::ItemWeaponData_CookingItem;
             }
-            
-            if (item.buy_price == 10 && item.sell_price > 8) {
-                item.buy_price = item.sell_price * 5 / 4;
-            }
-            
+            // Fix sorting order.
             if (item.type_sort_order > 0x31) {
                 item.type_sort_order += 1;
             }
-        } else if (i >= ItemType::POWER_JUMP) {
-            const int32_t word_index = (i - ItemType::POWER_JUMP) >> 3;
-            const int32_t nybble_index = (i - ItemType::POWER_JUMP) & 7;
-            const int32_t tier = 
-                (kBadgePriceTiers[word_index] >> (nybble_index << 2)) & 15;
-            if (tier > 0) {
-                item.buy_price = tier > 4 ? tier * 50 - 100 : tier * 25;
-            }
-            item.star_piece_price = tier > 0 ? tier : 1;
-            
-            // Higher discounted price, since most prices in general are lower.
-            item.discount_price = item.buy_price * 4 / 5;
-            item.sell_price = item.buy_price >> 1;
-            
+        } else {
+            // Fix sorting order.
             if (item.type_sort_order > 0x49) ++item.type_sort_order;
             if (item.type_sort_order > 0x43) ++item.type_sort_order;
             if (item.type_sort_order > 0x3b) ++item.type_sort_order;
@@ -1473,6 +1429,54 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::LUCKY_DAY_P].type_sort_order        = 0x3b + 6;
     itemDataTable[ItemType::PITY_FLOWER_P].type_sort_order      = 0x43 + 7;
     itemDataTable[ItemType::FP_DRAIN_P].type_sort_order         = 0x49 + 8;
+    
+    // BP cost changes.
+    itemDataTable[ItemType::PEEKABOO].bp_cost = 0;   // Also equipped by default
+    itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
+    itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
+    itemDataTable[ItemType::PITY_FLOWER].bp_cost = 4;
+    itemDataTable[ItemType::PITY_FLOWER_P].bp_cost = 4;
+    
+    // Changed pickup messages for Super / Ultra boots and hammer.
+    itemDataTable[ItemType::SUPER_BOOTS].description = "msg_custom_super_boots";
+    itemDataTable[ItemType::ULTRA_BOOTS].description = "msg_custom_ultra_boots";
+    itemDataTable[ItemType::SUPER_HAMMER].description = "msg_custom_super_hammer";
+    itemDataTable[ItemType::ULTRA_HAMMER].description = "msg_custom_ultra_hammer";
+    
+    // New badges (Toughen Up, Toughen Up P); a single-turn +DEF buff.
+    itemDataTable[ItemType::SUPER_CHARGE].bp_cost = 1;
+    itemDataTable[ItemType::SUPER_CHARGE].icon_id = kSquareDiamondIconId;
+    itemDataTable[ItemType::SUPER_CHARGE].name = "in_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE].description = "msg_toughen_up";
+    itemDataTable[ItemType::SUPER_CHARGE].menu_description = "msg_toughen_up_menu";
+    itemDataTable[ItemType::SUPER_CHARGE_P].bp_cost = 1;
+    itemDataTable[ItemType::SUPER_CHARGE_P].icon_id = kSquareDiamondPartnerId;
+    itemDataTable[ItemType::SUPER_CHARGE_P].name = "in_toughen_up_p";
+    itemDataTable[ItemType::SUPER_CHARGE_P].description = "msg_toughen_up_p";
+    itemDataTable[ItemType::SUPER_CHARGE_P].menu_description = "msg_toughen_up_p_menu";
+        
+    // Change Super Charge (P) weapons into Toughen Up (P).
+    ttyd::battle_mario::badgeWeapon_SuperCharge.base_fp_cost = 1;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.charge_strength = 0;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_chance = 100;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_time = 1;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_strength = 2;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.icon = kSquareDiamondIconId;
+    ttyd::battle_mario::badgeWeapon_SuperCharge.name = "in_toughen_up";
+    
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.base_fp_cost = 1;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.charge_strength = 0;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_chance = 100;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_time = 1;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_strength = 2;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.icon = kSquareDiamondIconId;
+    ttyd::battle_mario::badgeWeapon_SuperChargeP.name = "in_toughen_up";
+    
+    // Turn Gold Bars x3 into "Shine Sprites" that can be used from the menu.
+    memcpy(&itemDataTable[ItemType::GOLD_BAR_X3], 
+           &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
+    itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
+        |= ItemUseLocation::kField;
     
     // Reinstate Fire Pop's fire damage (base it off of Electro Pop's params).
     static BattleWeapon kFirePopParams;
@@ -1538,6 +1542,8 @@ void ApplyItemAndAttackPatches() {
     // Make Koopa Curse multi-target.
     ttyd::battle_item_data::ItemWeaponData_Kameno_Noroi.target_class_flags =
         0x02101260;
+    // Give it its correct icon.
+    itemDataTable[ItemType::KOOPA_CURSE].icon_id = kKoopaCurseIconId;
         
     // Make Hot Sauce charge by +3.
     ttyd::battle_item_data::ItemWeaponData_RedKararing.charge_strength = 3;
@@ -1554,23 +1560,6 @@ void ApplyItemAndAttackPatches() {
     // Determines which badge type to count to determine the power level.
     ttyd::battle_mario::badgeWeapon_TsuranukiNaguri.damage_function_params[6] =
         ItemType::PIERCING_BLOW;
-        
-    // Change Super Charge (P) into Toughen Up (P), a single-turn DEF buff.
-    ttyd::battle_mario::badgeWeapon_SuperCharge.base_fp_cost = 1;
-    ttyd::battle_mario::badgeWeapon_SuperCharge.charge_strength = 0;
-    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_chance = 100;
-    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_time = 1;
-    ttyd::battle_mario::badgeWeapon_SuperCharge.def_change_strength = 2;
-    ttyd::battle_mario::badgeWeapon_SuperCharge.icon = kSquareDiamondIconId;
-    ttyd::battle_mario::badgeWeapon_SuperCharge.name = "in_toughen_up";
-    
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.base_fp_cost = 1;
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.charge_strength = 0;
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_chance = 100;
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_time = 1;
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.def_change_strength = 2;
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.icon = kSquareDiamondIconId;
-    ttyd::battle_mario::badgeWeapon_SuperChargeP.name = "in_toughen_up";
         
     // Change base FP cost of some moves.
     ttyd::battle_mario::badgeWeapon_Charge.base_fp_cost = 2;
