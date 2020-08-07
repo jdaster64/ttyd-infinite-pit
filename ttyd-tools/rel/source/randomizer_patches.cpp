@@ -1364,16 +1364,16 @@ void ApplyWeaponLevelSelectionPatches() {
 }
 
 void ApplyItemAndAttackPatches() {
-    // Rebalanced price tiers for items & badges (TODO: these are placeholders!)
+    // Rebalanced price tiers for items & badges (non-pool items may have 0s).
     static const constexpr uint32_t kPriceTiers[] = {
         // Items / recipes.
-        0x44444444, 0x44444444, 0x44444444, 0x44444444, 0x44444444,
-        0x44444444, 0x44444444, 0x44444444, 0x44444444, 0x44444444,
-        0x44444444, 0x44444444, 0x44444444, 0x00004444,
+        0x1a444662, 0x5a334343, 0xb7321253, 0x34453205, 0x00700665,
+        0x00700000, 0x30743210, 0xa7764353, 0x32078644, 0x00842420,
+        0x34703543, 0x30040740, 0x54444045, 0x00000045,
         // Badges.
-        0x77777777, 0x77777777, 0x77777777, 0x77777777, 0x77777777,
-        0x77777777, 0x77777777, 0x77777777, 0x77777777, 0x77777777,
-        0x77777777, 0x77777777, 0x00000777
+        0xb8a88dbb, 0x009d8a8b, 0xeedd99cc, 0xcceeffff, 0xbbccccdd,
+        0x0000beeb, 0x98880cfa, 0xcaaddcc9, 0xc000dd7c, 0x0000000c,
+        0x00770000, 0x00000000, 0x00000880
     };
     // Prices corresponding to the price tiers in the above array.
     static const constexpr uint8_t kPrices[] = {
