@@ -697,7 +697,7 @@ void BuildBattle(
 }
 
 // Stat weights as percentages for certain Pit floors (00s, 10s, 20s, ... 90s).
-// After level 100, ATK and DEF rise by 50% every 100 floors, and HP by 100%.
+// After floor 100, HP, ATK and DEF rise by 5% every 10 floors.
 const int8_t kStatPercents[10] = { 20, 25, 35, 40, 50, 55, 65, 75, 90, 100 };
 
 bool GetEnemyStats(

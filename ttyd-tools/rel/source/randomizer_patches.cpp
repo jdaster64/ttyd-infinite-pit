@@ -1397,7 +1397,7 @@ void ApplyItemAndAttackPatches() {
             const int32_t tier =
                 (kPriceTiers[word_index] >> (nybble_index << 2)) & 15;
             item.buy_price = kPrices[tier];
-            item.sell_price = kPrices[tier] * 3 / 5;
+            item.sell_price = kPrices[tier] / 5;
         }
         
         if (i < ItemType::POWER_JUMP) {
@@ -1614,6 +1614,26 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kPityFlowerChanceHookAddr),
         &kLoadPityFlowerChanceOpcode, sizeof(int32_t));
+        
+    // Refund grants 100% of sell price, plus 20% per additional badge.
+    const int32_t kConsumeItemRefundPerBadgeHookAddr = 0x8010affc;
+    const int32_t kConsumeItemReserveRefundPerBadgeHookAddr = 0x8010ae84;
+    const int32_t kPerBadgeRefundRateOpcode = 0x1ca00014;  // mulli r5, r0, 20
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kConsumeItemRefundPerBadgeHookAddr),
+        &kPerBadgeRefundRateOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kConsumeItemReserveRefundPerBadgeHookAddr),
+        &kPerBadgeRefundRateOpcode, sizeof(int32_t));
+    const int32_t kConsumeItemRefundBaseHookAddr = 0x8010b018;
+    const int32_t kConsumeItemReserveRefundBaseHookAddr = 0x8010aea0;
+    const int32_t kAddBaseRefundRateOpcode = 0x38a50050;  // addi r5, r5, 80
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kConsumeItemRefundBaseHookAddr),
+        &kAddBaseRefundRateOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kConsumeItemReserveRefundBaseHookAddr),
+        &kAddBaseRefundRateOpcode, sizeof(int32_t));
     
     // Disable getting coins and experience from a successful Gale Force.
     const int32_t kGaleForceKillHookAddr = 0x80351ea4;
@@ -1834,7 +1854,7 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kDismissRuleDispButtonOpAddr),
         &kDismissRuleDispButtonOpcode, sizeof(uint32_t));
         
-    // Patch Charlieton's sell price scripts, making them scale from 1x to 3x.
+    // Patch Charlieton's sell price scripts, making them scale from 20 to 100%.
     const int32_t kCharlietonPitListHookAddr = 0x8023c120;
     const int32_t kCharlietonPitItemHookAddr = 0x8023d2e0;
     mod::patch::writePatch(
