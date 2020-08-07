@@ -28,7 +28,7 @@ void BuildBattle(
 // Should not be called for ATK/DEF if replacing a vanilla ATK/DEF of 0.
 bool GetEnemyStats(
     int32_t unit_type, int32_t* out_hp, int32_t* out_atk, int32_t* out_def, 
-    int32_t* out_level, int32_t base_attack_power = 0);
+    int32_t* out_level, int32_t* out_coinlvl, int32_t base_attack_power = 0);
     
 // Randomly sets parameters for a battle condition that grants a bonus item.
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable = true);

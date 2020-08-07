@@ -957,10 +957,15 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
     // Used as a sentinel to see if stats have already changed for this enemy.
     if (unit->run_rate & 1) return;
     
-    int32_t hp, level;
-    if (!GetEnemyStats(unit->unit_type, &hp, nullptr, nullptr, &level)) return;
+    int32_t hp, level, coinlvl;
+    if (!GetEnemyStats(
+        unit->unit_type, &hp, nullptr, nullptr, &level, &coinlvl)) return;
     unit->max_hp = hp;
     unit->level = level;
+    unit->base_coin = coinlvl / 2;
+    // Give an additional coin half the time if coinlvl is odd.
+    unit->bonus_coin_rate = 50;
+    unit->bonus_coin = coinlvl & 1 ? 1 : 0;
     
     // Additional global changes for enemies in this mod.
     unit->danger_hp = 5;
@@ -984,8 +989,8 @@ int32_t AlterDamageCalculation(
         && !(weapon->target_property_flags & 0x100000)  // not a recoil attack
         && !weapon->item_id && base_atk > 0) {
         GetEnemyStats(
-            attacker->current_kind, nullptr, &altered_atk, nullptr, nullptr,
-            base_atk);
+            attacker->current_kind, nullptr, &altered_atk, nullptr, 
+            nullptr, nullptr, base_atk);
         if (altered_atk < 1) altered_atk = 1;
         if (altered_atk > 99) altered_atk = 99;
         weapon->damage_function_params[0] = altered_atk;
@@ -995,7 +1000,8 @@ int32_t AlterDamageCalculation(
         && base_def >= 0 && base_def < 99) {
         if (base_def > 0) {
             GetEnemyStats(
-                target->current_kind, nullptr, nullptr, &altered_def, nullptr);
+                target->current_kind, nullptr, nullptr, &altered_def, 
+                nullptr, nullptr);
         }
         if (altered_def > 99) altered_def = 99;
         def_ptr[weapon->element] = altered_def;
@@ -1021,8 +1027,8 @@ int32_t AlterFpDamageCalculation(
     if (attacker->current_kind <= BattleUnitType::BONETAIL
         && !weapon->item_id && base_atk > 0) {
         GetEnemyStats(
-            attacker->current_kind, nullptr, &altered_atk, nullptr, nullptr,
-            base_atk);
+            attacker->current_kind, nullptr, &altered_atk, nullptr,
+            nullptr, nullptr, base_atk);
         if (altered_atk < 1) altered_atk = 1;
         if (altered_atk > 99) altered_atk = 99;
         weapon->fp_damage_function_params[0] = altered_atk;
@@ -1318,7 +1324,7 @@ void ApplyWeaponLevelSelectionPatches() {
                     int32_t altered_charge;
                     GetEnemyStats(
                         unit->current_kind, nullptr, &altered_charge,
-                        nullptr, nullptr, *strength);
+                        nullptr, nullptr, nullptr, *strength);
                     if (altered_charge > 99) altered_charge = 99;
                     *strength = altered_charge;
                 }
@@ -1358,7 +1364,7 @@ void ApplyWeaponLevelSelectionPatches() {
 }
 
 void ApplyItemAndAttackPatches() {
-    // Rebalanced price tiers for items & badges (TODO: placeholders!)
+    // Rebalanced price tiers for items & badges (TODO: these are placeholders!)
     static const constexpr uint32_t kPriceTiers[] = {
         // Items / recipes.
         0x44444444, 0x44444444, 0x44444444, 0x44444444, 0x44444444,

@@ -701,8 +701,8 @@ void BuildBattle(
 const int8_t kStatPercents[10] = { 20, 25, 35, 40, 50, 55, 65, 75, 90, 100 };
 
 bool GetEnemyStats(
-    int32_t unit_type, int32_t* out_hp, int32_t* out_atk, 
-    int32_t* out_def, int32_t* out_level, int32_t base_attack_power) {
+    int32_t unit_type, int32_t* out_hp, int32_t* out_atk, int32_t* out_def,
+    int32_t* out_level, int32_t* out_coinlvl, int32_t base_attack_power) {
     constexpr const int32_t kNumEnemyTypes =
         sizeof(kEnemyInfo) / sizeof(EnemyTypeInfo);
     // Look up the enemy type info w/matching unit_type.
@@ -758,6 +758,12 @@ bool GetEnemyStats(
             *out_level =
                 ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
         }
+    }
+    if (out_coinlvl) {
+        // "Coin level" = expected number of coins x 2.
+        // Return level_offset for normal enemies (lv 2 ~ 10 / 1 ~ 5 coins),
+        // or 20 (10 coins) for boss / special enemies.
+        *out_coinlvl = ei->level_offset > 10 ? 20 : ei->level_offset;
     }
     
     return true;
