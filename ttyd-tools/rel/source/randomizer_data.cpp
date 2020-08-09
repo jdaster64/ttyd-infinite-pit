@@ -724,14 +724,16 @@ bool GetEnemyStats(
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
             
     if (out_hp) {
-        int32_t hp = (ei->hp_scale * base_hp_pct + 50) / 100;
+        int32_t hp = (ei->hp_scale * base_hp_pct + 50);
         hp = hp * g_Randomizer->state_.hp_multiplier_ / 100;
+        hp /= 100;
         *out_hp = hp < 1 ? 1 : hp;
     }
     if (out_atk) {
-        int32_t atk = (ei->atk_scale * base_atkdef_pct + 50) / 100;
-        atk += base_attack_power - ei->atk_base;
+        int32_t atk = (ei->atk_scale * base_atkdef_pct + 50);
         atk = atk * g_Randomizer->state_.atk_multiplier_ / 100;
+        atk /= 100;
+        atk += base_attack_power - ei->atk_base;
         *out_atk = atk < 1 ? 1 : atk;
     }
     if (out_def) {
