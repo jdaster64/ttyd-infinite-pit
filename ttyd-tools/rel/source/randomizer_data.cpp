@@ -732,8 +732,8 @@ bool GetEnemyStats(
     if (out_atk) {
         int32_t atk = (ei->atk_scale * base_atkdef_pct + 50);
         atk = atk * g_Randomizer->state_.atk_multiplier_ / 100;
+        atk += (base_attack_power - ei->atk_base) * 100;
         atk /= 100;
-        atk += base_attack_power - ei->atk_base;
         *out_atk = atk < 1 ? 1 : atk;
     }
     if (out_def) {
