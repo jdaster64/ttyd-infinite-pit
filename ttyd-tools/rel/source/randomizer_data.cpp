@@ -141,7 +141,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::BOB_OMB, 283, 10, 7, 2, 2, 5, kHpTables[1], kFpTables[0], 9 },
     { BattleUnitType::BULKY_BOB_OMB, 304, 12, 4, 2, 2, 5, kHpTables[1], kFpTables[0], 9 },
     { BattleUnitType::BOB_ULK, 305, 15, 5, 2, 4, 7, kHpTables[3], kFpTables[0], 9 },
-    { BattleUnitType::DULL_BONES, 39, 8, 5, 2, 1, 2, kHpTables[0], kFpTables[0], 4 },
+    { BattleUnitType::DULL_BONES, 39, 8, 5, 1, 1, 2, kHpTables[0], kFpTables[0], 4 },
     { BattleUnitType::RED_BONES, 36, 12, 6, 2, 1, 5, kHpTables[0], kFpTables[0], 4 },
     { BattleUnitType::DRY_BONES, 196, 12, 6, 3, 3, 7, kHpTables[0], kFpTables[2], 4 },
     { BattleUnitType::DARK_BONES, 197, 20, 8, 3, 5, 10, kHpTables[1], kFpTables[2], 4 },
