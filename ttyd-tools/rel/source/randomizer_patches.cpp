@@ -918,7 +918,7 @@ void UseShineSprite() {
         pouch_data->current_hp += 5 * hp_plus_p_cnt;
         pouch_data->max_hp += 5 * hp_plus_p_cnt;
         // Save the partner upgrade count to the randomizer state.
-        ++g_Randomizer->state_.partner_upgrades_[selected_partner_id];
+        ++g_Randomizer->state_.partner_upgrades_[selected_partner_id - 1];
     }
 }
 
