@@ -2070,8 +2070,13 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
 
 EVT_DEFINE_USER_FUNC(FullyHealPartyMember) {
     int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
+    int16_t starting_hp = ttyd::mario_pouch::_party_max_hp_table[idx * 4];
+    const int32_t hp_plus_p_cnt =
+        ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
     auto& party_data = ttyd::mario_pouch::pouchGetPtr()->party_data[idx];
-    party_data.current_hp = party_data.max_hp;
+    party_data.base_max_hp = starting_hp;
+    party_data.max_hp = starting_hp + hp_plus_p_cnt * 5;
+    party_data.current_hp = starting_hp + hp_plus_p_cnt * 5;
     return 2;
 }
 
