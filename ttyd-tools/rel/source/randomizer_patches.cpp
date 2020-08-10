@@ -1990,11 +1990,44 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     NpcEntry* npc = ttyd::evt_npc::evtNpcNameToPtr(evt, name);
     ttyd::npcdrv::npcSetBattleInfo(npc, battle_id);
     
+    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    
     // Set the enemies' held items.
     NpcBattleInfo* battle_info = &npc->battleInfo;
     for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
-        battle_info->wHeldItems[i] =
+        int32_t item =
             PickRandomItem(/* seeded = */ true, 40, 20, 40, 0);
+        
+        // Indirectly attacking enemies should not hold defense-increasing
+        // badges if the player cannot damage them at base rank equipment /
+        // without a damaging Star Power.
+        if (pouch.jump_level < 2 && !(pouch.star_powers_obtained & 0x92)) {
+            const BattleUnitSetup& unit_setup = 
+                battle_info->pConfiguration->enemy_data[i];
+            switch (unit_setup.unit_kind_params->unit_type) {
+                case BattleUnitType::DULL_BONES:
+                case BattleUnitType::LAKITU:
+                case BattleUnitType::DARK_LAKITU:
+                case BattleUnitType::MAGIKOOPA:
+                case BattleUnitType::RED_MAGIKOOPA:
+                case BattleUnitType::WHITE_MAGIKOOPA:
+                case BattleUnitType::GREEN_MAGIKOOPA:
+                case BattleUnitType::HAMMER_BRO:
+                case BattleUnitType::BOOMERANG_BRO:
+                case BattleUnitType::FIRE_BRO:
+                    switch (item) {
+                        case ItemType::DEFEND_PLUS:
+                        case ItemType::DEFEND_PLUS_P:
+                        case ItemType::P_DOWN_D_UP:
+                        case ItemType::P_DOWN_D_UP_P:
+                            // Pick a new item, disallowing badges.
+                            item = PickRandomItem(
+                                /* seeded = */ true, 40, 20, 0, 0);
+                    }
+            }
+        }
+        
+        battle_info->wHeldItems[i] = item;
     }
     // Occasionally, set a battle condition for an optional bonus reward.
     SetBattleCondition(&npc->battleInfo);
