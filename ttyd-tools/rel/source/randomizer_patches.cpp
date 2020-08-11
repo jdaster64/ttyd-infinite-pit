@@ -1513,7 +1513,7 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
     
-    // Strawberry Cake restores 1 HP and FP base; extra logic is run
+    // Strawberry Cake restores 5 HP and FP base; extra logic is run
     // in the menu and in battle to make it restore up to 25 extra HP / FP.
     itemDataTable[ItemType::CAKE].hp_restored = 5;
     itemDataTable[ItemType::CAKE].fp_restored = 5;
