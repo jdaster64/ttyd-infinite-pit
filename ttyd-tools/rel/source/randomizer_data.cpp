@@ -1084,9 +1084,17 @@ int16_t PickChestReward() {
         }
         for (int32_t i = 5; i <= 12; ++i) weights[i] = sp_weight;
         
-        // Halve the chance of getting unique badges; in total they
-        // shouldn't be worth all that much of the pool's weight.
-        for (int32_t i = 13; i <= 24; ++i) weights[i] = 5;
+        // The unique badges should take up about as much weight as Star Powers;
+        // this makes them less likely than the average reward early on but
+        // more likely the fewer there are remaining.
+        int32_t num_unique_badges_remaining =
+            12 - CountSetBits(GetBitMask(13, 24) & state.reward_flags_);
+        int32_t unique_badge_weight = 15 + 5 * num_unique_badges_remaining;
+        if (num_unique_badges_remaining > 0) {
+            for (int32_t i = 13; i <= 24; ++i) {
+                weights[i] = unique_badge_weight / num_unique_badges_remaining;
+            }
+        }
         
         // Disable rewards that shouldn't be received out of order or that
         // have already been claimed, and assign partner weight to partners.
