@@ -640,6 +640,8 @@
 800d3c68:pouchSetFP
 800d3c8c:pouchGetMaxFP
 800d3c98:pouchGetFP
+800d3ca4:pouchSetPartyHP
+800d3cd4:pouchGetPartyHP
 800d3ce8:pouchSetMaxHP
 800d3d00:pouchSetHP
 800d3d24:pouchGetMaxHP
@@ -935,6 +937,7 @@
 
 // battle_event_cmd.o
 801054e8:btlevtcmd_WeaponAftereffect
+801056f4:btlevtcmd_GetItemRecoverParam
 8010749c:btlevtcmd_AudienceDeclareACResult
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem

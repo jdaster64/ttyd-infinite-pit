@@ -50,6 +50,7 @@ const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 void (*g__rule_disp_trampoline)(void) = nullptr;
 void (*g_BattleInformationSetDropMaterial_trampoline)(FbatBattleInformation*) = nullptr;
+int32_t (*g_btlevtcmd_GetItemRecoverParam_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
@@ -175,6 +176,14 @@ void Randomizer::Init() {
         [](FbatBattleInformation* fbat_info) {
             // Replaces the original logic completely.
             GetDropMaterials(fbat_info);
+        });
+        
+    g_btlevtcmd_GetItemRecoverParam_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetItemRecoverParam,
+        [](EvtEntry* evt, bool isFirstCall) {
+            g_btlevtcmd_GetItemRecoverParam_trampoline(evt, isFirstCall);
+            // Run custom behavior to replace the recovery params in some cases.
+            return GetAlteredItemRestorationParams(evt, isFirstCall);
         });
         
     g_btlevtcmd_ConsumeItem_trampoline = patch::hookFunction(

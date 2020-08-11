@@ -102,8 +102,8 @@ void pouchSetMaxFP(int16_t max_fp);
 void pouchSetFP(int16_t fp);
 int16_t pouchGetMaxFP();
 int16_t pouchGetFP();
-// pouchSetPartyHP
-// pouchGetPartyHP
+void pouchSetPartyHP(int32_t partner_idx, int16_t hp);
+int16_t pouchGetPartyHP(int32_t partner_idx);
 void pouchSetMaxHP(int16_t max_hp);
 void pouchSetHP(int16_t hp);
 int16_t pouchGetMaxHP();

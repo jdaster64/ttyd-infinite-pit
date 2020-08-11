@@ -46,7 +46,7 @@ extern "C" {
 // btlevtcmd_GetGuardKouraId
 // btlevtcmd_SetGuard
 EVT_DECLARE_USER_FUNC(btlevtcmd_WeaponAftereffect, 1)
-// btlevtcmd_GetItemRecoverParam
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetItemRecoverParam, 4)
 // btlevtcmd_CommandGetWeaponItemId
 // btlevtcmd_CommandGetWeaponAddress
 // btlevtcmd_CommandGetWeaponActionLv

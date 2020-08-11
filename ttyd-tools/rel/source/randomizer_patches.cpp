@@ -95,12 +95,12 @@ extern "C" {
     void BranchBackFixItemWinPartyDispOrder();
     void StartFixItemWinPartySelectOrder();
     void BranchBackFixItemWinPartySelectOrder();
-    void StartUsePartyRankup();
-    void BranchBackUsePartyRankup();
+    void StartUseSpecialItems();
+    void BranchBackUseSpecialItems();
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); } 
-    void usePartyRankup() { mod::pit_randomizer::UseShineSprite(); }
+    void useSpecialItems() { mod::pit_randomizer::UseSpecialItemsInMenu(); }
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
         uint32_t unk0) {
@@ -407,6 +407,11 @@ const int32_t HammerBrosHpCheck[] = {
     USER_FUNC(GetPercentOfMaxHP, -2, LW(0))
     IF_SMALL(LW(0), 50)
 };
+
+// Returns one of 0, 5, 10, ..., 25 at random (to be added to the base 5).
+int32_t GetBonusCakeRestoration() {
+    return ttyd::system::irand(6) * 5;
+}
 
 }
 
@@ -862,16 +867,19 @@ void DisplayUpDownNumberIcons(
         -8.0, 16.0, 16.0, 16.0, 1.0, 1.0, 0, unk0);
 }
 
-void UseShineSprite() {
+void UseSpecialItemsInMenu() {
     void* winPtr = ttyd::win_main::winGetPtr();
     const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
     
-    // If the item is a Shine Sprite... (otherwise, handle normally)
-    if (item == ItemType::GOLD_BAR_X3) {
+    // If the item is a Strawberry Cake or Shine Sprite...
+    // (otherwise, handle normally)
+    if (item == ItemType::CAKE || item == ItemType::GOLD_BAR_X3) {
         int32_t* party_member_target = 
             reinterpret_cast<int32_t*>(winPtr) + (0x2dc / 4);
-        // If Mario is selected, target the first party member instead.
-        if (*party_member_target == 0) *party_member_target = 1;
+        if (*party_member_target == 0 && item == ItemType::GOLD_BAR_X3) {
+            // If Mario is selected, target the first party member instead.
+            *party_member_target = 1;
+        }
         
         WinPartyData* party_data = ttyd::win_party::g_winPartyDt;
         ttyd::mario_pouch::PouchPartyData* pouch_data = 
@@ -895,30 +903,51 @@ void UseShineSprite() {
                 ++current_order;
             }
         }
-        // Rank the selected party member up and fully heal them.
-        const int32_t selected_partner_id =
-            party_win_order[*party_member_target - 1]->partner_id;
-        pouch_data += selected_partner_id;
-        int16_t* hp_table = 
-            ttyd::mario_pouch::_party_max_hp_table + selected_partner_id * 4;
-        if (pouch_data->hp_level < 2) {
-            ++pouch_data->hp_level;
-            ++pouch_data->attack_level;
-            ++pouch_data->tech_level;
-        } else {
-            // Increase the Ultra Rank's max HP by 5.
-            if (hp_table[2] < 200) hp_table[2] += 5;
+        
+        int32_t selected_partner_id = 0;
+        if (*party_member_target > 0) {
+            selected_partner_id =
+                party_win_order[*party_member_target - 1]->partner_id;
         }
-        pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
-        pouch_data->current_hp = hp_table[pouch_data->hp_level];
-        pouch_data->max_hp = hp_table[pouch_data->hp_level];
-        // Include HP Plus P in current / max stats.
-        const int32_t hp_plus_p_cnt =
-            ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
-        pouch_data->current_hp += 5 * hp_plus_p_cnt;
-        pouch_data->max_hp += 5 * hp_plus_p_cnt;
-        // Save the partner upgrade count to the randomizer state.
-        ++g_Randomizer->state_.partner_upgrades_[selected_partner_id - 1];
+        
+        if (item == ItemType::CAKE) {
+            if (selected_partner_id == 0) {
+                ttyd::mario_pouch::pouchSetHP(
+                    ttyd::mario_pouch::pouchGetHP() +
+                    GetBonusCakeRestoration());
+            } else {
+                ttyd::mario_pouch::pouchSetPartyHP(
+                    selected_partner_id,
+                    ttyd::mario_pouch::pouchGetPartyHP(selected_partner_id) + 
+                    GetBonusCakeRestoration());
+            }
+            ttyd::mario_pouch::pouchSetFP(
+                ttyd::mario_pouch::pouchGetFP() +
+                GetBonusCakeRestoration());
+        } else if (item == ItemType::GOLD_BAR_X3) {
+            // Rank the selected party member up and fully heal them.
+            pouch_data += selected_partner_id;
+            int16_t* hp_table = 
+                ttyd::mario_pouch::_party_max_hp_table + selected_partner_id * 4;
+            if (pouch_data->hp_level < 2) {
+                ++pouch_data->hp_level;
+                ++pouch_data->attack_level;
+                ++pouch_data->tech_level;
+            } else {
+                // Increase the Ultra Rank's max HP by 5.
+                if (hp_table[2] < 200) hp_table[2] += 5;
+            }
+            pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
+            pouch_data->current_hp = hp_table[pouch_data->hp_level];
+            pouch_data->max_hp = hp_table[pouch_data->hp_level];
+            // Include HP Plus P in current / max stats.
+            const int32_t hp_plus_p_cnt =
+                ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
+            pouch_data->current_hp += 5 * hp_plus_p_cnt;
+            pouch_data->max_hp += 5 * hp_plus_p_cnt;
+            // Save the partner upgrade count to the randomizer state.
+            ++g_Randomizer->state_.partner_upgrades_[selected_partner_id - 1];
+        }
     }
 }
 
@@ -1484,9 +1513,10 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
     
-    // Cake restores 15 HP and FP.
-    itemDataTable[ItemType::CAKE].hp_restored = 15;
-    itemDataTable[ItemType::CAKE].fp_restored = 15;
+    // Strawberry Cake restores 1 HP and FP base; extra logic is run
+    // in the menu and in battle to make it restore up to 25 extra HP / FP.
+    itemDataTable[ItemType::CAKE].hp_restored = 5;
+    itemDataTable[ItemType::CAKE].fp_restored = 5;
     
     // Reinstate Fire Pop's fire damage (base it off of Electro Pop's params).
     static BattleWeapon kFirePopParams;
@@ -1829,9 +1859,9 @@ void ApplyMiscPatches() {
     const int32_t kWinItemCheckBackgroundHookAddress = 0x8016cfd0;
     mod::patch::writeBranch(
         reinterpret_cast<void*>(kWinItemCheckBackgroundHookAddress),
-        reinterpret_cast<void*>(StartUsePartyRankup));
+        reinterpret_cast<void*>(StartUseSpecialItems));
     mod::patch::writeBranch(
-        reinterpret_cast<void*>(BranchBackUsePartyRankup),
+        reinterpret_cast<void*>(BranchBackUseSpecialItems),
         reinterpret_cast<void*>(kWinItemCheckBackgroundHookAddress + 0x4));
 
     // Prevents the menu from closing if you use an item on the active party.
@@ -2206,6 +2236,19 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
         }
         
         evtSetValue(evt, evt->evtArguments[1], item);
+    }
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetAlteredItemRestorationParams) {
+    int32_t item_id = evtGetValue(evt, evt->evtArguments[0]);
+    if (item_id == ItemType::CAKE) {
+        int32_t hp = 
+            evtGetValue(evt, evt->evtArguments[1]) + GetBonusCakeRestoration();
+        int32_t fp =
+            evtGetValue(evt, evt->evtArguments[2]) + GetBonusCakeRestoration();
+        evtSetValue(evt, evt->evtArguments[1], hp);
+        evtSetValue(evt, evt->evtArguments[2], fp);
     }
     return 2;
 }

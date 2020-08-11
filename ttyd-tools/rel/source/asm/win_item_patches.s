@@ -2,8 +2,8 @@
 .global BranchBackFixItemWinPartyDispOrder
 .global StartFixItemWinPartySelectOrder
 .global BranchBackFixItemWinPartySelectOrder
-.global StartUsePartyRankup
-.global BranchBackUsePartyRankup
+.global StartUseSpecialItems
+.global BranchBackUseSpecialItems
 
 StartFixItemWinPartyDispOrder:
 # Initially:
@@ -277,11 +277,12 @@ stwx %r6, %r5, %r4  # Store "end of array" value.
 BranchBackFixItemWinPartySelectOrder:
 b 0
 
-StartUsePartyRankup:
-# Call C function to check whether the item being used is a Shine Sprite.
-bl usePartyRankup
+StartUseSpecialItems:
+# Call C function to check whether the item being used is a Shine Sprite or
+# Strawberry Cake.
+bl useSpecialItems
 # Restore existing opcode.
 lwz %r0, 0x2dc(%r28)
 
-BranchBackUsePartyRankup:
+BranchBackUseSpecialItems:
 b 0

@@ -42,8 +42,9 @@ void DisplayUpDownNumberIcons(
     int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
     uint32_t unk0);
 
-// Ranks up and fully heals the selected party member when using a Shine Sprite.
-void UseShineSprite();
+// Ranks up and fully heals the selected party member when using a Shine Sprite,
+// or restores random HP/FP if using a Strawberry Cake.
+void UseSpecialItemsInMenu();
 
 // Checks whether the battle condition was satisfied, and if so,
 // adds a bonus item to the "recovered items" pool.
@@ -147,5 +148,8 @@ EVT_DECLARE_USER_FUNC(GetPercentOfMaxHP, 2)
 
 // Replaces the behavior of Mowz's Kiss Thief.
 EVT_DECLARE_USER_FUNC(GetKissThiefResult, 3)
+
+// Returns altered item restoration parameters.
+EVT_DECLARE_USER_FUNC(GetAlteredItemRestorationParams, 4)
 
 }

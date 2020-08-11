@@ -176,8 +176,8 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
             return "Doubles the damage Mario \n"
                    "takes, but doubles coin drops.";
         case MsgKey::MSG_CAKE:
-            return "Scrumptious strawberry cake \n"
-                   "that heals 15 HP and 15 FP.";
+            return "Scrumptious strawberry cake.\n"
+                   "Heals 5 to 30 HP and FP.";
         case MsgKey::MSG_KAME_NO_NOROI:
             return "Has a chance of inducing Slow \n"
                    "status on all foes.";
