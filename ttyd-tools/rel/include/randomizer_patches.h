@@ -6,6 +6,7 @@
 #include <ttyd/battle_unit.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/npcdrv.h>
+#include <ttyd/win_party.h>
 
 #include <cstdint>
 
@@ -42,9 +43,13 @@ void DisplayUpDownNumberIcons(
     int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
     uint32_t unk0);
 
+// Stores pointers to WinPartyData entries in the correct order based
+// on the currently active partner and partners currently obtained.
+void GetPartyMemberMenuOrder(ttyd::win_party::WinPartyData** out_party_data);
+
 // Ranks up and fully heals the selected party member when using a Shine Sprite,
 // or restores random HP/FP if using a Strawberry Cake.
-void UseSpecialItemsInMenu();
+void UseSpecialItemsInMenu(ttyd::win_party::WinPartyData** party_data);
 
 // Checks whether the battle condition was satisfied, and if so,
 // adds a bonus item to the "recovered items" pool.

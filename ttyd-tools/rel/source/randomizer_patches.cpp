@@ -99,8 +99,15 @@ extern "C" {
     void BranchBackUseSpecialItems();
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
-    void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); } 
-    void useSpecialItems() { mod::pit_randomizer::UseSpecialItemsInMenu(); }
+    void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
+    
+    void getPartyMemberMenuOrder(ttyd::win_party::WinPartyData** party_data) {
+        mod::pit_randomizer::GetPartyMemberMenuOrder(party_data);
+    }
+    void useSpecialItems(ttyd::win_party::WinPartyData** party_data) {
+        mod::pit_randomizer::UseSpecialItemsInMenu(party_data);
+    }
+    
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
         uint32_t unk0) {
@@ -867,68 +874,74 @@ void DisplayUpDownNumberIcons(
         -8.0, 16.0, 16.0, 16.0, 1.0, 1.0, 0, unk0);
 }
 
-void UseSpecialItemsInMenu() {
+void GetPartyMemberMenuOrder(WinPartyData** out_party_data) {
+    WinPartyData* party_data = ttyd::win_party::g_winPartyDt;
+    // Get the currently active party member.
+    const int32_t party_id = ttyd::mario_party::marioGetParty();
+    
+    // Put the currently active party member in the first slot.
+    WinPartyData** current_order = out_party_data;
+    for (int32_t i = 0; i < 7; ++i) {
+        if (party_data[i].partner_id == party_id) {
+            *current_order = party_data + i;
+            ++current_order;
+        }
+    }
+    // Put the remaining party members in the remaining slots, ordered by
+    // the order they appear in g_winPartyDt.
+    ttyd::mario_pouch::PouchPartyData* pouch_data = 
+        ttyd::mario_pouch::pouchGetPtr()->party_data;
+    for (int32_t i = 0; i < 7; ++i) {
+        int32_t id = party_data[i].partner_id;
+        if ((pouch_data[id].flags & 1) && id != party_id) {
+            *current_order = party_data + i;
+            ++current_order;
+        }
+    }
+}
+
+void UseSpecialItemsInMenu(WinPartyData** party_data) {
     void* winPtr = ttyd::win_main::winGetPtr();
     const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
     
     // If the item is a Strawberry Cake or Shine Sprite...
-    // (otherwise, handle normally)
     if (item == ItemType::CAKE || item == ItemType::GOLD_BAR_X3) {
-        int32_t* party_member_target = 
-            reinterpret_cast<int32_t*>(winPtr) + (0x2dc / 4);
-        if (*party_member_target == 0 && item == ItemType::GOLD_BAR_X3) {
-            // If Mario is selected, target the first party member instead.
-            *party_member_target = 1;
+        int32_t& party_member_target = 
+            reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
+        if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3) {
+            // If Mario is selected for using a Shine Sprite, change the
+            // target to the active party member instead.
+            party_member_target = 1;
         }
         
-        WinPartyData* party_data = ttyd::win_party::g_winPartyDt;
-        ttyd::mario_pouch::PouchPartyData* pouch_data = 
-            ttyd::mario_pouch::pouchGetPtr()->party_data;
-        const int32_t party_id = ttyd::mario_party::marioGetParty();
-        
-        // Determine the order the party members are shown in the menu.
-        // TODO: Try to reuse the same code currently in win_item_patches.s.
-        WinPartyData* party_win_order[7];
-        WinPartyData** current_order = party_win_order;
-        for (int32_t i = 0; i < 7; ++i) {
-            if (party_data[i].partner_id == party_id) {
-                *current_order = party_data + i;
-                ++current_order;
-            }
-        }
-        for (int32_t i = 0; i < 7; ++i) {
-            int32_t id = party_data[i].partner_id;
-            if ((pouch_data[id].flags & 1) && id != party_id) {
-                *current_order = party_data + i;
-                ++current_order;
-            }
-        }
-        
-        int32_t selected_partner_id = 0;
-        if (*party_member_target > 0) {
-            selected_partner_id =
-                party_win_order[*party_member_target - 1]->partner_id;
+        int32_t selected_party_id = 0;
+        if (party_member_target > 0) {
+            // Convert the selected menu index into the PouchPartyData index.
+            selected_party_id = party_data[party_member_target - 1]->partner_id;
         }
         
         if (item == ItemType::CAKE) {
-            if (selected_partner_id == 0) {
+            // Add just bonus HP / FP (the base is added after this function).
+            if (selected_party_id == 0) {
                 ttyd::mario_pouch::pouchSetHP(
                     ttyd::mario_pouch::pouchGetHP() +
                     GetBonusCakeRestoration());
             } else {
                 ttyd::mario_pouch::pouchSetPartyHP(
-                    selected_partner_id,
-                    ttyd::mario_pouch::pouchGetPartyHP(selected_partner_id) + 
+                    selected_party_id,
+                    ttyd::mario_pouch::pouchGetPartyHP(selected_party_id) + 
                     GetBonusCakeRestoration());
             }
             ttyd::mario_pouch::pouchSetFP(
                 ttyd::mario_pouch::pouchGetFP() +
                 GetBonusCakeRestoration());
         } else if (item == ItemType::GOLD_BAR_X3) {
-            // Rank the selected party member up and fully heal them.
-            pouch_data += selected_partner_id;
+            ttyd::mario_pouch::PouchPartyData* pouch_data =
+                ttyd::mario_pouch::pouchGetPtr()->party_data + selected_party_id;
             int16_t* hp_table = 
-                ttyd::mario_pouch::_party_max_hp_table + selected_partner_id * 4;
+                ttyd::mario_pouch::_party_max_hp_table + selected_party_id * 4;
+                
+            // Rank the selected party member up and fully heal them.
             if (pouch_data->hp_level < 2) {
                 ++pouch_data->hp_level;
                 ++pouch_data->attack_level;
@@ -946,9 +959,10 @@ void UseSpecialItemsInMenu() {
             pouch_data->current_hp += 5 * hp_plus_p_cnt;
             pouch_data->max_hp += 5 * hp_plus_p_cnt;
             // Save the partner upgrade count to the randomizer state.
-            ++g_Randomizer->state_.partner_upgrades_[selected_partner_id - 1];
+            ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
         }
     }
+    // Run normal logic to add HP, FP, and SP afterwards...
 }
 
 void CheckBattleCondition() {
@@ -1513,8 +1527,8 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
     
-    // Strawberry Cake restores 5 HP and FP base; extra logic is run
-    // in the menu and in battle to make it restore up to 25 extra HP / FP.
+    // Base HP and FP restored by Strawberry Cake; extra logic is run
+    // in the menu / in battle to make it restore random extra HP / FP.
     itemDataTable[ItemType::CAKE].hp_restored = 5;
     itemDataTable[ItemType::CAKE].fp_restored = 5;
     
