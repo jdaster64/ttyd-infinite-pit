@@ -1008,7 +1008,7 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
     unit->base_coin = coinlvl / 2;
     // Give an additional coin half the time if coinlvl is odd.
     unit->bonus_coin_rate = 50;
-    unit->bonus_coin = coinlvl & 1 ? 1 : 0;
+    unit->bonus_coin = coinlvl & 1;
     
     // Additional global changes for enemies in this mod.
     unit->danger_hp = 5;

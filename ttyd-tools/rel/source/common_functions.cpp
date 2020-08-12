@@ -102,7 +102,7 @@ void UnlinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt) {
 }
 
 int32_t CountSetBits(uint32_t x) {
-    // TODO: Is there a pop_cnt builtin?
+    // PowerPC has no built-in pop_cnt instruction, apparently
     x = x - ((x >> 1) & 0x55555555);
     x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
     return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
