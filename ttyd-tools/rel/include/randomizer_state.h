@@ -25,7 +25,8 @@ struct RandomizerState {
     // Used for reloading a save.
     uint32_t    saved_rng_state_;
     uint8_t     load_from_save_;
-    uint8_t     unused_[7];
+    uint8_t     disable_partner_badges_in_shop_;
+    uint8_t     unused_[6];
     
     // Options that can be set by the player at the start of a file.
     int16_t     hp_multiplier_;

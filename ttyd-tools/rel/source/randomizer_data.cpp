@@ -938,7 +938,7 @@ void GetBattleConditionString(char* out_buf) {
 
 int32_t PickRandomItem(
     bool seeded, int32_t normal_item_weight, int32_t recipe_item_weight,
-    int32_t badge_weight, int32_t no_item_weight) {
+    int32_t badge_weight, int32_t no_item_weight, bool force_no_partner) {
     // Bitfields of whether each item is included in the pool or not;
     // item X is enabled if kItemPool[X / 16 - offset] & (1 << (X % 16)) != 0.
     static constexpr const uint16_t kNormalItems[] = {
@@ -987,7 +987,8 @@ int32_t PickRandomItem(
                     num_partners += pouch.party_data[i].flags & 1;
                 }
                 // Exclude 'P' badges if no partners unlocked yet.
-                bitfield = num_partners ? kStackableBadges : kStackableBadgesNoP;
+                bitfield = (num_partners && !force_no_partner)
+                    ? kStackableBadges : kStackableBadgesNoP;
                 len_bitfield = sizeof(kStackableBadges) / sizeof(uint16_t);
                 offset = 0xf0;
             } else {

@@ -40,9 +40,10 @@ void GetBattleConditionString(char* out_buf);
 // for various purposes (enemy items, Charlieton, Kiss Thief, etc.),
 // using either the mod's random state (seeded = true) or TTYD's RNG (false).
 // Returns 0 if the "no item" case was picked.
+// If force_no_partner is set or you have no partners, will not pick "P" badges.
 int32_t PickRandomItem(
     bool seeded, int32_t normal_item_weight, int32_t recipe_item_weight,
-    int32_t badge_weight, int32_t no_item_weight = 0);
+    int32_t badge_weight, int32_t no_item_weight = 0, bool force_no_partner = false);
     
 // Picks a reward for a chest, updating the randomizer state accordingly.
 // Reward is either an item/badge (if the result > 0) or a partner (-1 to -7).

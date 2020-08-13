@@ -70,6 +70,7 @@ bool RandomizerState::Load(bool new_save) {
     floor_ = 0;
     reward_flags_ = 0x00000000;
     load_from_save_ = false;
+    disable_partner_badges_in_shop_ = true;
     for (int32_t i = 0; i < 7; ++i) partner_upgrades_[i] = 0;
     InitPartyMaxHpTable(partner_upgrades_);
     

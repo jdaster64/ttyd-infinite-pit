@@ -522,13 +522,21 @@ void OnModuleLoaded(OSModuleInfo* module) {
         *reinterpret_cast<int32_t*>(
             module_ptr + kPitMoverLastSpawnFloorOffset) = 0;
         
-        // If not reward floor, reset Pit-related flags, and reset save prompt.
+        // If not reward floor, reset Pit-related flags and save-related status.
         if (g_Randomizer->state_.floor_ % 10 != 9) {
             for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
                 ttyd::swdrv::swClear(i);
             }
-            g_Randomizer->state_.load_from_save_ = false;
             g_PromptSave = true;
+            
+            g_Randomizer->state_.load_from_save_ = false;
+            const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+            for (int32_t i = 0; i < 8; ++i) {
+                if (pouch.party_data[i].flags & 1) {
+                    g_Randomizer->state_.disable_partner_badges_in_shop_ = false;
+                    break;
+                }
+            }
         }
         // Otherwise, modify Charlieton's stock, using items from the randomizer
         // state if continuing from an existing save file.
@@ -1242,9 +1250,10 @@ void ReplaceCharlietonStock() {
     // Before setting stock, check if reloading an existing save file;
     // if so, set the RNG state to what it was at the start of the floor
     // so Charlieton's stock is the same as it was before.
-    const int32_t current_rng_state = g_Randomizer->state_.rng_state_;
+    RandomizerState& state = g_Randomizer->state_;
+    const int32_t current_rng_state = state.rng_state_;
     if (g_Randomizer->state_.load_from_save_) {
-        g_Randomizer->state_.rng_state_ = g_Randomizer->state_.saved_rng_state_;
+        g_Randomizer->state_.rng_state_ = state.saved_rng_state_;
     }
     
     // Fill in Charlieton's expanded inventory.
@@ -1258,7 +1267,8 @@ void ReplaceCharlietonStock() {
                 i / kNumCharlietonItemsPerType == 0,
                 i / kNumCharlietonItemsPerType == 1, 
                 i / kNumCharlietonItemsPerType == 2, 
-                0);
+                0,
+                /* force_no_partner = */ state.disable_partner_badges_in_shop_);
             // Make sure no duplicate items exist.
             for (int32_t j = 0; j < i; ++j) {
                 if (inventory[j] == item) {
@@ -1270,15 +1280,15 @@ void ReplaceCharlietonStock() {
         }
     }
     
-    if (g_Randomizer->state_.load_from_save_) {
+    if (state.load_from_save_) {
         // If loaded from save, restore the previous RNG value so the seed
         // matches up with where it should start on the following floor.
-        g_Randomizer->state_.rng_state_ = current_rng_state;
+        state.rng_state_ = current_rng_state;
     } else {
         // Otherwise, save what the RNG was before generating the list, so the
         // item list can be duplicated after loading a save.
-        g_Randomizer->state_.saved_rng_state_ = current_rng_state;
-        g_Randomizer->state_.load_from_save_ = true;
+        state.saved_rng_state_ = current_rng_state;
+        state.load_from_save_ = true;
     }
 }
 
