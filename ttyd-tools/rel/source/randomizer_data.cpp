@@ -129,7 +129,7 @@ const NpcEntTypeInfo kNpcInfo[] = {
 };
 
 const EnemyTypeInfo kEnemyInfo[] = {
-    { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 80, kHpTables[0], kFpTables[0], -1 },
+    { BattleUnitType::BONETAIL, 325, 200, 8, 2, 8, 100, kHpTables[0], kFpTables[0], -1 },
     { BattleUnitType::ATOMIC_BOO, 148, 100, 4, 0, 2, 60, kHpTables[2], kFpTables[2], 2 },
     { BattleUnitType::BANDIT, 274, 12, 6, 0, 2, 4, kHpTables[0], kFpTables[0], 5 },
     { BattleUnitType::BIG_BANDIT, 129, 15, 6, 0, 1, 5, kHpTables[0], kFpTables[0], 5 },
@@ -728,6 +728,7 @@ bool GetEnemyStats(
         hp = hp * g_Randomizer->state_.hp_multiplier_ / 100;
         hp /= 100;
         *out_hp = hp < 1 ? 1 : hp;
+        *out_hp = hp > 9999 ? 9999 : hp;
     }
     if (out_atk) {
         int32_t atk = (ei->atk_scale * base_atkdef_pct + 50);
@@ -735,6 +736,7 @@ bool GetEnemyStats(
         atk = atk * g_Randomizer->state_.atk_multiplier_ / 100;
         atk /= 100;
         *out_atk = atk < 1 ? 1 : atk;
+        *out_atk = atk > 99 ? 99 : atk;
     }
     if (out_def) {
         if (ei->def_scale == 0) {
@@ -743,6 +745,7 @@ bool GetEnemyStats(
             // Enemies with def_scale > 0 should always have at least 1 DEF.
             int32_t def = (ei->def_scale * base_atkdef_pct + 50) / 100;
             *out_def = def < 1 ? 1 : def;
+            *out_def = def > 99 ? 99 : def;
         }
     }
     if (out_level) {
