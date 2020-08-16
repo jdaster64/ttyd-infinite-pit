@@ -45,6 +45,7 @@ namespace MsgKey {
         MSG_KAME_NO_NOROI,
         MSG_NANCY_FRAPPE,
         MSG_PTR_MEROMERO_KISS,
+        MSG_PWD_KUMOGAKURE,
         MSG_SUPER_COIN,
         MSG_TEKI_KYOUKA,
         MSG_TOUGHEN_UP,
@@ -95,6 +96,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_kame_no_noroi",
     "msg_nancy_frappe",
     "msg_ptr_meromero_kiss",
+    "msg_pwd_kumogakure",
     "msg_super_coin",
     "msg_teki_kyouka",
     "msg_toughen_up",
@@ -226,6 +228,9 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
         case MsgKey::MSG_PTR_MEROMERO_KISS:
             return "Blow a kiss to an enemy to try\n"
                    "to win them to your side.";
+        case MsgKey::MSG_PWD_KUMOGAKURE:
+            return "Makes your team dodgy for \n"
+                   "a time so foes frequently miss.";
         case MsgKey::MSG_SUPER_COIN:
             return "A mysterious, powerful object.\n"
                    "Use it to power up your partner!";

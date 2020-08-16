@@ -61,6 +61,7 @@
 #include <ttyd/swdrv.h>
 #include <ttyd/system.h>
 #include <ttyd/unit_bomzou.h>
+#include <ttyd/unit_koura.h>
 #include <ttyd/unit_party_christine.h>
 #include <ttyd/unit_party_chuchurina.h>
 #include <ttyd/unit_party_clauda.h>
@@ -406,6 +407,18 @@ EVT_END()
 // coins and EXP from Gale Force.
 EVT_BEGIN(GaleForceKillPatch)
 USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_KillUnit, -2, 0)
+RETURN()
+EVT_END()
+
+// Run at end of Dodgy Fog evt for Flurrie to also apply the status to herself.
+EVT_BEGIN(DodgyFogFlurrieEvt)
+USER_FUNC(
+    ttyd::battle_event_cmd::btlevtcmd_CheckDamage, -2, -2, 1, LW(12), 256, LW(5))
+RETURN()
+EVT_END()
+// Hook to run above event.
+EVT_BEGIN(DodgyFogFlurriePatch)
+RUN_CHILD_EVT(DodgyFogFlurrieEvt)
 RETURN()
 EVT_END()
 
@@ -1061,6 +1074,12 @@ int32_t AlterDamageCalculation(
     // Run vanilla damage calculation.
     int32_t damage = g_BattleCalculateDamage_trampoline(
         attacker, target, target_part, weapon, unk0, unk1);
+        
+    // Set Shell Shield max damage to 1 (essentially making its HP hit-based).
+    if (damage > 0 && target->current_kind == BattleUnitType::SHELL_SHIELD) {
+        damage = 1;
+    }
+        
     // Change ATK and DEF back, and return calculated damage.
     weapon->damage_function_params[0] = base_atk;
     def_ptr[weapon->element] = base_def;
@@ -1688,12 +1707,35 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kConsumeItemReserveRefundBaseHookAddr),
         &kAddBaseRefundRateOpcode, sizeof(int32_t));
+        
+    // Set Shell Shield's max HP to 3.
+    ttyd::unit_koura::unit_koura.max_hp = 3;
+    // Set Shell Shield's starting HP to 1 ~ 3 when spawned rather than 2 ~ 8.
+    const int32_t kShellShieldSetHpHookAddr = 0x80392238;
+    const int32_t kShellShieldSetHpFuncAddr =
+        reinterpret_cast<int32_t>(ShellShieldSetInitialHp);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kShellShieldSetHpHookAddr),
+        &kShellShieldSetHpFuncAddr, sizeof(int32_t));
+    // Set HP thresholds for different disrepair animation states...
+    // - On initialization (pose_tbl_reset)
+    *reinterpret_cast<int32_t*>(0x8039c2ec) = 1;  // heavy damage - 1/3
+    *reinterpret_cast<int32_t*>(0x8039c338) = 2;  // light damage - 2/3
+    // - On damage (damage_core)
+    *reinterpret_cast<int32_t*>(0x8039c190) = 1;  // heavy damage - 1/3
+    *reinterpret_cast<int32_t*>(0x8039c1ec) = 2;  // light damage - 2/3
     
     // Disable getting coins and experience from a successful Gale Force.
     const int32_t kGaleForceKillHookAddr = 0x80351ea4;
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGaleForceKillHookAddr),
         GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        
+    // Have Flurrie also apply Dodgy to herself at the end of Dodgy Fog event.
+    const int32_t kDodgyFogEndHookAddr = 0x8037ba04;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kDodgyFogEndHookAddr),
+        DodgyFogFlurriePatch, sizeof(DodgyFogFlurriePatch));
         
     // Make Infatuate single-target and slightly cheaper.
     ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.
@@ -1782,6 +1824,9 @@ void ApplyItemAndAttackPatches() {
         ttyd::unit_party_sanders::partyWeapon_SandersFirstAttack.
             damage_function_params,
         kKoopsBobberyFirstAttackParams, sizeof(kKoopsBobberyFirstAttackParams));
+    // Lip Lock immune to fire and spikes (except pre-emptive spikes).
+    ttyd::unit_party_clauda::partyWeapon_ClaudaLipLockAttack.
+        counter_resistance_flags |= 0x1a;
     // Stampede is limited to targets within Hammer range.
     ttyd::unit_party_yoshi::partyWeapon_YoshiCallGuard.
         target_property_flags |= 0x2000;
@@ -2164,6 +2209,21 @@ EVT_DEFINE_USER_FUNC(FullyHealPartyMember) {
     party_data.base_max_hp = starting_hp;
     party_data.max_hp = starting_hp + hp_plus_p_cnt * 5;
     party_data.current_hp = starting_hp + hp_plus_p_cnt * 5;
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(ShellShieldSetInitialHp) {
+    int32_t ac_level = evtGetValue(evt, evt->evtArguments[1]);
+    // Action command rating of 2, 4, 6, 8 -> starting HP of 1, 1, 2, 3.
+    int32_t starting_hp = ac_level / 2 - 1;
+    if (starting_hp < 1) starting_hp = 1;
+    if (starting_hp > 3) starting_hp = 3;
+    
+    evtSetValue(evt, evt->evtArguments[1], starting_hp);
+    ttyd::battle_event_cmd::btlevtcmd_SetHp(evt, isFirstCall);
+    
+    // Reset variable 1 to the action command level before exiting.
+    evtSetValue(evt, evt->evtArguments[1], ac_level);
     return 2;
 }
 

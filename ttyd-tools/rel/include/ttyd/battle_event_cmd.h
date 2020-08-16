@@ -144,7 +144,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_AudienceDeclareACResult, 2)
 // btlevtcmd_SetEventDamage
 // btlevtcmd_DamageDirect
 // btlevtcmd_CommandCheckDamage
-// btlevtcmd_CheckDamage
+EVT_DECLARE_USER_FUNC(btlevtcmd_CheckDamage, 6)
 // btlevtcmd_CommandPreCheckCounter
 // btlevtcmd_PreCheckCounter
 // btlevtcmd_CommandPreCheckDamage
@@ -243,7 +243,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetConsumeItem, 1)
 // btlevtcmd_SetSwallowParam
 // btlevtcmd_SetMaxFp
 // btlevtcmd_SetFp
-// btlevtcmd_SetHp
+EVT_DECLARE_USER_FUNC(btlevtcmd_SetHp, 2)
 // btlevtcmd_GetMaxFp
 // btlevtcmd_GetMaxHp
 // btlevtcmd_GetFp

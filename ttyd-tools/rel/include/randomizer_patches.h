@@ -143,6 +143,10 @@ EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 // Fully heals the selected party member.
 EVT_DECLARE_USER_FUNC(FullyHealPartyMember, 1)
 
+// Sets the HP of Shell Shield when it first spawns based on how well the
+// Action Command was performed.
+EVT_DECLARE_USER_FUNC(ShellShieldSetInitialHp, 2)
+
 // If Vivian's Infatuate lands successfully, tries changing the effect from
 // Confuse to the enemy permanently swapping its alliance.
 // (Also runs the replaced code from btlevtcmd_AudienceDeclareACResult).

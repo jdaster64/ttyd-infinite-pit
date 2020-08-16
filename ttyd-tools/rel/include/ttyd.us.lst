@@ -939,8 +939,10 @@
 801054e8:btlevtcmd_WeaponAftereffect
 801056f4:btlevtcmd_GetItemRecoverParam
 8010749c:btlevtcmd_AudienceDeclareACResult
+8010a78c:btlevtcmd_CheckDamage
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
+8010ff74:btlevtcmd_SetHp
 80113304:btlevtcmd_KillUnit
 
 // battle_information.o
@@ -1908,3 +1910,26 @@
 8041893c:dead_event
 8039b560:end_battle_evt
 8039b5ac:explosion_event
+
+// unit_koura.o
+// .data
+8039bc20:unit_koura
+80418958:defence
+80418960:defence_attr
+80418968:regist
+80418980:pose_table
+804189a8:pose_table_crack_lv1
+804189d0:pose_table_crack_lv2
+8039bce4:data_table
+8039bd1c:parts
+8039bdb4:init_event
+804189f8:damage_event
+8039be6c:phase_event
+8039bf04:koura_open
+8039c024:koura_close
+80418a20:wait_event
+80418a38:attack_event
+8039c160:damage_core
+8039c2d0:pose_tbl_reset
+8039c3b8:dead_event
+8039c784:destroy_event
