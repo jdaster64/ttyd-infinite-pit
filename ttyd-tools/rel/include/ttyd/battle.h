@@ -15,6 +15,40 @@ struct FbatBattleInformation;
 
 namespace ttyd::battle {
 
+struct BattleWorkTarget {
+    int16_t     unit_idx;
+    int16_t     part_idx;  // one-indexed
+    int16_t     hit_cursor_pos_x;
+    int16_t     hit_cursor_pos_y;
+    int16_t     hit_cursor_pos_z;
+    int16_t     pad_0a;
+    int32_t     final_pos_x;
+    int32_t     final_pos_y;
+    int32_t     final_pos_z;
+    int32_t     addl_offset_x;
+    int8_t      forward_distance;
+    bool        fg_or_bg_layer;
+    int16_t     pad_1e;
+    int32_t     unk_20;
+} __attribute__((__packed__));
+
+static_assert(sizeof(BattleWorkTarget) == 0x24);
+
+struct BattleWorkWeaponTargets {
+    battle_database_common::BattleWeapon* weapon;
+    BattleWorkTarget    targets[74];
+    int8_t              num_targets;
+    int8_t              target_indices[74];
+    int8_t              current_target;
+    int32_t             attacker_idx;
+    int32_t             attacker_enemy_belong;
+    uint32_t            weapon_target_class_flags;
+    uint32_t            weapon_target_property_flags;
+    int32_t             attacking_direction;
+} __attribute__((__packed__));
+
+static_assert(sizeof(BattleWorkWeaponTargets) == 0xacc);
+
 struct BattleWorkCommandAction {
     uint32_t        type;
     uint32_t        enabled;
@@ -111,7 +145,7 @@ struct BattleWork {
     int32_t         phase_evt_queue[64][2];
     int32_t         active_unit_idx;
     int32_t         unknown_unit_idx;  // BattleTransID -6
-    int8_t          weapon_targets_work[0xacc];
+    BattleWorkWeaponTargets weapon_targets_work;
     uint32_t        battle_flags;
     uint32_t        unk_00ef8;  // flags
     uint32_t        unk_00efc;

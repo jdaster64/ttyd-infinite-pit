@@ -68,7 +68,7 @@ void DrawOptionsMenu() {
 void DrawTitleScreenInfo() {
     // TODO: Update with final text before release.
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v0.00 r12 by jdaster64\n"
+        "PM:TTYD Infinite Pit v0.00 r13 by jdaster64\n"
         "Guide / GitHub link: TBA";
     DrawCenteredTextWindow(
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);

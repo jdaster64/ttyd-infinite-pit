@@ -87,6 +87,10 @@ bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
 // Checks for enemies to use additional types of items.
 void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
 
+// Changes the order that certain attacks select their targets in
+// (selecting the user last, if the user is included).
+void ReorderWeaponTargets();
+
 // Displays the Star Power in 0.01 units numerically below the status window.
 void DisplayStarPowerNumber();
 

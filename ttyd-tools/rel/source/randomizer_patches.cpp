@@ -169,6 +169,7 @@ void (*g_DrawWeaponWin_trampoline)() = nullptr;
 void (*g__getSickStatusParam_trampoline)(
     BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
 int32_t(*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t(*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -1218,6 +1219,30 @@ void* EnemyUseAdditionalItemsCheck(BattleWorkUnit* unit) {
     }
 }
 
+void ReorderWeaponTargets() {
+    auto& twork = ttyd::battle::g_BattleWork->weapon_targets_work;
+    
+    // If Trade Off, reorder targets so attacker (if present) is targeted last.
+    // TODO: Apply this change for any other weapons with similar issues
+    // (or maybe just all weapons, period).
+    if (twork.weapon == &ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka) {
+        if (twork.num_targets > 1) {
+            for (int32_t i = 0; i < twork.num_targets - 1; ++i) {
+                int32_t target_unit_idx = 
+                    twork.targets[twork.target_indices[i]].unit_idx;
+                if (target_unit_idx == twork.attacker_idx) {
+                    // Swap with last target.
+                    int32_t tmp = twork.target_indices[i];
+                    twork.target_indices[i] = 
+                        twork.target_indices[twork.num_targets - 1];
+                    twork.target_indices[twork.num_targets - 1] = tmp;
+                    return;
+                }
+            }
+        }
+    }
+}
+
 void DisplayStarPowerNumber() {
     // Don't display SP if Mario hasn't gotten any Star Powers yet.
     if (ttyd::mario_pouch::pouchGetMaxAP() < 100) return;
@@ -2002,6 +2027,15 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGetItemWeaponNameOpAddr),
         &kGetItemWeaponNameOpcode, sizeof(uint32_t));
+        
+    // Changes targeting order for certain attacks so the user hits themselves
+    // after all other targets.
+    g_btlevtcmd_GetSelectNextEnemy_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetSelectNextEnemy,
+        [](EvtEntry* evt, bool isFirstCall) {
+            ReorderWeaponTargets();
+            return g_btlevtcmd_GetSelectNextEnemy_trampoline(evt, isFirstCall);
+        });
 }
 
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
