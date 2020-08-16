@@ -1465,7 +1465,7 @@ void ApplyItemAndAttackPatches() {
     static const constexpr uint32_t kPriceTiers[] = {
         // Items / recipes.
         0x1a444662, 0x5a334343, 0xb7321253, 0x34453205, 0x00700665,
-        0x00700000, 0x30743210, 0xa7764353, 0x32078644, 0x00842420,
+        0x00700000, 0x30743210, 0xa7764353, 0x35078644, 0x00842420,
         0x34703543, 0x30040740, 0x54444045, 0x00000045,
         // Badges.
         0xb8a88dbb, 0x009d8a8b, 0xeedd99cc, 0xcceeffff, 0xbbccccdd,
@@ -1633,6 +1633,9 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kPoisonMushroomChanceAddr),
         &kPoisonMushroomChance, sizeof(kPoisonMushroomChance));
+        
+    // Make Space Food guarantee Allergic status.
+    ttyd::battle_item_data::ItemWeaponData_SpaceFood.allergic_chance = 100;
         
     // Make Trade Off usable only on the enemy party.
     ttyd::battle_item_data::ItemWeaponData_Teki_Kyouka.target_class_flags =
