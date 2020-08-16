@@ -1724,6 +1724,8 @@ void ApplyItemAndAttackPatches() {
     // - On damage (damage_core)
     *reinterpret_cast<int32_t*>(0x8039c190) = 1;  // heavy damage - 1/3
     *reinterpret_cast<int32_t*>(0x8039c1ec) = 2;  // light damage - 2/3
+    // Set FP cost to 5.
+    ttyd::unit_party_nokotarou::partyWeapon_NokotarouKouraGuard.base_fp_cost = 5;
     
     // Disable getting coins and experience from a successful Gale Force.
     const int32_t kGaleForceKillHookAddr = 0x80351ea4;
@@ -1737,10 +1739,10 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kDodgyFogEndHookAddr),
         DodgyFogFlurriePatch, sizeof(DodgyFogFlurriePatch));
         
-    // Make Infatuate single-target and slightly cheaper.
+    // Make Infatuate single-target and slightly more expensive.
     ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.
         target_class_flags = 0x01101260;
-    ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.base_fp_cost = 3;
+    ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.base_fp_cost = 5;
     // Disable checking for the next enemy in the attack's event script.
     *reinterpret_cast<int32_t*>(0x8038df34) = 0x0002001a;
     // Call a custom function on successfully hitting an enemy w/Infatuate
