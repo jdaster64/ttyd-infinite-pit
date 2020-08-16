@@ -1854,10 +1854,10 @@ void ApplyItemAndAttackPatches() {
         ttyd::unit_party_sanders::partyWeapon_SandersFirstAttack.
             damage_function_params,
         kKoopsBobberyFirstAttackParams, sizeof(kKoopsBobberyFirstAttackParams));
-    // Tattle has a doubled Stylish multiplier, essentially making it equivalent
-    // to an Excellent + Stylish (or better, w/Unsimplifier) if successful.
+    // Tattle has an increased Stylish multiplier, essentially making it better
+    // than an Excellent + Stylish if successful.
     ttyd::unit_party_christine::partyWeapon_ChristineMonosiri.
-        stylish_multiplier = 2;
+        stylish_multiplier = 3;
     // Lip Lock immune to fire and spikes (except pre-emptive spikes).
     ttyd::unit_party_clauda::partyWeapon_ClaudaLipLockAttack.
         counter_resistance_flags |= 0x1a;
