@@ -1854,9 +1854,23 @@ void ApplyItemAndAttackPatches() {
         ttyd::unit_party_sanders::partyWeapon_SandersFirstAttack.
             damage_function_params,
         kKoopsBobberyFirstAttackParams, sizeof(kKoopsBobberyFirstAttackParams));
+    // Tattle has a doubled Stylish multiplier, essentially making it equivalent
+    // to an Excellent + Stylish (or better, w/Unsimplifier) if successful.
+    ttyd::unit_party_christine::partyWeapon_ChristineMonosiri.
+        stylish_multiplier = 2;
     // Lip Lock immune to fire and spikes (except pre-emptive spikes).
     ttyd::unit_party_clauda::partyWeapon_ClaudaLipLockAttack.
         counter_resistance_flags |= 0x1a;
+    // Gulp's shot attack has a cascading effect, essentially acting like
+    // the Super / Ultra Hammer moves; secondary hits' damage reduced to 2 ~ 4.
+    ttyd::unit_party_yoshi::partyWeapon_YoshiNomikomi_Involved.
+        damage_pattern = 6;  // "shot" effect on hit
+    ttyd::unit_party_yoshi::partyWeapon_YoshiNomikomi_Involved.
+        damage_function_params[1] = 2;
+    ttyd::unit_party_yoshi::partyWeapon_YoshiNomikomi_Involved.
+        damage_function_params[3] = 3;
+    ttyd::unit_party_yoshi::partyWeapon_YoshiNomikomi_Involved.
+        damage_function_params[5] = 4;
     // Stampede is limited to targets within Hammer range.
     ttyd::unit_party_yoshi::partyWeapon_YoshiCallGuard.
         target_property_flags |= 0x2000;

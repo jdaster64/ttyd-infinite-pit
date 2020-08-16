@@ -44,8 +44,10 @@ namespace MsgKey {
         MSG_JON_KANBAN_3,
         MSG_KAME_NO_NOROI,
         MSG_NANCY_FRAPPE,
+        MSG_PKR_MONOSIRI,
         MSG_PTR_MEROMERO_KISS,
         MSG_PWD_KUMOGAKURE,
+        MSG_PYS_NOMIKOMI,
         MSG_SUPER_COIN,
         MSG_TEKI_KYOUKA,
         MSG_TOUGHEN_UP,
@@ -95,8 +97,10 @@ constexpr const char* kKeyLookups[] = {
     "msg_jon_kanban_3",
     "msg_kame_no_noroi",
     "msg_nancy_frappe",
+    "msg_pkr_monosiri",
     "msg_ptr_meromero_kiss",
     "msg_pwd_kumogakure",
+    "msg_pys_nomikomi",
     "msg_super_coin",
     "msg_teki_kyouka",
     "msg_toughen_up",
@@ -225,12 +229,18 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
         case MsgKey::BTL_HLP_CMD_OPERATION_SUPER_CHARGE:
             return "Briefly increases DEF by\n"
                    "more than Defending.";
+        case MsgKey::MSG_PKR_MONOSIRI:
+            return "A super-stylish move that\n"
+                   "reveals enemies' HP.";
         case MsgKey::MSG_PTR_MEROMERO_KISS:
             return "Blow a kiss to an enemy to try\n"
                    "to win them to your side.";
         case MsgKey::MSG_PWD_KUMOGAKURE:
             return "Makes your team dodgy for \n"
                    "a time so foes frequently miss.";
+        case MsgKey::MSG_PYS_NOMIKOMI:
+            return "Spit the front enemy into all\n"
+                   "ground-bound enemies behind it.";
         case MsgKey::MSG_SUPER_COIN:
             return "A mysterious, powerful object.\n"
                    "Use it to power up your partner!";
