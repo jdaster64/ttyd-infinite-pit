@@ -674,6 +674,7 @@
 // evt_pouch.o
 800f07d0:evt_pouch_get_yoshiname
 800f0a8c:evt_pouch_party_join
+800f0e20:evt_pouch_add_item
 
 // npc_event.o
 // .text

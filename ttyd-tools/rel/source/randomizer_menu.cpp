@@ -67,7 +67,7 @@ int32_t menu_state_ = MenuState::NUM_CHEST_REWARDS;
 
 bool ShouldDisplayMenu() {
     return InMainGameModes() && !strcmp(GetCurrentMap(), kStartRoomName) &&
-           ttyd::mariost::marioStGetSystemLevel() != 15;  // not paused
+           !((ttyd::mariost::marioStGetSystemLevel() & 0xf) == 0xf);  // !paused
 }
 
 bool ShouldControlMenu() {

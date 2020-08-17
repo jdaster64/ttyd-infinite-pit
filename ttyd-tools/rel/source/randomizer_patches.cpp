@@ -394,6 +394,20 @@ RUN_CHILD_EVT(EnemyNpcSetupEvt)
 RETURN()
 EVT_END()
 
+// Special behavior if you try to buy an item with a full inventory.
+// TODO: Should let you buy it and pull up the discard menu.
+EVT_BEGIN(CharlietonBuyFullInventoryEvt)
+USER_FUNC(ttyd::evt_pouch::evt_pouch_add_item, LW(1), LW(0))
+RUN_CHILD_EVT(REL_PTR(ModuleId::JON, kPitCharlietonPouchAddItemCheckOffset))
+RETURN()
+EVT_END()
+
+// Wrapper for Charlieton full-inventory event.
+EVT_BEGIN(CharlietonBuyFullInventoryEvtHook)
+RUN_CHILD_EVT(CharlietonBuyFullInventoryEvt)
+RETURN()
+EVT_END()
+
 // Patch over the end of the existing Trade Off item script so it actually
 // calls the part of the code associated with applying its status.
 EVT_BEGIN(TradeOffPatch)
@@ -529,6 +543,21 @@ void OnModuleLoaded(OSModuleInfo* module) {
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + kPitEnemySetupEvtOffset),
             EnemyNpcSetupEvtHook, sizeof(EnemyNpcSetupEvtHook));
+            
+        // Fix Charlieton's buy prompt if trying to buy a badge.
+        *reinterpret_cast<int32_t*>(
+            module_ptr + kPitCharlietonMinItemToDisplayBadgeTextOffset) = 1000;
+            
+        // Run custom behavior if trying to buy an item/badge from Charlieton
+        // with a full inventory.
+        LinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(module_ptr),
+            const_cast<int32_t*>(CharlietonBuyFullInventoryEvt));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_ptr + kPitCharlietonPouchAddItemCallOffset),
+            CharlietonBuyFullInventoryEvtHook,
+            sizeof(CharlietonBuyFullInventoryEvtHook));
             
         // Make Charlieton always spawn, and Movers never spawn.
         *reinterpret_cast<int32_t*>(
@@ -700,6 +729,9 @@ void OnMapUnloaded() {
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
             const_cast<int32_t*>(EnemyNpcSetupEvt));
+        UnlinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
+            const_cast<int32_t*>(CharlietonBuyFullInventoryEvt));
         if (g_AdditionalModuleToLoad) {
             gc::OSLink::OSUnlink(ttyd::mariost::g_MarioSt->pMapAlloc);
             g_AdditionalModuleToLoad = nullptr;

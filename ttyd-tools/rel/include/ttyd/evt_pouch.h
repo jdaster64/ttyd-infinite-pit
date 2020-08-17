@@ -29,7 +29,7 @@ EVT_DECLARE_USER_FUNC(evt_pouch_party_join, 1)
 // evt_pouch_add_keepitem
 // N_evt_pouch_remove_item_index
 // evt_pouch_remove_item
-// evt_pouch_add_item
+EVT_DECLARE_USER_FUNC(evt_pouch_add_item, 2)
 // evt_pouch_get_starstone
 // evt_pouch_add_starpiece
 // evt_pouch_get_starpiece
