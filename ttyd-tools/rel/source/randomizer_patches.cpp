@@ -566,6 +566,15 @@ void OnFileLoad(bool new_file) {
         g_Randomizer->state_.Load(/* new_save = */ true);
         g_Randomizer->state_.Save();
         
+        // Start with FX badges equipped if option is set.
+        if (g_Randomizer->state_.options_ & RandomizerState::START_WITH_FX) {
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_P);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_Y);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_G);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_B);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
+        }
+        
         // Update any stats / equipment / flags as necessary.
         ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
         ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);

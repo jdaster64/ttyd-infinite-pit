@@ -83,8 +83,14 @@ bool RandomizerState::Load(bool new_save) {
     // If the filename is a few variants of "random" or a single 'star',
     // pick a random replacement filename.
     const char* filename = GetSavefileName();
+    for (const char* ch = filename; *ch; ++ch) {
+        // If the filename contains a 'heart' character, start w/FX badges.
+        if (*ch == '\xd0') options_ |= RandomizerState::START_WITH_FX;
+    }    
     if (!strcmp(filename, "random") || !strcmp(filename, "Random") ||
-        !strcmp(filename, "RANDOM") || !strcmp(filename, "\xde")) { 
+        !strcmp(filename, "RANDOM") || !strcmp(filename, "\xde") ||
+        !strcmp(filename, "random\xd0") || !strcmp(filename, "Random\xd0") ||
+        !strcmp(filename, "RANDOM\xd0") || !strcmp(filename, "\xde\xd0")) { 
         char filenameChars[9];
         rng_state_ = static_cast<uint32_t>(gc::OSTime::OSGetTime());
         for (int32_t i = 0; i < 8; ++i) {
