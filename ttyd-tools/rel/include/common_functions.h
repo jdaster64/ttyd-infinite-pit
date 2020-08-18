@@ -17,6 +17,8 @@ extern const uint32_t kPitBossFloorReturnBeroEntryOffset;
 extern const uint32_t kPitMoverLastSpawnFloorOffset;
 extern const uint32_t kPitCharlietonSpawnChanceOffset;
 extern const uint32_t kPitCharlietonTalkEvtOffset;
+extern const uint32_t kPitCharlietonTalkMinItemForBadgeDialogOffset;
+extern const uint32_t kPitCharlietonTalkNoInvSpaceBranchOffset;
 extern const uint32_t kPitEvtOpenBoxOffset;
 extern const uint32_t kPitFloorIncrementEvtOffset;
 extern const uint32_t kPitEnemySetupEvtOffset;

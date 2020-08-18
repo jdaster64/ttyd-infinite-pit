@@ -6,6 +6,8 @@
 	const int32_t name[] = {
 #define EVT_END() \
 	0x1 };
+// For ending an early branch out of an existing event without an "end" op.
+#define EVT_PATCH_END() } ;
 
 #define EVT_HELPER_OP(op) \
 	reinterpret_cast<int32_t>((op))

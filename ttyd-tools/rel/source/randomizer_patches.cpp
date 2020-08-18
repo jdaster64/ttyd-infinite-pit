@@ -396,81 +396,9 @@ RUN_CHILD_EVT(EnemyNpcSetupEvt)
 RETURN()
 EVT_END()
 
-// Replacement for Charlieton Pit conversation event.
-EVT_BEGIN(CharlietonTalkEvt)
-// Start conversation text.
-USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("100kai_item_01"), 0, PTR("me"))
-USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
-IF_EQUAL(LW(0), 1)  // "No"
-    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_02"))
-    RETURN()
-END_IF()
-USER_FUNC(ttyd::evt_msg::evt_msg_continue)
-
-LBL(0)
-// Open shop menu.
-USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(12))
-USER_FUNC(ttyd::evt_window::evt_win_other_select, 15)
-IF_EQUAL(LW(0), 0)  // Exit shop
-    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
-    USER_FUNC(
-        ttyd::evt_msg::evt_msg_print, 0, PTR("100kai_item_10"), 0, PTR("me"))
-    RETURN()
-END_IF()
-USER_FUNC(ttyd::evt_pouch::evt_pouch_get_coin, LW(0))
-IF_SMALL(LW(0), LW(3))  // Not enough coins
-    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
-    USER_FUNC(
-        ttyd::evt_msg::evt_msg_print, 0, PTR("100kai_item_03"), 0, PTR("me"))
-    GOTO(0)
-END_IF()
-// Item selected; confirmation dialog box.
-USER_FUNC(ttyd::evt_sub::evt_sub_get_language, LW(0))
-SWITCH(LW(0))
-    CASE_EQUAL(0)
-        USER_FUNC(ttyd::evt_msg::evt_msg_print_insert,
-                  0, PTR("100kai_item_04"), 0, PTR("me"), LW(2), LW(3))
-    CASE_ETC()
-        USER_FUNC(ttyd::evt_msg::unk_US_EU_05_800d0998,
-                  0, LW(14), PTR("100kai_item_04"), LW(3))
-        USER_FUNC(ttyd::evt_msg::unk_US_EU_07_800d12b0, 1, LW(14), LW(14), LW(2))
-        USER_FUNC(ttyd::evt_msg::evt_msg_print, 1, LW(14), 0, PTR("me"))
-END_SWITCH()
-USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
-IF_EQUAL(LW(0), 1)  // Declined.
-    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
-    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_05"))
-    RETURN()
-END_IF()
-// Confirmed; add item to pouch.
-USER_FUNC(ttyd::evt_pouch::evt_pouch_add_item, LW(1), LW(0))
-IF_NOT_EQUAL(LW(0), -1)
-    // Spend coins.
-    MUL(LW(3), -1)
-    USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
-    USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(12))
-    WAIT_MSEC(200)
-    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
-    
-    // Check if player has coins remaining.
-    USER_FUNC(ttyd::evt_pouch::evt_pouch_get_coin, LW(0))
-    IF_EQUAL(LW(0), 0)
-        USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_06"))
-        RETURN()
-    END_IF()
-    // Ask player if they want to buy another item.
-    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_07"))
-    USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
-    IF_EQUAL(LW(0), 1)  // Declined.
-        USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_08"))
-        RETURN()
-    END_IF()
-    // Close text dialog and loop back to menu.
-    USER_FUNC(ttyd::evt_msg::evt_msg_continue)
-    GOTO(0)
-END_IF()
 // Inventory full; ask the player if they still want to buy the item,
 // and throw out an existing one.
+EVT_BEGIN(CharlietonInvFullEvt)
 USER_FUNC(
     ttyd::evt_msg::evt_msg_print_add, 0, PTR("pit_charlieton_full_inv"))
 USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
@@ -479,14 +407,12 @@ IF_EQUAL(LW(0), 1)  // Declined.
     USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_08"))
     RETURN()
 END_IF()
-
 // Spend coins.
 MUL(LW(3), -1)
 USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
 USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(12))
 WAIT_MSEC(200)
 USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
-
 // Close text dialog and handle spawning item / throwing away.
 USER_FUNC(ttyd::evt_msg::evt_msg_continue)
 USER_FUNC(GetUniqueItemName, LW(0))
@@ -498,10 +424,10 @@ RETURN()
 EVT_END()
 
 // Wrapper for Charlieton full-inventory event.
-EVT_BEGIN(CharlietonTalkEvtHook)
-RUN_CHILD_EVT(CharlietonTalkEvt)
+EVT_BEGIN(CharlietonInvFullEvtHook)
+RUN_CHILD_EVT(CharlietonInvFullEvt)
 RETURN()
-EVT_END()
+EVT_PATCH_END()
 
 // Patch over the end of the existing Trade Off item script so it actually
 // calls the part of the code associated with applying its status.
@@ -652,10 +578,15 @@ void OnModuleLoaded(OSModuleInfo* module) {
         // and throwing away an old one if you have a full item/badge inventory.
         LinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(module_ptr),
-            const_cast<int32_t*>(CharlietonTalkEvt));
+            const_cast<int32_t*>(CharlietonInvFullEvt));
         mod::patch::writePatch(
-            reinterpret_cast<void*>(module_ptr + kPitCharlietonTalkEvtOffset),
-            CharlietonTalkEvtHook, sizeof(CharlietonTalkEvtHook));
+            reinterpret_cast<void*>(
+                module_ptr + kPitCharlietonTalkNoInvSpaceBranchOffset),
+            CharlietonInvFullEvtHook, sizeof(CharlietonInvFullEvtHook));
+            
+        // Fix Charlieton's text when offering to sell a badge.
+        *reinterpret_cast<int32_t*>(
+            module_ptr + kPitCharlietonTalkMinItemForBadgeDialogOffset) = 1000;
             
         // Make Charlieton always spawn, and Movers never spawn.
         *reinterpret_cast<int32_t*>(
@@ -829,7 +760,7 @@ void OnMapUnloaded() {
             const_cast<int32_t*>(EnemyNpcSetupEvt));
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
-            const_cast<int32_t*>(CharlietonTalkEvt));
+            const_cast<int32_t*>(CharlietonInvFullEvt));
         if (g_AdditionalModuleToLoad) {
             gc::OSLink::OSUnlink(ttyd::mariost::g_MarioSt->pMapAlloc);
             g_AdditionalModuleToLoad = nullptr;
