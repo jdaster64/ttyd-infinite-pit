@@ -36,8 +36,8 @@ EVT_DECLARE_USER_FUNC(evt_pouch_add_item, 2)
 // evt_pouch_set_supercoin
 // evt_pouch_get_supercoin
 // evt_pouch_set_coin
-// evt_pouch_add_coin
-// evt_pouch_get_coin
+EVT_DECLARE_USER_FUNC(evt_pouch_add_coin, 1)
+EVT_DECLARE_USER_FUNC(evt_pouch_get_coin, 1)
 
 }
 

@@ -54,6 +54,7 @@ namespace MsgKey {
         MSG_TOUGHEN_UP_MENU,
         MSG_TOUGHEN_UP_P,
         MSG_TOUGHEN_UP_P_MENU,
+        PIT_CHARLIETON_FULL_INV,
         PIT_CHEST_UNCLAIMED,
         PIT_DISABLED_RETURN,
         PIT_REWARD_PARTY_JOIN,
@@ -107,6 +108,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_toughen_up_menu",
     "msg_toughen_up_p",
     "msg_toughen_up_p_menu",
+    "pit_charlieton_full_inv",
     "pit_chest_unclaimed",
     "pit_disabled_return",
     "pit_reward_party_join",
@@ -144,6 +146,11 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
     // TODO: Order of case statements shouldn't matter, but consider either
     // ordering them alphabetically or putting logically similar ones together?
     switch (idx) {
+        case MsgKey::PIT_CHARLIETON_FULL_INV:
+            return "<p>\n"
+                   "Ooh, you can't carry any more \n"
+                   "stuff, my man. You sure you\n"
+                   "want to buy this anyway?\n<o>";
         case MsgKey::PIT_REWARD_PARTY_JOIN:
             return "<system>\n<p>\nYou got a new party member!\n<k>";
         case MsgKey::PIT_DISABLED_RETURN:

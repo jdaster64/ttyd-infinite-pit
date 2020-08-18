@@ -41,6 +41,8 @@
 #include <ttyd/evt_party.h>
 #include <ttyd/evt_pouch.h>
 #include <ttyd/evt_snd.h>
+#include <ttyd/evt_sub.h>
+#include <ttyd/evt_window.h>
 #include <ttyd/evt_yuugijou.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
@@ -394,17 +396,110 @@ RUN_CHILD_EVT(EnemyNpcSetupEvt)
 RETURN()
 EVT_END()
 
-// Special behavior if you try to buy an item with a full inventory.
-// TODO: Should let you buy it and pull up the discard menu.
-EVT_BEGIN(CharlietonBuyFullInventoryEvt)
+// Replacement for Charlieton Pit conversation event.
+EVT_BEGIN(CharlietonTalkEvt)
+// Start conversation text.
+USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("100kai_item_01"), 0, PTR("me"))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
+IF_EQUAL(LW(0), 1)  // "No"
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_02"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_continue)
+
+LBL(0)
+// Open shop menu.
+USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(12))
+USER_FUNC(ttyd::evt_window::evt_win_other_select, 15)
+IF_EQUAL(LW(0), 0)  // Exit shop
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
+    USER_FUNC(
+        ttyd::evt_msg::evt_msg_print, 0, PTR("100kai_item_10"), 0, PTR("me"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_pouch::evt_pouch_get_coin, LW(0))
+IF_SMALL(LW(0), LW(3))  // Not enough coins
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
+    USER_FUNC(
+        ttyd::evt_msg::evt_msg_print, 0, PTR("100kai_item_03"), 0, PTR("me"))
+    GOTO(0)
+END_IF()
+// Item selected; confirmation dialog box.
+USER_FUNC(ttyd::evt_sub::evt_sub_get_language, LW(0))
+SWITCH(LW(0))
+    CASE_EQUAL(0)
+        USER_FUNC(ttyd::evt_msg::evt_msg_print_insert,
+                  0, PTR("100kai_item_04"), 0, PTR("me"), LW(2), LW(3))
+    CASE_ETC()
+        USER_FUNC(ttyd::evt_msg::unk_US_EU_05_800d0998,
+                  0, LW(14), PTR("100kai_item_04"), LW(3))
+        USER_FUNC(ttyd::evt_msg::unk_US_EU_07_800d12b0, 1, LW(14), LW(14), LW(2))
+        USER_FUNC(ttyd::evt_msg::evt_msg_print, 1, LW(14), 0, PTR("me"))
+END_SWITCH()
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
+IF_EQUAL(LW(0), 1)  // Declined.
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_05"))
+    RETURN()
+END_IF()
+// Confirmed; add item to pouch.
 USER_FUNC(ttyd::evt_pouch::evt_pouch_add_item, LW(1), LW(0))
-RUN_CHILD_EVT(REL_PTR(ModuleId::JON, kPitCharlietonPouchAddItemCheckOffset))
+IF_NOT_EQUAL(LW(0), -1)
+    // Spend coins.
+    MUL(LW(3), -1)
+    USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
+    USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(12))
+    WAIT_MSEC(200)
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
+    
+    // Check if player has coins remaining.
+    USER_FUNC(ttyd::evt_pouch::evt_pouch_get_coin, LW(0))
+    IF_EQUAL(LW(0), 0)
+        USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_06"))
+        RETURN()
+    END_IF()
+    // Ask player if they want to buy another item.
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_07"))
+    USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
+    IF_EQUAL(LW(0), 1)  // Declined.
+        USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_08"))
+        RETURN()
+    END_IF()
+    // Close text dialog and loop back to menu.
+    USER_FUNC(ttyd::evt_msg::evt_msg_continue)
+    GOTO(0)
+END_IF()
+// Inventory full; ask the player if they still want to buy the item,
+// and throw out an existing one.
+USER_FUNC(
+    ttyd::evt_msg::evt_msg_print_add, 0, PTR("pit_charlieton_full_inv"))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("100kai_item_00"))
+IF_EQUAL(LW(0), 1)  // Declined.
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("100kai_item_08"))
+    RETURN()
+END_IF()
+
+// Spend coins.
+MUL(LW(3), -1)
+USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
+USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(12))
+WAIT_MSEC(200)
+USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(12))
+
+// Close text dialog and handle spawning item / throwing away.
+USER_FUNC(ttyd::evt_msg::evt_msg_continue)
+USER_FUNC(GetUniqueItemName, LW(0))
+USER_FUNC(
+    ttyd::evt_item::evt_item_entry,
+    LW(0), LW(1), FLOAT(0.0), FLOAT(-999.0), FLOAT(0.0), 17, -1, 0)
+USER_FUNC(ttyd::evt_item::evt_item_get_item, LW(0))
 RETURN()
 EVT_END()
 
 // Wrapper for Charlieton full-inventory event.
-EVT_BEGIN(CharlietonBuyFullInventoryEvtHook)
-RUN_CHILD_EVT(CharlietonBuyFullInventoryEvt)
+EVT_BEGIN(CharlietonTalkEvtHook)
+RUN_CHILD_EVT(CharlietonTalkEvt)
 RETURN()
 EVT_END()
 
@@ -544,20 +639,14 @@ void OnModuleLoaded(OSModuleInfo* module) {
             reinterpret_cast<void*>(module_ptr + kPitEnemySetupEvtOffset),
             EnemyNpcSetupEvtHook, sizeof(EnemyNpcSetupEvtHook));
             
-        // Fix Charlieton's buy prompt if trying to buy a badge.
-        *reinterpret_cast<int32_t*>(
-            module_ptr + kPitCharlietonMinItemToDisplayBadgeTextOffset) = 1000;
-            
-        // Run custom behavior if trying to buy an item/badge from Charlieton
-        // with a full inventory.
+        // Replace Charlieton talk evt, adding a dialog for buying an item
+        // and throwing away an old one if you have a full item/badge inventory.
         LinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(module_ptr),
-            const_cast<int32_t*>(CharlietonBuyFullInventoryEvt));
+            const_cast<int32_t*>(CharlietonTalkEvt));
         mod::patch::writePatch(
-            reinterpret_cast<void*>(
-                module_ptr + kPitCharlietonPouchAddItemCallOffset),
-            CharlietonBuyFullInventoryEvtHook,
-            sizeof(CharlietonBuyFullInventoryEvtHook));
+            reinterpret_cast<void*>(module_ptr + kPitCharlietonTalkEvtOffset),
+            CharlietonTalkEvtHook, sizeof(CharlietonTalkEvtHook));
             
         // Make Charlieton always spawn, and Movers never spawn.
         *reinterpret_cast<int32_t*>(
@@ -731,7 +820,7 @@ void OnMapUnloaded() {
             const_cast<int32_t*>(EnemyNpcSetupEvt));
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
-            const_cast<int32_t*>(CharlietonBuyFullInventoryEvt));
+            const_cast<int32_t*>(CharlietonTalkEvt));
         if (g_AdditionalModuleToLoad) {
             gc::OSLink::OSUnlink(ttyd::mariost::g_MarioSt->pMapAlloc);
             g_AdditionalModuleToLoad = nullptr;
@@ -2265,6 +2354,16 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         gsw_floor += ((actual_floor / 10) % 10 == 9) ? 90 : 80;
     }
     ttyd::swdrv::swByteSet(1321, gsw_floor);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetUniqueItemName) {
+    static int32_t id = 0;
+    static char name[16];
+    
+    id = (id + 1) % 1000;
+    sprintf(name, "ch_item_%03" PRId32, id);
+    evtSetValue(evt, evt->evtArguments[0], PTR(name));
     return 2;
 }
 

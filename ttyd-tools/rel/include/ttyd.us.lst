@@ -400,6 +400,9 @@
 800535b8:evt_npc_slave_entry
 800536e4:evt_npc_entry
 
+// evt_sub.o
+80054a68:evt_sub_get_language
+
 // mario.o
 800561b8:toFrontPose
 800566cc:toRearPose
@@ -623,7 +626,12 @@
 800b2388:cardCopy2Main
 
 // evt_msg.o
+800d0998:unk_US_EU_05_800d0998
+800d12b0:unk_US_EU_07_800d12b0
 800d2008:evt_msg_toge
+800d2090:evt_msg_select
+800d21fc:evt_msg_continue
+800d23c4:evt_msg_print_add
 800d2460:evt_msg_print_insert
 800d284c:evt_msg_print
 
@@ -675,6 +683,8 @@
 800f07d0:evt_pouch_get_yoshiname
 800f0a8c:evt_pouch_party_join
 800f0e20:evt_pouch_add_item
+800f0fe8:evt_pouch_add_coin
+800f1018:evt_pouch_get_coin
 
 // npc_event.o
 // .text
@@ -1448,6 +1458,12 @@
 
 // evt_johoya.o
 801fb068:johoya_init
+
+// evt_window.o
+80209a0c:evt_win_coin_wait
+80209aac:evt_win_coin_off
+80209b5c:evt_win_coin_on
+8020a2c4:evt_win_other_select
 
 // evt_yuugijou.o
 80229bcc:yuugijou_init
