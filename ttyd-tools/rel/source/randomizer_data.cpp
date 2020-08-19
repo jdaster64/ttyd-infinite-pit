@@ -758,11 +758,14 @@ bool GetEnemyStats(
         } else {
             // Enemies' level will always be the same amount higher than Mario,
             // typically giving 3 ~ 10 EXP depending on strength and group size.
-            // Bosses / special enemies don't get the additional levels.
-            int32_t level_offset = 
-                ei->level_offset + (ei->level_offset > 10 ? 0 : 5);
-            *out_level =
-                ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
+            if (ei->level_offset <= 10) {
+                int32_t level_offset = ei->level_offset + 5;
+                *out_level =
+                    ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
+            } else {
+                // Bosses / special enemies get fixed bonus Star Points instead.
+                *out_level = -ei->level_offset / 2;
+            }
         }
     }
     if (out_coinlvl) {
@@ -826,7 +829,7 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     // Use the unused "random_item_weight" field to store the item reward.
     int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
     *item_reward = PickRandomItem(
-        /* seeded = */ true, 10, 10, 30, state.floor_ < 30 ? 0 : 30);
+        /* seeded = */ true, 10, 10, 40, state.floor_ < 30 ? 0 : 30);
     // If the "none" case was picked, make it a Shine Sprite.
     if (*item_reward <= 0) *item_reward = ItemType::GOLD_BAR_X3;
     

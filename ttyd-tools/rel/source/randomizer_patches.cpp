@@ -1086,8 +1086,16 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
     if (!GetEnemyStats(
         unit->unit_type, &hp, nullptr, nullptr, &level, &coinlvl)) return;
     unit->max_hp = hp;
-    unit->level = level;
-    unit->bonus_exp = 0;
+    
+    if (level >= 0) {
+        unit->level = level;
+        unit->bonus_exp = 0;
+    } else {
+        // If negative, give it as bonus EXP instead (to avoid level overflow).
+        unit->level = ttyd::mario_pouch::pouchGetPtr()->level + 1;
+        unit->bonus_exp = -level;
+    }
+    
     unit->base_coin = coinlvl / 2;
     // Give an additional coin half the time if coinlvl is odd.
     unit->bonus_coin_rate = 50;
@@ -1526,7 +1534,7 @@ void ApplyItemAndAttackPatches() {
     static const constexpr uint32_t kPriceTiers[] = {
         // Items / recipes.
         0x1a444662, 0x5a334343, 0xb7321253, 0x34453205, 0x00700665,
-        0x00700000, 0x30743210, 0xa7764353, 0x35078644, 0x00842420,
+        0x00700000, 0x30743250, 0xa7764353, 0x35078644, 0x00842420,
         0x34703543, 0x30040740, 0x54444045, 0x00002045,
         // Badges.
         0xb8a88dbb, 0x009d8a8b, 0xeedd99cc, 0xcceeffff, 0xbbccccdd,
@@ -1869,11 +1877,14 @@ void ApplyItemAndAttackPatches() {
             return 2;
         });
         
-    // Increase Hold Fast and Return Postage's returned damage to 1x
-    // (but not Poison counter status / regular Payback status).
+    // Increase all forms of Payback-esque status returned damage to 1x.
+    const int32_t kPaybackCounterDivisorHookAddr = 0x800fb7dc;
     const int32_t kHoldFastCounterDivisorHookAddr = 0x800fb800;
     const int32_t kReturnPostageCounterDivisorHookAddr = 0x800fb824;
     const uint32_t kLoadCounterDivisorOpcode = 0x38000032;  // li r0, 50
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kPaybackCounterDivisorHookAddr),
+        &kLoadCounterDivisorOpcode, sizeof(int32_t));
     mod::patch::writePatch(
         reinterpret_cast<void*>(kHoldFastCounterDivisorHookAddr),
         &kLoadCounterDivisorOpcode, sizeof(int32_t));

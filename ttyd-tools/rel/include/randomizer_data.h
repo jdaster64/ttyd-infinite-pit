@@ -25,6 +25,7 @@ void BuildBattle(
 // floor (determined by the randomizer state).
 // Will return false if no stats were found for the given enemy type.
 // If an out pointer is passed as nullptr, that stat will be skipped.
+// If out_level returns a negative number, that should be used as bonus EXP.
 // Should not be called for ATK/DEF if replacing a vanilla ATK/DEF of 0.
 bool GetEnemyStats(
     int32_t unit_type, int32_t* out_hp, int32_t* out_atk, int32_t* out_def, 
