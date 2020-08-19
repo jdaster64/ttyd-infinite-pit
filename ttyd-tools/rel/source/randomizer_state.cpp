@@ -86,7 +86,7 @@ bool RandomizerState::Load(bool new_save) {
     for (const char* ch = filename; *ch; ++ch) {
         // If the filename contains a 'heart' character, start w/FX badges.
         if (*ch == '\xd0') options_ |= RandomizerState::START_WITH_FX;
-    }    
+    }
     if (!strcmp(filename, "random") || !strcmp(filename, "Random") ||
         !strcmp(filename, "RANDOM") || !strcmp(filename, "\xde") ||
         !strcmp(filename, "random\xd0") || !strcmp(filename, "Random\xd0") ||
