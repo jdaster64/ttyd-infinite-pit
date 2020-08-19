@@ -1,6 +1,7 @@
 #pragma once
 
 #include "battle_database_common.h"
+#include "evtmgr.h"
 
 #include <cstdint>
 
@@ -12,7 +13,7 @@ extern "C" {
 // _set_hustle
 // _dictionary
 // _monosiri_flag_on
-// btlevtcmd_get_monosiri_msg_no
+EVT_DECLARE_USER_FUNC(btlevtcmd_get_monosiri_msg_no, 3)
 // __makeTechMenuFunc
 // krb_get_dir
 

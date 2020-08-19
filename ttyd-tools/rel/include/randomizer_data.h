@@ -3,6 +3,7 @@
 #include "common_types.h"
 
 #include <ttyd/battle_database_common.h>
+#include <ttyd/battle_unit.h>
 #include <ttyd/npcdrv.h>
 
 #include <cstdint>
@@ -30,6 +31,11 @@ void BuildBattle(
 bool GetEnemyStats(
     int32_t unit_type, int32_t* out_hp, int32_t* out_atk, int32_t* out_def, 
     int32_t* out_level, int32_t* out_coinlvl, int32_t base_attack_power = 0);
+    
+// Gets/sets a custom Tattle message based on the enemy's parameters.
+const char* GetCustomTattle();
+const char* SetCustomTattle(
+    ttyd::battle_unit::BattleWorkUnit* unit, const char* original_tattle_msg);
     
 // Randomly sets parameters for a battle condition that grants a bonus item.
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable = true);

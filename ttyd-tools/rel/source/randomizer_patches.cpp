@@ -170,8 +170,9 @@ void (*g_DrawOperationWin_trampoline)() = nullptr;
 void (*g_DrawWeaponWin_trampoline)() = nullptr;
 void (*g__getSickStatusParam_trampoline)(
     BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
-int32_t(*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
-int32_t(*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -1813,6 +1814,30 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kConsumeItemReserveRefundBaseHookAddr),
         &kAddBaseRefundRateOpcode, sizeof(int32_t));
         
+    // Tattle returns a custom message based on the enemy's stats.
+    g_btlevtcmd_get_monosiri_msg_no_trampoline = mod::patch::hookFunction(
+        ttyd::unit_party_christine::btlevtcmd_get_monosiri_msg_no,
+        [](EvtEntry* evt, bool isFirstCall) {
+            auto* battleWork = ttyd::battle::g_BattleWork;
+            int32_t unit_idx = evtGetValue(evt, evt->evtArguments[0]);
+            unit_idx = ttyd::battle_sub::BattleTransID(evt, unit_idx);
+            auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, unit_idx);
+            
+            // Get original pointer to Tattle string.
+            g_btlevtcmd_get_monosiri_msg_no_trampoline(evt, isFirstCall);
+            const char* tattle_msg = 
+                reinterpret_cast<const char*>(
+                    evtGetValue(evt, evt->evtArguments[2]));
+            // Build a custom tattle, if the enemy has stats to pull from.
+            tattle_msg = SetCustomTattle(unit, tattle_msg);
+            evtSetValue(evt, evt->evtArguments[2], PTR(tattle_msg));
+            return 2;
+        });
+    // Tattle also has an increased Stylish multiplier, essentially making it
+    // better than an Excellent + Stylish if successful.
+    ttyd::unit_party_christine::partyWeapon_ChristineMonosiri.
+        stylish_multiplier = 3;
+        
     // Set Shell Shield's max HP to 3.
     ttyd::unit_koura::unit_koura.max_hp = 3;
     // Set Shell Shield's starting HP to 1 ~ 3 when spawned rather than 2 ~ 8.
@@ -1934,10 +1959,6 @@ void ApplyItemAndAttackPatches() {
         ttyd::unit_party_sanders::partyWeapon_SandersFirstAttack.
             damage_function_params,
         kKoopsBobberyFirstAttackParams, sizeof(kKoopsBobberyFirstAttackParams));
-    // Tattle has an increased Stylish multiplier, essentially making it better
-    // than an Excellent + Stylish if successful.
-    ttyd::unit_party_christine::partyWeapon_ChristineMonosiri.
-        stylish_multiplier = 3;
     // Lip Lock immune to fire and spikes (except pre-emptive spikes).
     ttyd::unit_party_clauda::partyWeapon_ClaudaLipLockAttack.
         counter_resistance_flags |= 0x1a;

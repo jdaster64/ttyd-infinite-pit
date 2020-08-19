@@ -1,6 +1,7 @@
 #include "randomizer_strings.h"
 
 #include "randomizer.h"
+#include "randomizer_data.h"
 
 #include <ttyd/mariost.h>
 
@@ -14,6 +15,7 @@ namespace mod::pit_randomizer {
 namespace MsgKey {
     enum e {
         BTL_HLP_CMD_OPERATION_SUPER_CHARGE = 0,
+        BTL_HLP_CUSTOM_TATTLE,
         IN_2BAI_DAMAGE,
         IN_CAKE,
         IN_TOUGHEN_UP,
@@ -68,6 +70,7 @@ namespace {
 // in sync with the above enum, and always maintain alphabetical order.
 constexpr const char* kKeyLookups[] = {
     "btl_hlp_cmd_operation_super_charge",
+    "btl_hlp_custom_tattle",
     "in_2bai_damage",
     "in_cake",
     "in_toughen_up",
@@ -146,6 +149,8 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
     // TODO: Order of case statements shouldn't matter, but consider either
     // ordering them alphabetically or putting logically similar ones together?
     switch (idx) {
+        case MsgKey::BTL_HLP_CUSTOM_TATTLE:
+            return GetCustomTattle();
         case MsgKey::PIT_CHARLIETON_FULL_INV:
             return "<p>\n"
                    "Ooh, you can't carry any more \n"
@@ -238,7 +243,7 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
                    "more than Defending.";
         case MsgKey::MSG_PKR_MONOSIRI:
             return "A super-stylish move that\n"
-                   "reveals enemies' HP.";
+                   "describes an enemy's stats.";
         case MsgKey::MSG_PTR_MEROMERO_KISS:
             return "Blow a kiss to an enemy to try\n"
                    "to win them to your side.";

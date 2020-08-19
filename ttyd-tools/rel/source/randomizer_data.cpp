@@ -8,6 +8,7 @@
 #include <ttyd/battle.h>
 #include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_database_common.h>
+#include <ttyd/battle_unit.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
@@ -25,6 +26,7 @@ namespace mod::pit_randomizer {
 
 namespace {
 
+using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::npcdrv::NpcSetupInfo;
 using ::ttyd::npcdrv::NpcTribeDescription;
@@ -406,6 +408,20 @@ BattleUnitSetup g_CustomUnits[6];
 BattleGroupSetup g_CustomBattleParty;
 int8_t g_CustomAudienceWeights[12];
 
+// Look up the enemy type info w/matching unit_type (returns null if none found).
+const EnemyTypeInfo* LookupEnemyTypeInfo(int32_t unit_type) {
+    constexpr const int32_t kNumEnemyTypes =
+        sizeof(kEnemyInfo) / sizeof(EnemyTypeInfo);
+    const EnemyTypeInfo* ei = nullptr;
+    for (int32_t i = 0; i < kNumEnemyTypes; ++i) {
+        if (kEnemyInfo[i].unit_type == unit_type) {
+            ei = kEnemyInfo + i;
+            break;
+        }
+    }
+    return ei;
+}
+
 }
 
 ModuleId::e SelectEnemies(int32_t floor) {
@@ -704,16 +720,8 @@ const int8_t kStatPercents[10] = { 20, 25, 35, 40, 50, 55, 65, 75, 90, 100 };
 bool GetEnemyStats(
     int32_t unit_type, int32_t* out_hp, int32_t* out_atk, int32_t* out_def,
     int32_t* out_level, int32_t* out_coinlvl, int32_t base_attack_power) {
-    constexpr const int32_t kNumEnemyTypes =
-        sizeof(kEnemyInfo) / sizeof(EnemyTypeInfo);
     // Look up the enemy type info w/matching unit_type.
-    const EnemyTypeInfo* ei = nullptr;
-    for (int32_t i = 0; i < kNumEnemyTypes; ++i) {
-        if (kEnemyInfo[i].unit_type == unit_type) {
-            ei = kEnemyInfo + i;
-            break;
-        }
-    }
+    const EnemyTypeInfo* ei = LookupEnemyTypeInfo(unit_type);
     if (!ei) return false;
     
     int32_t floor_group = g_Randomizer->state_.floor_ / 10;
@@ -776,6 +784,38 @@ bool GetEnemyStats(
     }
     
     return true;
+}
+
+char g_TattleTextBuf[512];
+
+const char* GetCustomTattle() { return g_TattleTextBuf; }
+
+const char* SetCustomTattle(
+    BattleWorkUnit* unit, const char* original_tattle_msg) {
+    int32_t unit_type = unit->current_kind;
+    const EnemyTypeInfo* ei = LookupEnemyTypeInfo(unit_type);
+    if (ei == nullptr) {
+        // No stats to pull from; just use the original message.
+        return original_tattle_msg;
+    }
+    // Take the first paragraph from the original tattle 
+    // (ignore the first few characters in case there's a <p> there).
+    const char* original_tattle = ttyd::msgdrv::msgSearch(original_tattle_msg);
+    const char* p1_end_ptr = strstr(original_tattle + 4, "<p>");
+    int32_t p1_len =
+        p1_end_ptr ? p1_end_ptr - original_tattle : strlen(original_tattle);
+    strncpy(g_TattleTextBuf, original_tattle, p1_len);
+    
+    // TODO: Calculate the enemy's current stats, add ATK offset.
+    char* p2_ptr = g_TattleTextBuf + p1_len;
+    sprintf(p2_ptr,
+            "<p>Its base stats are:\n"
+            "Max HP: %" PRId16 ", ATK: %" PRId16 ",\n"
+            "DEF: %" PRId16 ", Level: %" PRId16 ".\n<k>",
+            ei->hp_scale, ei->atk_scale, ei->def_scale, ei->level_offset);
+    
+    // Return a key that looks up g_TattleTextBuf from randomizer_strings.
+    return "btl_hlp_custom_tattle";
 }
 
 struct BattleCondition {
