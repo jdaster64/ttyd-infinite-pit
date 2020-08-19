@@ -1065,6 +1065,11 @@
 80115b30:DrawOperationWin
 80115dac:DrawWeaponWin
 
+// battle_monosiri.o
+8012ed2c:battleSetUnitMonosiriFlag
+8012ee3c:battleCheckUnitMonosiriFlag
+8012ef20:battleGetUnitMonosiriPtr
+
 // battle_sub.o
 801253ec:BattleTransID
 

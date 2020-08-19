@@ -15,7 +15,8 @@ namespace mod::pit_randomizer {
 namespace MsgKey {
     enum e {
         BTL_HLP_CMD_OPERATION_SUPER_CHARGE = 0,
-        BTL_HLP_CUSTOM_TATTLE,
+        CUSTOM_TATTLE_BATTLE,
+        CUSTOM_TATTLE_MENU,
         IN_2BAI_DAMAGE,
         IN_CAKE,
         IN_TOUGHEN_UP,
@@ -70,7 +71,8 @@ namespace {
 // in sync with the above enum, and always maintain alphabetical order.
 constexpr const char* kKeyLookups[] = {
     "btl_hlp_cmd_operation_super_charge",
-    "btl_hlp_custom_tattle",
+    "custom_tattle_battle",
+    "custom_tattle_menu",
     "in_2bai_damage",
     "in_cake",
     "in_toughen_up",
@@ -124,6 +126,11 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
     // Do not use for more than one custom message at a time!
     static char buf[128];
     
+    // Handle journal Tattle entries.
+    if (strstr(msg_key, "menu_enemy_")) {
+        msg_key = SetCustomMenuTattle(msg_key);
+    }
+    
     // Binary search on all possible message replacements.
     constexpr const int32_t kNumMsgKeys =
         sizeof(kKeyLookups) / sizeof(const char*);
@@ -144,12 +151,14 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
             break;
         }
     }
+    
     if (!found) return nullptr;
     
     // TODO: Order of case statements shouldn't matter, but consider either
     // ordering them alphabetically or putting logically similar ones together?
     switch (idx) {
-        case MsgKey::BTL_HLP_CUSTOM_TATTLE:
+        case MsgKey::CUSTOM_TATTLE_BATTLE:
+        case MsgKey::CUSTOM_TATTLE_MENU:
             return GetCustomTattle();
         case MsgKey::PIT_CHARLIETON_FULL_INV:
             return "<p>\n"
