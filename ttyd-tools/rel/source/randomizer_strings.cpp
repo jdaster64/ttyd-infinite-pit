@@ -277,7 +277,7 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
                    "cost and attack power.";
         case MsgKey::MENU_FIRE_NAGURI:
             return "Wear this to use Fire Drive,\n"
-                   "a 4-FP move which deals\n"
+                   "a 3-FP move which deals \n"
                    "fire damage and Burn status\n"
                    "to all grounded enemies.\n"
                    "Wearing more copies of the\n"

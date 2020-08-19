@@ -349,7 +349,9 @@ const EnemyModuleInfo kEnemyModuleInfo[] = {
 
 const int32_t kPresetLoadouts[][5] = {
     { 6, 92, 34, 93, -1 },      // Bones
+    { 88, 85, 87, 86, 89 },     // Yuxes + X-Nauts
     { 57, 58, 3, -1, -1 },      // Goomba, Hyper Goomba, Gloomba
+    { 70, 21, 18, -1, -1 },     // Koopas
     { 58, 59, 60, -1, -1 },     // Hyper Goomba family
     { 3, 8, 13, -1, -1 },       // Gloomba family
     { 14, 81, 28, -1, -1 },     // Bandits
@@ -357,7 +359,6 @@ const int32_t kPresetLoadouts[][5] = {
     { 7, 79, 22, -1, -1 },      // Fuzzies
     { 9, 19, 32, -1, -1 },      // Clefts
     { 11, 101, 29, 48, -1 },    // Puffs
-    { 70, 21, 18, -1, -1 },     // Koopas
     { 71, 72, 23, -1, -1 },     // Paratroopas
     { 94, 95, 20, 27, -1 },     // Buzzy family
     { 25, 91, 40, -1, -1 },     // Embers
@@ -375,7 +376,6 @@ const int32_t kPresetLoadouts[][5] = {
     { 42, 31, 42, 31, -1 },     // Chain Chomps
     { 68, 67, 66, -1, -1 },     // Koopatrol, Magikoopa, Hammer Bro
     { 84, 85, 86, -1, -1 },     // X-Nauts
-    { 88, 85, 87, 86, 89 },     // Yuxes + X-Nauts
     { 61, 2, 61, 2, 61 },       // Dayzees
 };
 
@@ -429,11 +429,12 @@ ModuleId::e SelectEnemies(int32_t floor) {
     auto& state = g_Randomizer->state_;
     
     // If floor > 50, determine whether to use one of the preset loadouts.
-    if (floor >= 50 && state.Rand(100) < 20) {
+    if (floor >= 50 && state.Rand(100) < 15) {
         int32_t idx = state.Rand(sizeof(kPresetLoadouts) / (sizeof(int32_t)*5));
-        // If the Bones variants loadout selected and player doesn't have
-        // a damaging Star Power, use the Goomba variants loadout instead.
-        if (idx == 0 && !(pouch.star_powers_obtained & 0x92)) idx = 1;
+        // If the Bones or Yux variants loadout selected and player doesn't have
+        // a damaging Star Power, use the Goomba / Koopa variants loadout.
+        if (idx < 2 && !(pouch.star_powers_obtained & 0x92)) idx += 2;
+        
         for (int32_t enemy = 0; enemy < 5; ++enemy) {
             g_Enemies[enemy] = kPresetLoadouts[idx][enemy];
         }
@@ -727,7 +728,7 @@ bool GetEnemyStats(
         int32_t hp = (ei->hp_scale * base_hp_pct + 50);
         hp = hp * g_Randomizer->state_.hp_multiplier_ / 100;
         hp /= 100;
-        *out_hp = hp < 1 ? 1 : hp;
+        hp = hp < 1 ? 1 : hp;
         *out_hp = hp > 9999 ? 9999 : hp;
     }
     if (out_atk) {
@@ -735,7 +736,7 @@ bool GetEnemyStats(
         atk += (base_attack_power - ei->atk_base) * 100;
         atk = atk * g_Randomizer->state_.atk_multiplier_ / 100;
         atk /= 100;
-        *out_atk = atk < 1 ? 1 : atk;
+        atk = atk < 1 ? 1 : atk;
         *out_atk = atk > 99 ? 99 : atk;
     }
     if (out_def) {
@@ -744,7 +745,7 @@ bool GetEnemyStats(
         } else {
             // Enemies with def_scale > 0 should always have at least 1 DEF.
             int32_t def = (ei->def_scale * base_atkdef_pct + 50) / 100;
-            *out_def = def < 1 ? 1 : def;
+            def = def < 1 ? 1 : def;
             *out_def = def > 99 ? 99 : def;
         }
     }
@@ -818,14 +819,14 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    // Set conditions on about 1 in 5 battles randomly (and not on Bonetail).
+    // Set conditions on about 1 in 4 battles randomly (and not on Bonetail).
     RandomizerState& state = g_Randomizer->state_;
-    if (state.floor_ % 10 == 9 || state.Rand(5)) return;
+    if (state.floor_ % 10 == 9 || state.Rand(4)) return;
     
     // Use the unused "random_item_weight" field to store the item reward.
     int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
     *item_reward = PickRandomItem(
-        /* seeded = */ true, 20, 20, 40, state.floor_ < 30 ? 0 : 20);
+        /* seeded = */ true, 10, 10, 30, state.floor_ < 30 ? 0 : 30);
     // If the "none" case was picked, make it a Shine Sprite.
     if (*item_reward <= 0) *item_reward = ItemType::GOLD_BAR_X3;
     
@@ -1038,7 +1039,7 @@ int16_t PickChestReward() {
         ItemType::CHILL_OUT, ItemType::DOUBLE_DIP, ItemType::DOUBLE_DIP,
         ItemType::DOUBLE_DIP_P, ItemType::DOUBLE_DIP_P, ItemType::FEELING_FINE,
         ItemType::FEELING_FINE_P, ItemType::LUCKY_START, ItemType::QUICK_CHANGE,
-        ItemType::RETURN_POSTAGE, ItemType::SPIKE_SHIELD, ItemType::ZAP_TAP,
+        ItemType::RETURN_POSTAGE, ItemType::ZAP_TAP, ItemType::SPIKE_SHIELD,
         // Partners (represented by dummy values); (items 25 - 31).
         -1, -2, -3, -4, -5, -6, -7
     };
@@ -1064,14 +1065,28 @@ int16_t PickChestReward() {
         weights[32] = 0;
         weights[33] = 0;
     } else {
+        // Set Strange Sack's weight to be decently high.
+        weights[0] = 40;
+        // Set Mario's upgrade weights to be moderately likely.
+        for (int32_t i = 1; i < 4; ++i) weights[i] = 15;
+        
         // Determine the weight for a partner based on how many you have
         // currently and how deep in the Pit you are.
         int32_t partner_weight = 0;
         if (num_partners < 7) {
-            partner_weight =
-                (60 - 10 * num_partners + state.floor_ / 5) / (7 - num_partners);
-            if (partner_weight > 100) partner_weight = 100;
-            if (partner_weight < 5) partner_weight = 5;
+            partner_weight = 10;
+            if (state.floor_ > 30) {
+                // Decrease average weight, but increase total considerably 
+                // if behind expected count (2 by floor 50, 3 by floor 70, etc.)
+                partner_weight = 5;
+                int32_t expected_partners = (state.floor_ - 9) / 20;
+                if (num_partners < expected_partners) {
+                    partner_weight += 
+                        30 * (expected_partners - num_partners) 
+                           / (7 - num_partners);
+                }
+                if (partner_weight > 100) partner_weight = 100;
+            }
         }
         
         // Determine the weight for Crystal Stars based on how many are yet to
@@ -1098,6 +1113,8 @@ int16_t PickChestReward() {
             for (int32_t i = 13; i <= 24; ++i) {
                 weights[i] = unique_badge_weight / num_unique_badges_remaining;
             }
+            // Make Spike Shield specifically a bit more likely.
+            weights[24] *= 3;
         }
         
         // Disable rewards that shouldn't be received out of order or that
@@ -1111,13 +1128,13 @@ int16_t PickChestReward() {
                 case ItemType::ULTRA_BOOTS:
                     if (pouch.jump_level < 2) {
                         weights[i] = 0;
-                        weights[i-1] += 10;     // Make Super more likely.
+                        weights[i-1] += 10;     // Make Super a bit more likely.
                     }
                     break;
                 case ItemType::ULTRA_HAMMER:
                     if (pouch.hammer_level < 2) {
                         weights[i] = 0;
-                        weights[i-1] += 10;     // Make Super more likely.
+                        weights[i-1] += 10;     // Make Super a bit more likely.
                     }
                     break;
                 case ItemType::DIAMOND_STAR:
@@ -1150,7 +1167,7 @@ int16_t PickChestReward() {
         
         // Set weights for a Shine Sprite (32) or random pool badge (33).
         weights[32] = state.floor_ > 30 ? 20 : 0;
-        weights[33] = 20;
+        weights[33] = state.floor_ < 100 ? 10 : 20;
     }
     
     int32_t sum_weights = 0;

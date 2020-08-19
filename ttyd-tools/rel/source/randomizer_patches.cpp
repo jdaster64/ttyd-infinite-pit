@@ -492,21 +492,20 @@ void OnFileLoad(bool new_file) {
         g_Randomizer->state_.Load(/* new_save = */ true);
         g_Randomizer->state_.Save();
         
-        // Start with FX badges equipped if option is set.
-        if (g_Randomizer->state_.options_ & RandomizerState::START_WITH_FX) {
-            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_P);
-            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_Y);
-            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_G);
-            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_B);
-            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
-        }
-        
         // Update any stats / equipment / flags as necessary.
         ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
         ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);
         ttyd::mario_pouch::pouchSetCoin(0);
-        ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
         ttyd::mario_pouch::pouchGetItem(ItemType::W_EMBLEM);
+        ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
+        // Start with FX badges equipped if option is set.
+        if (g_Randomizer->state_.options_ & RandomizerState::START_WITH_FX) {
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_P);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_G);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_B);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_Y);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
+        }
         ttyd::mario_pouch::pouchGetItem(ItemType::PEEKABOO);
         ttyd::mario_pouch::pouchEquipBadgeID(ItemType::PEEKABOO);
         ttyd::mario_pouch::pouchGetItem(ItemType::FP_PLUS);
@@ -1088,6 +1087,7 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
         unit->unit_type, &hp, nullptr, nullptr, &level, &coinlvl)) return;
     unit->max_hp = hp;
     unit->level = level;
+    unit->bonus_exp = 0;
     unit->base_coin = coinlvl / 2;
     // Give an additional coin half the time if coinlvl is odd.
     unit->bonus_coin_rate = 50;
@@ -1593,9 +1593,12 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::LUCKY_DAY_P].type_sort_order        = 0x3b + 6;
     itemDataTable[ItemType::PITY_FLOWER_P].type_sort_order      = 0x43 + 7;
     itemDataTable[ItemType::FP_DRAIN_P].type_sort_order         = 0x49 + 8;
+    // Sort Peekaboo to end, since it's unlikely to ever be unequipped.
+    itemDataTable[ItemType::PEEKABOO].type_sort_order           = 999;
     
     // BP cost changes.
     itemDataTable[ItemType::PEEKABOO].bp_cost = 0;   // Also equipped by default
+    itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 2;
     itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
     itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
     itemDataTable[ItemType::PITY_FLOWER].bp_cost = 4;
@@ -1732,13 +1735,18 @@ void ApplyItemAndAttackPatches() {
     // Determines which badge type to count to determine the power level.
     ttyd::battle_mario::badgeWeapon_TsuranukiNaguri.damage_function_params[6] =
         ItemType::PIERCING_BLOW;
+
+    // Make Fire Drive cheaper to use, but deal only 4 damage at base power.
+    ttyd::battle_mario::badgeWeapon_FireNaguri.damage_function_params[1] = 2;
+    ttyd::battle_mario::badgeWeapon_FireNaguri.damage_function_params[3] = 2;
+    ttyd::battle_mario::badgeWeapon_FireNaguri.damage_function_params[5] = 2;
+    ttyd::battle_mario::badgeWeapon_FireNaguri.base_fp_cost = 3;
         
     // Change base FP cost of some moves.
     ttyd::battle_mario::badgeWeapon_Charge.base_fp_cost = 2;
     ttyd::battle_mario::badgeWeapon_ChargeP.base_fp_cost = 2;
     ttyd::battle_mario::badgeWeapon_IceNaguri.base_fp_cost = 2;
     ttyd::battle_mario::badgeWeapon_TatsumakiJump.base_fp_cost = 2;
-    ttyd::battle_mario::badgeWeapon_FireNaguri.base_fp_cost = 4;
     
     // Increase attack power of Supernova to 4 per bar instead of 3.
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[1] = 4;
@@ -2359,26 +2367,40 @@ EVT_DEFINE_USER_FUNC(InfatuateChangeAlliance) {
     auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, unit_idx);
     auto* part = ttyd::battle::BattleGetUnitPartsPtr(unit_idx, part_idx);
     
-    // If not a boss enemy, undo Confusion status and change alliance.
-    if (unit->current_kind != BattleUnitType::BONETAIL &&
-        unit->current_kind != BattleUnitType::ATOMIC_BOO) {
-        uint32_t dummy = 0;
-        ttyd::battle_damage::BattleSetStatusDamage(
-            &dummy, unit, part, 0x100 /* ignore status vulnerability */,
-            5 /* Confusion */, 100, 0, 0, 0);
-        unit->alliance = 0;
-        
-        // Unqueue the status message for inflicting confusion.
-        static constexpr const uint32_t kNoStatusMsg[] = { 0xff000000U, 0, 0 };
-        memcpy(
-            reinterpret_cast<void*>(
-                reinterpret_cast<uintptr_t>(battleWork) + 0x18ddc),
-            kNoStatusMsg, sizeof(kNoStatusMsg));
-        memcpy(
-            reinterpret_cast<void*>(
-                reinterpret_cast<uintptr_t>(unit) + 0xae8),
-            kNoStatusMsg, sizeof(kNoStatusMsg));
+    // If not a boss enemy or Yux, undo Confusion status and change alliance.
+    switch (unit->current_kind) {
+        case BattleUnitType::BONETAIL:
+        case BattleUnitType::ATOMIC_BOO:
+        case BattleUnitType::YUX:
+        case BattleUnitType::Z_YUX:
+        case BattleUnitType::X_YUX:
+        case BattleUnitType::MINI_YUX:
+        case BattleUnitType::MINI_Z_YUX:
+        case BattleUnitType::MINI_X_YUX:
+            break;
+            
+        default: {
+            uint32_t dummy = 0;
+            ttyd::battle_damage::BattleSetStatusDamage(
+                &dummy, unit, part, 0x100 /* ignore status vulnerability */,
+                5 /* Confusion */, 100, 0, 0, 0);
+            unit->alliance = 0;
+            
+            // Unqueue the status message for inflicting confusion.
+            static constexpr const uint32_t kNoStatusMsg[] = {
+                0xff000000U, 0, 0
+            };
+            memcpy(
+                reinterpret_cast<void*>(
+                    reinterpret_cast<uintptr_t>(battleWork) + 0x18ddc),
+                kNoStatusMsg, sizeof(kNoStatusMsg));
+            memcpy(
+                reinterpret_cast<void*>(
+                    reinterpret_cast<uintptr_t>(unit) + 0xae8),
+                kNoStatusMsg, sizeof(kNoStatusMsg));
+        }
     }
+    
     // Call the function this user_func replaced with its original params.
     return ttyd::battle_event_cmd::btlevtcmd_AudienceDeclareACResult(
         evt, isFirstCall);
