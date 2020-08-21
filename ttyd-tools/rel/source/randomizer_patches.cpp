@@ -1539,7 +1539,7 @@ void ApplyItemAndAttackPatches() {
         0x34703543, 0x30040740, 0x54444045, 0x00002045,
         // Badges.
         0xb8a88dbb, 0x009d8a8b, 0xeedd99cc, 0xcceeffff, 0xbbccccdd,
-        0x0000beeb, 0x98880cfc, 0xcaaddcc9, 0xc000dd7c, 0x0000000c,
+        0x0000beeb, 0x9aaa0dfc, 0xcaaddcc9, 0xc000dd7c, 0x0000000c,
         0x00770000, 0x00000000, 0x00000880
     };
     // Prices corresponding to the price tiers in the above array.
@@ -1602,16 +1602,23 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::LUCKY_DAY_P].type_sort_order        = 0x3b + 6;
     itemDataTable[ItemType::PITY_FLOWER_P].type_sort_order      = 0x43 + 7;
     itemDataTable[ItemType::FP_DRAIN_P].type_sort_order         = 0x49 + 8;
-    // Sort Peekaboo to end, since it's unlikely to ever be unequipped.
-    itemDataTable[ItemType::PEEKABOO].type_sort_order           = 999;
+    
+    // Make Peekaboo 0 BP, and sort it last, as it's unlikely to be unequipped.
+    itemDataTable[ItemType::PEEKABOO].bp_cost = 0;
+    itemDataTable[ItemType::PEEKABOO].type_sort_order = 999;
     
     // BP cost changes.
-    itemDataTable[ItemType::PEEKABOO].bp_cost = 0;   // Also equipped by default
-    itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 2;
-    itemDataTable[ItemType::TORNADO_JUMP].bp_cost = 1;
-    itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
-    itemDataTable[ItemType::PITY_FLOWER].bp_cost = 4;
-    itemDataTable[ItemType::PITY_FLOWER_P].bp_cost = 4;
+    itemDataTable[ItemType::TORNADO_JUMP].bp_cost   = 1;
+    itemDataTable[ItemType::FIRE_DRIVE].bp_cost     = 2;
+    itemDataTable[ItemType::DEFEND_PLUS].bp_cost    = 4;
+    itemDataTable[ItemType::DEFEND_PLUS_P].bp_cost  = 4;
+    itemDataTable[ItemType::FEELING_FINE].bp_cost   = 3;
+    itemDataTable[ItemType::FEELING_FINE_P].bp_cost = 3;
+    itemDataTable[ItemType::FP_DRAIN_P].bp_cost     = 1;
+    itemDataTable[ItemType::PITY_FLOWER].bp_cost    = 4;
+    itemDataTable[ItemType::PITY_FLOWER_P].bp_cost  = 4;
+    itemDataTable[ItemType::RETURN_POSTAGE].bp_cost = 5;
+    itemDataTable[ItemType::LUCKY_START].bp_cost    = 3;
     
     // Changed pickup messages for Super / Ultra boots and hammer.
     itemDataTable[ItemType::SUPER_BOOTS].description = "msg_custom_super_boots";
@@ -1744,6 +1751,10 @@ void ApplyItemAndAttackPatches() {
     // Determines which badge type to count to determine the power level.
     ttyd::battle_mario::badgeWeapon_TsuranukiNaguri.damage_function_params[6] =
         ItemType::PIERCING_BLOW;
+        
+    // Make Head Rattle have a higher rate of success and base turn count.
+    ttyd::battle_mario::badgeWeapon_ConfuseHammer.confuse_chance = 127;
+    ttyd::battle_mario::badgeWeapon_ConfuseHammer.confuse_time = 4;
 
     // Make Fire Drive cheaper to use, but deal only 4 damage at base power.
     ttyd::battle_mario::badgeWeapon_FireNaguri.damage_function_params[1] = 2;
@@ -1786,6 +1797,29 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kMoneyMoneyHookAddr2),
         &kLoadDoublePainItemIdOpcode, sizeof(int32_t));
+        
+    // Happy badges have 50% chance of restoring HP / FP instead of 33%.
+    const int32_t kHappyHeartBaseRateHookAddr = 0x8011dee8;
+    const int32_t kHappyFlowerBaseRateHookAddr = 0x8011e0a0;
+    const int32_t kHappyHeartBaseRateOpcode = 0x23400032;  // subfic r26, r0, 50
+    const int32_t kHappyFlowerBaseRateOpcode = 0x23800032;  // subfic r28, r0, 50
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kHappyHeartBaseRateHookAddr),
+        &kHappyHeartBaseRateOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kHappyFlowerBaseRateHookAddr),
+        &kHappyFlowerBaseRateOpcode, sizeof(int32_t));
+    // For some reason they also were slightly less likely to restore if already
+    // at max HP/FP in vanilla!?  Remove that.
+    const int32_t kHappyHeartReductionAtMaxHookAddr = 0x8011dee4;
+    const int32_t kHappyFlowerReductionAtMaxHookAddr = 0x8011e09c;
+    const int32_t kHappyReductionAtMaxOpcode = 0x1c000000;  // mulli r0, r0, 0
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kHappyHeartReductionAtMaxHookAddr),
+        &kHappyReductionAtMaxOpcode, sizeof(int32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kHappyFlowerReductionAtMaxHookAddr),
+        &kHappyReductionAtMaxOpcode, sizeof(int32_t));
         
     // Pity Flower (P) guarantees 1 FP recovery on each damaging hit.
     const int32_t kPityFlowerChanceHookAddr = 0x800fe500;
