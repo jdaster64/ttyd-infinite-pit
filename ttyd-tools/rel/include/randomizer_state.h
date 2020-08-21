@@ -10,7 +10,7 @@ struct RandomizerState {
         MERLEE              = 0x10,     // Infinite Merlee curses
         SUPERGUARDS_COST_FP = 0x20,     // Superguards cost 1 FP
         NO_EXP_MODE         = 0x40,     // Start at level 99 w/99 BP, no EXP
-        START_WITH_FX       = 0x80,     // Start with Attack FX badges
+        START_WITH_FX       = 0x100,    // Start with Attack FX badges
     };
 
     // Save file revision; makes it possible to add fields while maintaining

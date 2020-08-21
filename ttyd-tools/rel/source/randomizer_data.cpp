@@ -1257,7 +1257,7 @@ int16_t PickChestReward() {
         }
         
         // Set weights for a Shine Sprite (32) or random pool badge (33).
-        weights[32] = state.floor_ > 30 ? 20 : 0;
+        weights[32] = state.floor_ > 30 ? (state.floor_ < 100 ? 20 : 10) : 0;
         weights[33] = state.floor_ < 100 ? 10 : 20;
     }
     
