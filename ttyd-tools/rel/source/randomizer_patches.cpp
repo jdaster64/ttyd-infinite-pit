@@ -1043,6 +1043,10 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
             pouch_data->max_hp += 5 * hp_plus_p_cnt;
             // Save the partner upgrade count to the randomizer state.
             ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
+            
+            // Also, increment the number of actual Shine Sprites, so it shows
+            // the total used in the Mario menu.
+            ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
         }
     }
     // Run normal logic to add HP, FP, and SP afterwards...
