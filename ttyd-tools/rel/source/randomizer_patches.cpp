@@ -1825,6 +1825,17 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kHappyFlowerReductionAtMaxHookAddr),
         &kHappyReductionAtMaxOpcode, sizeof(int32_t));
         
+    // HP and FP Drain restoration is no longer capped by damage dealt.
+    const int32_t kLoadFpDrainDamageDealtAddr = 0x8011391c;
+    const int32_t kLoadHpDrainDamageDealtAddr = 0x80113994;
+    const uint32_t kSkipDrainCapByDamageDealtOpcode = 0x48000010;  // b 0x10
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kLoadFpDrainDamageDealtAddr),
+        &kSkipDrainCapByDamageDealtOpcode, sizeof(uint32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kLoadHpDrainDamageDealtAddr),
+        &kSkipDrainCapByDamageDealtOpcode, sizeof(uint32_t));
+        
     // Pity Flower (P) guarantees 1 FP recovery on each damaging hit.
     const int32_t kPityFlowerChanceHookAddr = 0x800fe500;
     const int32_t kLoadPityFlowerChanceOpcode = 0x2c030064;  // cmpwi r3, 100
