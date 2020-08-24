@@ -493,6 +493,15 @@ void OnFileLoad(bool new_file) {
         g_Randomizer->state_.Load(/* new_save = */ true);
         g_Randomizer->state_.Save();
         
+        // Set story progress / some tutorial flags.
+        ttyd::swdrv::swInit();
+        ttyd::swdrv::swByteSet(0, 405);     // post-game story progress
+        ttyd::swdrv::swSet(0xe9);           // Save Block tutorial
+        ttyd::swdrv::swSet(0xea);           // Heart Block tutorial
+        ttyd::swdrv::swSet(0xeb);           // Item tutorial
+        ttyd::swdrv::swSet(0xec);           // Save Block tutorial-related
+        ttyd::swdrv::swSet(0x15d9);         // Star piece in Pit room collected
+        
         // Update any stats / equipment / flags as necessary.
         ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
         ttyd::mario_pouch::pouchGetItem(ItemType::HAMMER);
@@ -520,15 +529,6 @@ void OnFileLoad(bool new_file) {
         ttyd::mario_pouch::pouchReviseMarioParam();
         // Assign Yoshi a random color.
         ttyd::mario_pouch::pouchSetPartyColor(4, g_Randomizer->state_.Rand(7));
-        
-        // Set story progress / some tutorial flags.
-        ttyd::swdrv::swInit();
-        ttyd::swdrv::swByteSet(0, 405);     // post-game story progress
-        ttyd::swdrv::swSet(0xe9);           // Save Block tutorial
-        ttyd::swdrv::swSet(0xea);           // Heart Block tutorial
-        ttyd::swdrv::swSet(0xeb);           // Item tutorial
-        ttyd::swdrv::swSet(0xec);           // Save Block tutorial-related
-        ttyd::swdrv::swSet(0x15d9);         // Star piece in Pit room collected
     }
     g_PromptSave = false;
 }
