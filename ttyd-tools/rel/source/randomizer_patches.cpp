@@ -1611,6 +1611,14 @@ void ApplyItemAndAttackPatches() {
     itemDataTable[ItemType::PEEKABOO].bp_cost = 0;
     itemDataTable[ItemType::PEEKABOO].type_sort_order = 999;
     
+    // Set sort order of unused badges to -1 so they don't show up in log.
+    itemDataTable[ItemType::TIMING_TUTOR].type_sort_order = -1;
+    itemDataTable[ItemType::MONEY_MONEY].type_sort_order = -1;
+    itemDataTable[ItemType::ITEM_HOG].type_sort_order = -1;
+    itemDataTable[ItemType::BUMP_ATTACK].type_sort_order = -1;
+    itemDataTable[ItemType::FIRST_ATTACK].type_sort_order = -1;
+    itemDataTable[ItemType::SLOW_GO].type_sort_order = -1;
+    
     // BP cost changes.
     itemDataTable[ItemType::TORNADO_JUMP].bp_cost   = 1;
     itemDataTable[ItemType::FIRE_DRIVE].bp_cost     = 2;
