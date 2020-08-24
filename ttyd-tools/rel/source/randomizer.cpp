@@ -66,12 +66,12 @@ void DrawOptionsMenu() {
 }
 
 void DrawTitleScreenInfo() {
-    // TODO: Update with final text before release.
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v0.00 r22 by jdaster64\n"
-        "Guide / GitHub link: TBA";
+        "PM:TTYD Infinite Pit v1.00 r22 by jdaster64\n"
+        "https://github.com/jdaster64/ttyd-infinite-pit\n"
+        "Guide / Other mods: https://goo.gl/vjJjVd";
     DrawCenteredTextWindow(
-        kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
+        kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.7f, 0x000000E5u, 15, 10);
 }
 
 // Handles printing stuff to the screen for debugging purposes; no longer used.
