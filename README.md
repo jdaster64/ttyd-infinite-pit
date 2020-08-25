@@ -46,7 +46,7 @@ After verifying you have a workable copy of the game:
 1.  Download the latest version of the .GCI necessary to run the mod from the
     ["Releases" page](https://github.com/jdaster64/ttyd-infinite-pit/releases).
 1.  Import the .GCI onto your memory card (remove any other mods' .GCIs,
-    e.g. Shufflizer, but do not remove your TTYD save file.
+    e.g. Shufflizer, but do not remove your TTYD save file.)
 1.  Use either a hacked save file or a GCI loader Gecko/AR code to bootstrap
     the mod's code when running the game.
     
