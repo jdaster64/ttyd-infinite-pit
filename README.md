@@ -16,25 +16,26 @@
 *   **Kappy** and **Fatguy703** for pre-release playtesting and feedback.
 
 ### Overview
-Paper Mario: TTYD Infinite Pit is a Roguelike mod of TTYD by Jdaster64.
-In it, Mario is pit against an endless series of random enemy fights,
-with random item drops, chest rewards, and more!
+Paper Mario: TTYD Infinite Pit is a Roguelike mod of TTYD's Pit of 100 Trials 
+by Jdaster64. In it, Mario is pit against an endless series of random enemy 
+fights, with random item drops, chest rewards, and more!
 
-Nearly all random elements to setups and rewards are seeded, so you can try to
-improve your time or endurance on a particular seed, or have multiple players
-race to floor 100 or compete to see who can make it the farthest.
+Nearly all random elements to setups and rewards are seeded using the save
+file name, so you can try to improve your time or endurance on a particular 
+seed, or have multiple players race to floor 100 or compete to see who can make
+it the farthest.
 
-For a detailed overview the mod's features, check out
-[this PDF companion guide](TODO), or watch the
-[YouTube trailer](https://youtu.be/Anx8Smepb_Q) for a quick summary.
+For a detailed overview the mod's features, see
+[the PDF companion guide](https://drive.google.com/file/d/1O3HeDO48nqtygA-JTM8_VO5MC4-EOBvc/view?usp=sharing),
+or watch the [YouTube trailer](https://youtu.be/Anx8Smepb_Q) for a quick summary.
 
-If you like Infinite Pit, check out [this page](https://goo.gl/vjJjVd)
+If you're interested, check out [this page](https://goo.gl/vjJjVd)
 for information on some of my other Mario RPG mods.
 
 ### Setup
 Before attempting to install the mod, make sure you have **an unmodified copy of 
 the North American (U) version of TTYD**.
-This can be either an orignal retail disc or an ISO
+This can be either an orignal retail disc or a clean ISO
 (md5 of **db9a997a617ee03bbc32336d6945ec02**).
 
 **This mod _will not work_ on any other version of the game, and support is not 
