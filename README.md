@@ -1,4 +1,4 @@
-### Paper Mario: TTYD Infinite Pit Mod (v1.02 r24) by Jdaster64
+### Paper Mario: TTYD Infinite Pit Mod (v1.02.1 r25) by Jdaster64
 
 ### Credits
 *   **PistonMiner** - For the initial REL framework and related tools, and 
@@ -57,7 +57,7 @@ installation process.
 ### Known Issues
 
 *   Seeding is sometimes inconsistent after reloading a save; haven't been able
-    to reproduce the issue yet.
+    to reproduce the issue yet. (Might be fixed by 1.02.1)
 *   Battles occasionally will not have held items correctly assigned, typically
     when the encounter is initiated by a projectile.
 

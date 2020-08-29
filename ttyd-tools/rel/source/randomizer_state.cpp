@@ -1,5 +1,6 @@
 #include "randomizer_state.h"
 
+#include "patch.h"
 #include "randomizer.h"
 
 #include <gc/OSTime.h>
@@ -48,9 +49,9 @@ bool LoadFromPreviousVersion(RandomizerState* state) {
     
     // Version is compatible; load, making any adjustments necessary.
     if (version == 2) {
-        memcpy(state, saved_state, sizeof(RandomizerState));
+        patch::writePatch(state, saved_state, sizeof(RandomizerState));
     } else if (version == 1) {
-        memcpy(state, saved_state, sizeof(RandomizerState));
+        patch::writePatch(state, saved_state, sizeof(RandomizerState));
         state->hp_multiplier_ = 100;
         state->atk_multiplier_ = 100;
         state->options_ = 2;
@@ -111,7 +112,7 @@ bool RandomizerState::Load(bool new_save) {
 
 void RandomizerState::Save() {
     void* saved_state = GetSavedStateLocation();
-    memcpy(saved_state, this, sizeof(RandomizerState));
+    patch::writePatch(saved_state, this, sizeof(RandomizerState));
 }
 
 void RandomizerState::SeedRng(const char* str) {
