@@ -24,6 +24,7 @@
 #include <ttyd/battle_item_data.h>
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
+#include <ttyd/battle_seq.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
@@ -124,6 +125,7 @@ namespace mod::pit_randomizer {
 namespace {
 
 using ::gc::OSLink::OSModuleInfo;
+using ::ttyd::battle::BattleWork;
 using ::ttyd::battle::BattleWorkCommandCursor;
 using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
@@ -173,6 +175,7 @@ void (*g__getSickStatusParam_trampoline)(
 int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
+uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -255,12 +258,13 @@ DO(0)
         USER_FUNC(
             ttyd::evt_mobj::evt_mobj_get_position,
             PTR("box"), LW(10), LW(11), LW(12))
+        USER_FUNC(GetUniqueItemName, LW(14))
         USER_FUNC(
             ttyd::evt_item::evt_item_entry,
-            PTR("item"), LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
+            LW(14), LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
         WAIT_MSEC(300)  // If the second+ reward
         USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
-        USER_FUNC(ttyd::evt_item::evt_item_get_item, PTR("item"))
+        USER_FUNC(ttyd::evt_item::evt_item_get_item, LW(14))
         // If the item was a Crystal Star / Magical Map, unlock its Star Power.
         // TODO: The pause menu does not properly display SP moves out of order.
         USER_FUNC(AddItemStarPower, LW(1))
@@ -616,6 +620,16 @@ void OnModuleLoaded(OSModuleInfo* module) {
             ReplaceCharlietonStock();
         }
         
+        // Patch over cloning Wizzerds' num enemies check.
+        uint32_t kCheckNumEnemiesRemainingFuncAddr =
+            reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x535a4),
+            &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x5cecc),
+            &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+        
         g_PitModulePtr = module_ptr;
     } else {
         if (module_id == ModuleId::TIK) {
@@ -629,6 +643,12 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x323a4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            // Patch over Magikoopa's num enemies check.
+            uint32_t kCheckNumEnemiesRemainingFuncAddr =
+                reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x34efc),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
         } else if (module_id == ModuleId::TOU2) {
             // Patch over Hammer, Boomerang, and Fire Bros.' HP checks.
             mod::patch::writePatch(
@@ -640,6 +660,18 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x31aa4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            // Patch over Magikoopas' num enemies check.
+            uint32_t kCheckNumEnemiesRemainingFuncAddr =
+                reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x518c4),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x551ec),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x58b14),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
         } else if (module_id == ModuleId::AJI) {
             // Make all varieties of Yux able to be hit by grounded attacks,
             // that way any partner is able to attack them.
@@ -1315,6 +1347,33 @@ void ReorderWeaponTargets() {
             }
         }
     }
+}
+
+bool CheckIfPlayerDefeated() {
+    for (int32_t ai = 0; ai < 3; ++ai) {
+        auto* battleWork = ttyd::battle::g_BattleWork;
+        auto& alliance = battleWork->alliance_information[ai];
+        if (alliance.identifier == 2) {
+            int32_t idx = 0;
+            for (; idx < 64; ++idx) {
+                BattleWorkUnit* unit = battleWork->battle_units[idx];
+                // For all non-player allied actors that aren't enemies...
+                // (e.g. just Mario and partner)
+                if (unit && unit->alliance == 0 &&
+                    unit->true_kind > BattleUnitType::BONETAIL &&
+                    (unit->attribute_flags & 0x40000)) {
+                    // Break early if any are alive.
+                    if (!ttyd::battle_unit::BtlUnit_CheckStatus(unit, 27) &&
+                        !(unit->attribute_flags & 0x10000000)) break;
+                }
+            }
+            if (idx == 64) {  // Didn't break early (i.e. none are alive)
+                alliance.loss_condition_met = true;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void DisplayStarPowerNumber() {
@@ -2211,6 +2270,22 @@ void ApplyMiscPatches() {
             ReorderWeaponTargets();
             return g_btlevtcmd_GetSelectNextEnemy_trampoline(evt, isFirstCall);
         });
+        
+    // Make btlevtcmd_CheckSpace take friendly enemies into account.
+    const int32_t kCheckSpaceAllianceCheckOpAddr = 0x8010efe4;
+    const uint32_t kCheckSpaceAllianceCheckOpcode = 0x418100d0;  // bgt 0xd0
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckSpaceAllianceCheckOpAddr),
+        &kCheckSpaceAllianceCheckOpcode, sizeof(uint32_t));
+        
+    // Add additional check for player's side losing battle that doesn't
+    // take Infatuated enemies into account.
+    g_BattleCheckConcluded_trampoline = patch::hookFunction(
+        ttyd::battle_seq::BattleCheckConcluded, [](BattleWork* battleWork) {
+            uint32_t result = g_BattleCheckConcluded_trampoline(battleWork);
+            if (!result) result = CheckIfPlayerDefeated();
+            return result;
+        });
 }
 
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
@@ -2493,6 +2568,20 @@ EVT_DEFINE_USER_FUNC(InfatuateChangeAlliance) {
     // Call the function this user_func replaced with its original params.
     return ttyd::battle_event_cmd::btlevtcmd_AudienceDeclareACResult(
         evt, isFirstCall);
+}
+
+EVT_DEFINE_USER_FUNC(CheckNumEnemiesRemaining) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t num_enemies = 0;
+    for (int32_t i = 0; i < 64; ++i) {
+        BattleWorkUnit* unit = battleWork->battle_units[i];
+        // Count enemies of either alliance that are still alive.
+        if (unit && unit->current_kind <= BattleUnitType::BONETAIL &&
+            unit->alliance <= 1 && !BtlUnit_CheckStatus(unit, 27))
+            ++num_enemies;
+    }
+    evtSetValue(evt, evt->evtArguments[0], num_enemies);
+    return 2;
 }
 
 EVT_DEFINE_USER_FUNC(GetPercentOfMaxHP) {

@@ -234,6 +234,14 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::MINI_YUX, -1, 1, 0, 0, 0, 0, 0, 1, kHpTables[0], kFpTables[0] },
     { BattleUnitType::MINI_Z_YUX, -1, 2, 0, 0, 0, 0, 0, 1, kHpTables[0], kFpTables[0] },
     { BattleUnitType::MINI_X_YUX, -1, 1, 0, 0, 0, 0, 0, 1, kHpTables[0], kFpTables[0] },
+    // Copied stats for slight variants of enemies.
+    { BattleUnitType::RED_MAGIKOOPA_CLONE, 318, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::WHITE_MAGIKOOPA_CLONE, 319, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::GREEN_MAGIKOOPA_CLONE, 320, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::MAGIKOOPA_CLONE, 321, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::DARK_WIZZERD_CLONE, 296, 12, 8, 4, 5, 0, 8, -1, kHpTables[2], kFpTables[2] },
+    { BattleUnitType::ELITE_WIZZERD_CLONE, 297, 14, 8, 5, 7, 1, 10, -1, kHpTables[3], kFpTables[3] },
+    { BattleUnitType::GOOMBA_GLITZVILLE, 214, 10, 6, 0, 1, 0, 2, 10, kHpTables[0], kFpTables[0] },
     { /* invalid enemy */ },
 };
 
@@ -305,7 +313,7 @@ const EnemyModuleInfo kEnemyModuleInfo[] = {
     { BattleUnitType::CRAZEE_DAYZEE, ModuleId::GRA, 0x9090, 9, 38 },
     { BattleUnitType::GOOMBA, ModuleId::TIK, 0x27030, 1, 43 },
     { BattleUnitType::PARAGOOMBA, ModuleId::TIK, 0x27080, 2, 45 },
-    { BattleUnitType::SPIKY_GOOMBA, ModuleId::TIK, 0x270b0, 1, 44 },
+    { BattleUnitType::SPIKY_GOOMBA, ModuleId::TIK, 0x270d0, 1, 44 },
     { BattleUnitType::KOOPA_TROOPA, ModuleId::TIK, 0x26d60, 3, 52 },
     { BattleUnitType::HAMMER_BRO, ModuleId::TIK, 0x27120, 32, 20 },
     { BattleUnitType::MAGIKOOPA, ModuleId::TIK, 0x267d0, 31, 69 },
@@ -666,7 +674,7 @@ void BuildBattle(
         }
         
         // Position the enemies in standard spacing.
-        float offset = i - g_NumEnemies * 0.5f;
+        float offset = i - (g_NumEnemies - 1) * 0.5f;
         custom_unit.position.x = kEnemyPartyCenterX + offset * kEnemyPartySepX;
         custom_unit.position.z = offset * kEnemyPartySepZ;
         

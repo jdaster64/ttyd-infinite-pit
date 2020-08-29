@@ -968,6 +968,7 @@
 80114598:BattleInformationSetMode
 
 // battle_seq.o
+8011aa34:BattleCheckConcluded
 8011c350:_rule_disp
 
 // battle_mario.o
@@ -1081,6 +1082,7 @@
 801277ac:BtlUnit_OffUnitFlag
 801277bc:BtlUnit_OnUnitFlag
 801277cc:BtlUnit_CheckUnitFlag
+80127814:BtlUnit_CheckStatus
 80128fe0:BtlUnit_Entry
 
 // statuswindow.o

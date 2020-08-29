@@ -388,7 +388,7 @@ uint32_t BtlUnit_CheckUnitFlag(BattleWorkUnit* unit, uint32_t flag);
 // BtlUnit_OffStatusFlag
 // BtlUnit_OnStatusFlag
 // BtlUnit_CheckStatusFlag
-// BtlUnit_CheckStatus
+uint32_t BtlUnit_CheckStatus(BattleWorkUnit* unit, int8_t status_type);
 // BtlUnit_CheckRecoveryStatus
 // BtlUnit_ClearStatus
 // BtlUnit_SetStatus

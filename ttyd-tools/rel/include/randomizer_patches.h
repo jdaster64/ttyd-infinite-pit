@@ -91,6 +91,9 @@ void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
 // (selecting the user last, if the user is included).
 void ReorderWeaponTargets();
 
+// Checks if all player characters are defeated (excluding enemies).
+bool CheckIfPlayerDefeated();
+
 // Displays the Star Power in 0.01 units numerically below the status window.
 void DisplayStarPowerNumber();
 
@@ -159,6 +162,10 @@ EVT_DECLARE_USER_FUNC(ShellShieldSetInitialHp, 2)
 // Confuse to the enemy permanently swapping its alliance.
 // (Also runs the replaced code from btlevtcmd_AudienceDeclareACResult).
 EVT_DECLARE_USER_FUNC(InfatuateChangeAlliance, 2)
+
+// Replaces the logic for Wizzerds / Magikoopas checking if they can clone,
+// making sure to account for both possible alliances.
+EVT_DECLARE_USER_FUNC(CheckNumEnemiesRemaining, 1)
 
 // Returns the percentage of max HP a battle unit currently has.
 EVT_DECLARE_USER_FUNC(GetPercentOfMaxHP, 2)

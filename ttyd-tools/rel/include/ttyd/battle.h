@@ -15,6 +15,15 @@ struct FbatBattleInformation;
 
 namespace ttyd::battle {
 
+struct BattleWorkAlliance {
+    int16_t     identifier;  // 2 for player, 1 for enemy, 0 for neutral
+    int8_t      attack_direction;
+    int8_t      pad_03;
+    uint32_t    loss_condition_met;    
+};
+
+static_assert(sizeof(BattleWorkAlliance) == 0x8);
+
 struct BattleWorkTarget {
     int16_t     unit_idx;
     int16_t     part_idx;  // one-indexed
@@ -139,7 +148,7 @@ struct BattleWork {
     int16_t         turn_count;
     int16_t         pad_00002;
     int32_t         battle_seq_0;
-    int8_t          alliance_information[0x8 * 3];
+    BattleWorkAlliance alliance_information[3];
     battle_unit::BattleWorkUnit* battle_units[64];
     int32_t         move_priority_queue[64];
     int32_t         phase_evt_queue[64][2];

@@ -1,4 +1,4 @@
-### Paper Mario: TTYD Infinite Pit Mod (v1.00 r22) by Jdaster64
+### Paper Mario: TTYD Infinite Pit Mod (v1.01 r23) by Jdaster64
 
 ### Credits
 *   **PistonMiner** - For the initial REL framework and related tools, and 
@@ -52,4 +52,14 @@ After verifying you have a workable copy of the game:
     
 See [this guide](https://bit.ly/2Qi7krl) for more details on the 
 installation process.
+
+
+### Known Issues
+
+*   Some Infatuated enemies will cause a softlock on their turn if they don't
+    have any reachable targets.
+*   Seeding is sometimes inconsistent after reloading a save; haven't been able
+    to reproduce the issue yet.
+*   Battles occasionally will not have held items correctly assigned, typically
+    when the encounter is initiated by a projectile.
 
