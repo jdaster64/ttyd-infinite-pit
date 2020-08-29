@@ -215,7 +215,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectNextEnemy, 2)
 // btlevtcmd_GetProtectId
 // btlevtcmd_GetFriendBelong
 // btlevtcmd_GetEnemyBelong
-// btlevtcmd_CheckSpace
+EVT_DECLARE_USER_FUNC(btlevtcmd_CheckSpace, 8)
 // btlevtcmd_CheckDamagePattern
 // btlevtcmd_RunHitEventDirect
 // btlevtcmd_StartAvoid

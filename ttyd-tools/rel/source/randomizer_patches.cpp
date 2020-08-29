@@ -175,6 +175,7 @@ void (*g__getSickStatusParam_trampoline)(
 int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool) = nullptr;
 uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
 
 // Global variables and constants.
@@ -629,6 +630,8 @@ void OnModuleLoaded(OSModuleInfo* module) {
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + 0x5cecc),
             &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+        // Fix Dark Koopatrol's normal attack if there are no valid targets.
+        *reinterpret_cast<uint32_t*>(module_ptr + 0x51790) = 98;
         
         g_PitModulePtr = module_ptr;
     } else {
@@ -649,6 +652,8 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x34efc),
                 &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            // Fix Koopatrol's normal attack if there are no valid targets.
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x3a4a8) = 98;
         } else if (module_id == ModuleId::TOU2) {
             // Patch over Hammer, Boomerang, and Fire Bros.' HP checks.
             mod::patch::writePatch(
@@ -684,6 +689,12 @@ void OnModuleLoaded(OSModuleInfo* module) {
             z_yux->attribute_flags  &= ~0x600000;
             x_yux->attribute_flags  &= ~0x600000;
             yux->attribute_flags    &= ~0x600000;
+            
+            // Fix X-Naut & Elite X-Nauts' attacks if there are no valid targets.
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x4787c) = 98;
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x47d14) = 98;
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x4c4cc) = 98;
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x4c964) = 98;
         }
     }
     
@@ -2241,6 +2252,25 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kCrashHandlerEnableOpAddr),
         &kEnableHandlerOpcode, sizeof(uint32_t));
         
+    // Change the size of the crash handler text.
+    const uint32_t kCrashHandlerFontScaleAddr = 0x80428bc0;
+    const float kCrashHandlerNewFontScale = 0.6f;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerFontScaleAddr),
+        &kCrashHandlerNewFontScale, sizeof(float));
+        
+    // Make the crash handler text loop.
+    const uint32_t kCrashHandlerLoopHookAddr1 = 0x8025e4a4;
+    const uint32_t kCrashHandlerLoopHookAddr2 = 0x8025e4a8;
+    const uint32_t kCrashHandlerLoopOpcode1 = 0x3b400000;   // li r26, 0
+    const uint32_t kCrashHandlerLoopOpcode2 = 0x4bfffdd4;   // b -0x22c
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr1),
+        &kCrashHandlerLoopOpcode1, sizeof(uint32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr2),
+        &kCrashHandlerLoopOpcode2, sizeof(uint32_t));
+        
     // Skip tutorials for boots / hammer upgrades.
     const int32_t kSkipUpgradeCutsceneOpAddr = 0x800abcd8;
     const uint32_t kSkipCutsceneOpcode = 0x48000030;  // b 0x30
@@ -2269,6 +2299,29 @@ void ApplyMiscPatches() {
         [](EvtEntry* evt, bool isFirstCall) {
             ReorderWeaponTargets();
             return g_btlevtcmd_GetSelectNextEnemy_trampoline(evt, isFirstCall);
+        });
+        
+    // Force friendly enemies to never call for backup.
+    g_btlevtcmd_CheckSpace_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_CheckSpace,
+        [](EvtEntry* evt, bool isFirstCall) {
+            auto* battleWork = ttyd::battle::g_BattleWork;
+            uint32_t idx = reinterpret_cast<uint32_t>(evt->wActorThisPtr);
+            if (idx) {
+                auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, idx);
+                if (unit && unit->alliance == 0) {
+                    // If desired pos is way out of range, multiply it by -1
+                    // (to prevent infinite looping).
+                    int32_t target_pos = evtGetValue(evt, evt->evtArguments[1]);
+                    if (target_pos < -300 || target_pos > 300) {
+                        evtSetValue(evt, evt->evtArguments[1], -target_pos);
+                    }
+                    // Treat the spot as full.
+                    evtSetValue(evt, evt->evtArguments[0], 1);
+                    return 2;
+                }
+            }
+            return g_btlevtcmd_CheckSpace_trampoline(evt, isFirstCall);
         });
         
     // Make btlevtcmd_CheckSpace take friendly enemies into account.
