@@ -72,7 +72,7 @@ void DrawOptionsMenu() {
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v1.03 r26 by jdaster64\n"
+        "PM:TTYD Infinite Pit v1.03.1 r27 by jdaster64\n"
         "https://github.com/jdaster64/ttyd-infinite-pit\n"
         "Guide / Other mods: https://goo.gl/vjJjVd";
     DrawCenteredTextWindow(

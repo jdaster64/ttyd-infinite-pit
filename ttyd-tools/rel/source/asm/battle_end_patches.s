@@ -17,7 +17,7 @@ b 0
 
 StartBtlSeqEndJudgeRule:
 bl BtlActRec_JudgeRuleKeep
-mr %r3, %r26
+mr %r3, %r27
 
 BranchBackBtlSeqEndJudgeRule:
 b 0

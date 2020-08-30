@@ -2200,7 +2200,7 @@ void ApplyMiscPatches() {
         
     // Check for battle conditions at the start of processing the battle end,
     // not the end; this way level-up heals don't factor into "final HP".
-    const int32_t kBattleEndSequenceHookAddress = 0x8021529c;
+    const int32_t kBattleEndSequenceHookAddress = 0x80215348;
     mod::patch::writeBranch(
         reinterpret_cast<void*>(kBattleEndSequenceHookAddress),
         reinterpret_cast<void*>(StartBtlSeqEndJudgeRule));
