@@ -23,6 +23,10 @@ int32_t LoadMap();
 // Code that runs immediately before unloading a map.
 void OnMapUnloaded();
 
+// Copies NPC battle information to / from children of a parent NPC
+// (e.g. Piranha Plants, projectiles) when starting or ending a battle.
+void CopyChildBattleInfo(bool to_child);
+
 // Code to run at start / end of battle.
 void OnEnterExitBattle(bool is_start);
 // If the badge is one that can have its power level selected, returns the

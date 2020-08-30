@@ -144,6 +144,46 @@ struct BattleWorkCommand {
 
 static_assert(sizeof(BattleWorkCommand) == 0x574);
 
+struct BattleWorkActRecord {
+    uint8_t mario_times_jump_moves_used;
+    uint8_t mario_times_hammer_moves_used;
+    uint8_t mario_times_attacking_special_moves_used;
+    uint8_t mario_times_non_attacking_special_moves_used;
+    uint8_t mario_damage_taken;
+    uint8_t partner_damage_taken;
+    uint8_t mario_damaging_hits_taken;
+    uint8_t partner_damaging_hits_taken;
+    uint8_t max_power_bounce_combo;
+    uint8_t mario_num_times_attack_items_used;
+    uint8_t mario_num_times_non_attack_items_used;
+    uint8_t partner_num_times_attack_items_used;
+    uint8_t partner_num_times_non_attack_items_used;
+    uint8_t mario_times_changed_partner;
+    uint8_t partner_times_changed_partner;
+    uint8_t mario_times_attacked_audience;
+    uint8_t partner_times_attacked_audience;
+    uint8_t mario_times_appealed;
+    uint8_t partner_times_appealed;
+    uint8_t mario_fp_spent;
+    uint8_t mario_times_move_used;
+    uint8_t partner_fp_spent;
+    uint8_t partner_times_move_used;
+    uint8_t mario_times_charge_used;
+    uint8_t partner_times_charge_used;
+    uint8_t mario_times_super_charge_used;
+    uint8_t partner_times_super_charge_used;
+    uint8_t mario_times_ran_away;
+    uint8_t partner_times_ran_away;
+    uint8_t partner_times_attacking_moves_used;
+    uint8_t partner_times_non_attacking_moves_used;
+    uint8_t turns_spent;
+    uint8_t num_successful_ac;      // counts to 200 instead of 100
+    uint8_t num_unsuccessful_ac;    // counts to 200 instead of 100
+    uint8_t pad_22[2];
+};
+
+static_assert(sizeof(BattleWorkActRecord) == 0x24);
+
 struct BattleWork {
     int16_t         turn_count;
     int16_t         pad_00002;
@@ -187,7 +227,7 @@ struct BattleWork {
     int8_t          unk_163f8[4];
     
     int8_t          stage_work[0xb3c];
-    int8_t          act_record_work[0x24];
+    BattleWorkActRecord act_record_work;
     int8_t          after_reaction_queue[0x8 * 64];
     int8_t          stage_object_work[0x7c * 32];
     int8_t          stage_hazard_work[0x1f0];

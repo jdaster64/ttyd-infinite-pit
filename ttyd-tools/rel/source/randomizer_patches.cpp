@@ -17,6 +17,7 @@
 #include <ttyd/gx/GXTransform.h>
 #include <ttyd/battle.h>
 #include <ttyd/battle_ac.h>
+#include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_damage.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_enemy_item.h>
@@ -86,6 +87,11 @@ extern "C" {
     void CharlietonPitPriceListPatchEnd();
     void CharlietonPitPriceItemPatchStart();
     void CharlietonPitPriceItemPatchEnd();
+    // battle_end_patches.s
+    void StartGivePlayerInvuln();
+    void BranchBackGivePlayerInvuln();
+    void StartBtlSeqEndJudgeRule();
+    void BranchBackBtlSeqEndJudgeRule();
     // eff_updown_disp_patches.s
     void StartDispUpdownNumberIcons();
     void BranchBackDispUpdownNumberIcons();
@@ -94,6 +100,9 @@ extern "C" {
     void BranchBackMapLoad();
     void StartOnMapUnload();
     void BranchBackOnMapUnload();
+    // pouch_alloc_patches.s
+    void StartCheckPouchAlloc();
+    void BranchBackCheckPouchAlloc();
     // win_item_patches.s
     void StartFixItemWinPartyDispOrder();
     void BranchBackFixItemWinPartyDispOrder();
@@ -101,6 +110,12 @@ extern "C" {
     void BranchBackFixItemWinPartySelectOrder();
     void StartUseSpecialItems();
     void BranchBackUseSpecialItems();
+    
+    void* getOrAllocPouch(uint32_t heap, uint32_t size) {
+        auto* pouch = ttyd::mario_pouch::pouchGetPtr();
+        if (pouch) return pouch;
+        return ttyd::memory::__memAlloc(heap, size);
+    }
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
@@ -174,7 +189,7 @@ void (*g__getSickStatusParam_trampoline)(
     BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
 int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
-int32_t (*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_GetSelectEnemy_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool) = nullptr;
 uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
 
@@ -479,7 +494,6 @@ int32_t GetBonusCakeRestoration() {
 
 void OnFileLoad(bool new_file) {
     if (new_file) {
-        // TODO: Make this not re-allocate the pouch if an alloc already exists.
         ttyd::mario_pouch::pouchInit();
         PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
         // Initialize other systems / data.
@@ -813,6 +827,23 @@ void OnMapUnloaded() {
     // Normal unloading logic follows...
 }
 
+void CopyChildBattleInfo(bool to_child) {
+    auto* npc = ttyd::npcdrv::fbatGetPointer()->pBattleNpc;
+    // Only copy if the NPC is valid and has a parent.
+    if (npc && npc->master) {
+        NpcEntry *dest, *src;
+        if (to_child) {
+            dest = npc;
+            src = npc->master;
+        } else {
+            src = npc;
+            dest = npc->master;
+        }
+        mod::patch::writePatch(
+            &dest->battleInfo, &src->battleInfo, sizeof(NpcBattleInfo));
+    }
+}
+
 void OnEnterExitBattle(bool is_start) {
     if (is_start) {
         int8_t badge_count;
@@ -1135,7 +1166,11 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
         unit->unit_type, &hp, nullptr, nullptr, &level, &coinlvl)) return;
     unit->max_hp = hp;
     
-    if (level >= 0) {
+    if (ttyd::mario_pouch::pouchGetPtr()->level >= 99) {
+        // Assign enemies a high level so you can't Gale Force them to oblivion.
+        unit->level = 99;
+        unit->bonus_exp = 0;
+    } else if (level >= 0) {
         unit->level = level;
         unit->bonus_exp = 0;
     } else {
@@ -1558,9 +1593,9 @@ void ApplyWeaponLevelSelectionPatches() {
                     int8_t badges = g_CurMoveBadgeCounts[17 - is_mario];
                     *strength = badges + 1;
                 }
-                // If unit is an enemy and status is Charge, change its power
-                // in the same way as ATK / FP damage.
-                if (status_type == 16 && 
+                // If unit is an enemy and status is Charge (and not an item),
+                // change its power in the same way as ATK / FP damage.
+                if (status_type == 16 && !weapon->item_id &&
                     unit->current_kind <= BattleUnitType::BONETAIL) {
                     int32_t altered_charge;
                     GetEnemyStats(
@@ -1596,6 +1631,10 @@ void ApplyWeaponLevelSelectionPatches() {
             // Successful Superguard, subtract FP.
             if (defense_result == 5) {
                 ttyd::battle_unit::BtlUnit_SetFp(unit, fp - 1);
+                // Count towards FP-spending conditions. (Use Mario's FP 
+                // spent always, since no conditions care who spends it).
+                ttyd::battle_actrecord::BtlActRec_AddCount(
+                    &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent);
             }
             if (restore_superguard_frames) {
                 memcpy(ttyd::battle_ac::superguard_frames, superguard_frames, 7);
@@ -1645,7 +1684,7 @@ void ApplyItemAndAttackPatches() {
             // For all items that restore HP or FP, assign the "cooked item"
             // weapon struct if they don't already have a weapon assigned.
             if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
-                item.weapon_params = 
+                item.weapon_params =
                     &ttyd::battle_item_data::ItemWeaponData_CookingItem;
             }
             // Fix sorting order.
@@ -2146,6 +2185,33 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGswfInitHookAddr2),
         &kSkipGswfInitOpcode, sizeof(kSkipGswfInitOpcode));
+        
+    // Make defeating a group of enemies still holding stolen items always make
+    // you have temporary intangibility, even if you recovered some of them, to
+    // prevent projectiles from first-striking you again if you recover items.
+    const int32_t kEndBattleRecoverItemBeginHookAddress = 0x8004706c;
+    const int32_t kEndBattleRecoverItemEndHookAddress = 0x800470c8;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEndBattleRecoverItemBeginHookAddress),
+        reinterpret_cast<void*>(StartGivePlayerInvuln));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackGivePlayerInvuln),
+        reinterpret_cast<void*>(kEndBattleRecoverItemEndHookAddress));
+        
+    // Check for battle conditions at the start of processing the battle end,
+    // not the end; this way level-up heals don't factor into "final HP".
+    const int32_t kBattleEndSequenceHookAddress = 0x8021529c;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kBattleEndSequenceHookAddress),
+        reinterpret_cast<void*>(StartBtlSeqEndJudgeRule));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackBtlSeqEndJudgeRule),
+        reinterpret_cast<void*>(kBattleEndSequenceHookAddress + 4));
+    const int32_t kBattleEndSequenceCheckConditionAddress = 0x80216678;
+    const uint32_t kBattleEndSequenceCheckConditionOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kBattleEndSequenceCheckConditionAddress),
+        &kBattleEndSequenceCheckConditionOpcode, sizeof(uint32_t));
     
     // Apply patch to effUpdownDisp code to display the correct number
     // when Charging / +ATK/DEF-ing by more than 9 points.
@@ -2271,6 +2337,22 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kCrashHandlerLoopHookAddr2),
         &kCrashHandlerLoopOpcode2, sizeof(uint32_t));
         
+    // Fix msgWindow off-by-one allocation error.
+    const uint32_t kMsgWindowGetSizeToAllocAddr = 0x800816f4;
+    const uint32_t kMsgWindowGetSizeToAllocOpcode = 0x38830001;  // addi r4,r3,1
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kMsgWindowGetSizeToAllocAddr),
+        &kMsgWindowGetSizeToAllocOpcode, sizeof(uint32_t));
+        
+    // Fix pouch re-allocating when starting a new file.
+    const int32_t kPouchCheckAllocHookAddress = 0x800d59dc;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kPouchCheckAllocHookAddress),
+        reinterpret_cast<void*>(StartCheckPouchAlloc));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckPouchAlloc),
+        reinterpret_cast<void*>(kPouchCheckAllocHookAddress + 4));
+
     // Skip tutorials for boots / hammer upgrades.
     const int32_t kSkipUpgradeCutsceneOpAddr = 0x800abcd8;
     const uint32_t kSkipCutsceneOpcode = 0x48000030;  // b 0x30
@@ -2294,11 +2376,11 @@ void ApplyMiscPatches() {
         
     // Changes targeting order for certain attacks so the user hits themselves
     // after all other targets.
-    g_btlevtcmd_GetSelectNextEnemy_trampoline = patch::hookFunction(
-        ttyd::battle_event_cmd::btlevtcmd_GetSelectNextEnemy,
+    g_btlevtcmd_GetSelectEnemy_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetSelectEnemy,
         [](EvtEntry* evt, bool isFirstCall) {
             ReorderWeaponTargets();
-            return g_btlevtcmd_GetSelectNextEnemy_trampoline(evt, isFirstCall);
+            return g_btlevtcmd_GetSelectEnemy_trampoline(evt, isFirstCall);
         });
         
     // Force friendly enemies to never call for backup.
@@ -2324,12 +2406,15 @@ void ApplyMiscPatches() {
             return g_btlevtcmd_CheckSpace_trampoline(evt, isFirstCall);
         });
         
-    // Make btlevtcmd_CheckSpace take friendly enemies into account.
-    const int32_t kCheckSpaceAllianceCheckOpAddr = 0x8010efe4;
-    const uint32_t kCheckSpaceAllianceCheckOpcode = 0x418100d0;  // bgt 0xd0
+    // Make btlevtcmd_CheckSpace consider enemies only, regardless of alliance.
+    // lwz r0, 8 (r3); cmpwi r0, 0xab; bgt- 0xd0 (Branch if not an enemy)
+    const int32_t kCheckSpaceAllianceCheckOpAddr = 0x8010efdc;
+    const uint32_t kCheckSpaceAllianceCheckOps[] = {
+        0x80030008, (0x2c000000 | BattleUnitType::BONETAIL), 0x418100d0
+    };
     mod::patch::writePatch(
         reinterpret_cast<void*>(kCheckSpaceAllianceCheckOpAddr),
-        &kCheckSpaceAllianceCheckOpcode, sizeof(uint32_t));
+        kCheckSpaceAllianceCheckOps, sizeof(kCheckSpaceAllianceCheckOps));
         
     // Add additional check for player's side losing battle that doesn't
     // take Infatuated enemies into account.
@@ -2469,6 +2554,7 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     }
     // Occasionally, set a battle condition for an optional bonus reward.
     SetBattleCondition(&npc->battleInfo);
+    
     return 2;
 }
 

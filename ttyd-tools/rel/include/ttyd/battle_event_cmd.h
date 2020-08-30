@@ -158,7 +158,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_ConsumeItem, 1)
 EVT_DECLARE_USER_FUNC(btlevtcmd_GetConsumeItem, 1)
 // btlevtcmd_GetFirstAttackTarget
 EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectNextEnemy, 2)
-// btlevtcmd_GetSelectEnemy
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectEnemy, 2)
 // btlevtcmd_ChoiceSamplingEnemy
 // btlevtcmd_SamplingEnemy
 // btlevtcmd_PartsFaceDirectionSub

@@ -498,6 +498,13 @@
 // .data
 80415fd0:g_MarioSt
 
+// seq_battle.o
+800736ec:battle_exit
+800738ac:battle_init
+80073b24:seq_battleMain
+80073f00:seq_battleExit
+80073f20:seq_battleInit
+
 // fontmgr.o
 // unused:JUTFont_Draw
 // unused:JUTFont_DrawPos
@@ -954,6 +961,7 @@
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
 8010b490:btlevtcmd_GetSelectNextEnemy
+8010b540:btlevtcmd_GetSelectEnemy
 8010ef44:btlevtcmd_CheckSpace
 8010ff74:btlevtcmd_SetHp
 80113304:btlevtcmd_KillUnit
@@ -1427,6 +1435,8 @@
 // battle_actrecord.o
 8018ef8c:BtlActRec_JudgeRuleKeep
 8018f77c:BtlActRec_JudgeTurnRuleKeep
+8018f96c:BtlActRec_AddPoint
+8018f990:BtlActRec_AddCount
 
 // eff_updown.o
 // .text

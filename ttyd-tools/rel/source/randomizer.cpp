@@ -20,7 +20,9 @@
 #include <ttyd/event.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/msgdrv.h>
+#include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
+#include <ttyd/seq_battle.h>
 #include <ttyd/seq_title.h>
 #include <ttyd/statuswindow.h>
 #include <ttyd/system.h>
@@ -40,6 +42,7 @@ using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::dispdrv::CameraId;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::npcdrv::FbatBattleInformation;
+using ::ttyd::npcdrv::NpcEntry;
 using ::ttyd::seqdrv::SeqIndex;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
@@ -47,6 +50,8 @@ void (*g_stg0_00_init_trampoline)(void) = nullptr;
 void (*g_cardCopy2Main_trampoline)(int32_t) = nullptr;
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
+void (*g_seq_battleInit_trampoline)(void) = nullptr;
+void (*g_fbatBattleMode_trampoline)(void) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 void (*g__rule_disp_trampoline)(void) = nullptr;
 void (*g_BattleInformationSetDropMaterial_trampoline)(FbatBattleInformation*) = nullptr;
@@ -67,7 +72,7 @@ void DrawOptionsMenu() {
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v1.02.1 r25 by jdaster64\n"
+        "PM:TTYD Infinite Pit v1.03 r26 by jdaster64\n"
         "https://github.com/jdaster64/ttyd-infinite-pit\n"
         "Guide / Other mods: https://goo.gl/vjJjVd";
     DrawCenteredTextWindow(
@@ -130,6 +135,21 @@ void Randomizer::Init() {
                 OnModuleLoaded(new_module);
             }
             return result;
+        });
+
+    g_seq_battleInit_trampoline = patch::hookFunction(
+        ttyd::seq_battle::seq_battleInit, []() {
+            // Copy information from parent npc before battle, if applicable.
+            CopyChildBattleInfo(/* to_child = */ true);
+            g_seq_battleInit_trampoline();
+        });
+
+    g_fbatBattleMode_trampoline = patch::hookFunction(
+        ttyd::npcdrv::fbatBattleMode, []() {
+            bool post_battle_state = ttyd::npcdrv::fbatGetPointer()->state == 4;
+            g_fbatBattleMode_trampoline();
+            // Copy information back to parent npc after battle, if applicable.
+            if (post_battle_state) CopyChildBattleInfo(/* to_child = */ false);
         });
     
     g_seqSetSeq_trampoline = patch::hookFunction(

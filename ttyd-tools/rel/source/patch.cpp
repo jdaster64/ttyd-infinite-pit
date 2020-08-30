@@ -56,8 +56,8 @@ void writePatch(
 
 void writePatch(
     void* destination, const void* patch_start, uint32_t patch_len) {
+    clear_DC_IC_Cache(const_cast<void*>(patch_start), patch_len);
     memcpy(destination, patch_start, patch_len);
-    // TODO: Should this be address of destination?
     clear_DC_IC_Cache(destination, patch_len);
 }
 

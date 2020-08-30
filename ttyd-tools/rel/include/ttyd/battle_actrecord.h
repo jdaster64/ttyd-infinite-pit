@@ -87,8 +87,8 @@ extern "C" {
 // _check_use
 void BtlActRec_JudgeRuleKeep();
 void BtlActRec_JudgeTurnRuleKeep();
-// BtlActRec_AddPoint
-// BtlActRec_AddCount    
+void BtlActRec_AddPoint(uint8_t* counter, int8_t num_to_add);
+void BtlActRec_AddCount(uint8_t* counter);
 
 }
 
