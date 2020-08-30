@@ -51,6 +51,7 @@ namespace MsgKey {
         MSG_PTR_MEROMERO_KISS,
         MSG_PWD_KUMOGAKURE,
         MSG_PYS_NOMIKOMI,
+        MSG_SHIKAESHI_NO_KONA,
         MSG_SUPER_COIN,
         MSG_TEKI_KYOUKA,
         MSG_TOUGHEN_UP,
@@ -107,6 +108,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_ptr_meromero_kiss",
     "msg_pwd_kumogakure",
     "msg_pys_nomikomi",
+    "msg_shikaeshi_no_kona",
     "msg_super_coin",
     "msg_teki_kyouka",
     "msg_toughen_up",
@@ -205,6 +207,9 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
         case MsgKey::MSG_CAKE:
             return "Scrumptious strawberry cake.\n"
                    "Heals 5 to 30 HP and FP.";
+        case MsgKey::MSG_SHIKAESHI_NO_KONA:
+            return "Direct attackers take back\n"
+                   "the same damage they deal.";
         case MsgKey::MSG_KAME_NO_NOROI:
             return "Has a chance of inducing Slow \n"
                    "status on all foes.";
