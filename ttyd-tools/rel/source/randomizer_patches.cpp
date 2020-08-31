@@ -1942,17 +1942,6 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kHappyFlowerReductionAtMaxHookAddr),
         &kHappyReductionAtMaxOpcode, sizeof(int32_t));
         
-    // HP and FP Drain restoration is no longer capped by damage dealt.
-    const int32_t kLoadFpDrainDamageDealtAddr = 0x8011391c;
-    const int32_t kLoadHpDrainDamageDealtAddr = 0x80113994;
-    const uint32_t kSkipDrainCapByDamageDealtOpcode = 0x48000010;  // b 0x10
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kLoadFpDrainDamageDealtAddr),
-        &kSkipDrainCapByDamageDealtOpcode, sizeof(uint32_t));
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kLoadHpDrainDamageDealtAddr),
-        &kSkipDrainCapByDamageDealtOpcode, sizeof(uint32_t));
-        
     // Pity Flower (P) guarantees 1 FP recovery on each damaging hit.
     const int32_t kPityFlowerChanceHookAddr = 0x800fe500;
     const int32_t kLoadPityFlowerChanceOpcode = 0x2c030064;  // cmpwi r3, 100
@@ -2028,6 +2017,12 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGaleForceKillHookAddr),
         GaleForceKillPatch, sizeof(GaleForceKillPatch));
+    // Remove the (Mario - enemy level) adjustment to Gale Force's chance.
+    const int32_t kGaleForceLevelFactorHookAddr = 0x800fc0a8;
+    const uint32_t kGaleForceLevelFactorOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kGaleForceLevelFactorHookAddr),
+        &kGaleForceLevelFactorOpcode, sizeof(uint32_t));
         
     // Have Flurrie also apply Dodgy to herself at the end of Dodgy Fog event.
     const int32_t kDodgyFogEndHookAddr = 0x8037ba04;
