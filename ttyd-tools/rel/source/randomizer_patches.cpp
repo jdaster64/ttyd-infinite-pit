@@ -460,12 +460,21 @@ RUN_CHILD_EVT(static_cast<int32_t>(0x803652b8U))
 RETURN()
 EVT_END()
 
-// Patch over the end of subsetevt_blow_dead event to disable getting
-// coins and EXP from Gale Force.
+// Patch to disable the coins / EXP from Gale Force (replace with no-ops).
 EVT_BEGIN(GaleForceKillPatch)
-USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_KillUnit, -2, 0)
-RETURN()
-EVT_END()
+DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
+DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
+EVT_PATCH_END()
+static_assert(sizeof(GaleForceKillPatch) == 0x38);
+// Addresses to patch for troublesome individual enemies (mostly cloning ones).
+constexpr const uint32_t kDarkWizzerdGaleForcePatchOffset       = 0x544e4;
+constexpr const uint32_t kEliteWizzerdGaleForcePatchOffset      = 0x5de0c;
+constexpr const uint32_t kPiderGaleForcePatchOffset             = 0x760e4;
+constexpr const uint32_t kArantulaGaleForcePatchOffset          = 0x79ec4;
+constexpr const uint32_t kMagikoopaGaleForcePatchOffset         = 0x34a68;
+constexpr const uint32_t kGreenMagikoopaGaleForcePatchOffset    = 0x51430;
+constexpr const uint32_t kRedMagikoopaGaleForcePatchOffset      = 0x54d58;
+constexpr const uint32_t kWhiteMagikoopaGaleForcePatchOffset    = 0x58680;
 
 // Run at end of Dodgy Fog evt for Flurrie to also apply the status to herself.
 EVT_BEGIN(DodgyFogFlurrieEvt)
@@ -635,6 +644,21 @@ void OnModuleLoaded(OSModuleInfo* module) {
             ReplaceCharlietonStock();
         }
         
+        // Patch Gale Force coins / EXP out for Wizzerds & Piders.
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_ptr + kDarkWizzerdGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_ptr + kEliteWizzerdGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kPiderGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kArantulaGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
         // Patch over cloning Wizzerds' num enemies check.
         uint32_t kCheckNumEnemiesRemainingFuncAddr =
             reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
@@ -660,6 +684,11 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x323a4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            // Patch Gale Force coins / EXP out for Magikoopa.
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
             // Patch over Magikoopa's num enemies check.
             uint32_t kCheckNumEnemiesRemainingFuncAddr =
                 reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
@@ -679,6 +708,19 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x31aa4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            // Patch Gale Force coins / EXP out for Magikoopas.
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kGreenMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kRedMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kWhiteMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
             // Patch over Magikoopas' num enemies check.
             uint32_t kCheckNumEnemiesRemainingFuncAddr =
                 reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
