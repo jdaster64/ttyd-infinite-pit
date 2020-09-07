@@ -11,8 +11,14 @@ struct RandomizerState {
         SUPERGUARDS_COST_FP     = 0x20,     // Superguards cost 1 FP
         NO_EXP_MODE             = 0x40,     // Start at level 99 w/99 BP, no EXP
         START_WITH_FX           = 0x100,    // Start with Attack FX badges
-        START_WITH_ITEMS        = 0x200,    // Start with a preset set of items
-        SWITCH_PARTY_COST_FP    = 0x400,    // Switching partners costs 1 FP
+        START_WITH_NO_ITEMS     = 0x200,    // Start with a preset set of items
+        SWITCH_PARTY_COST_FP    = 0xc00,    // Switching partners costs 1-3 FP
+        YOSHI_COLOR_SELECT      = 0x1000,   // Manually selecting Yoshi color
+        
+        // Options that aren't controlled by flags (used by menu state).
+        CHANGE_PAGE             = -100,
+        HP_MODIFIER             = -101,     // Multiplier for enemy HP
+        ATK_MODIFIER            = -102,     // Multiplier for enemy ATK
     };
 
     // Save file revision; makes it possible to add fields while maintaining
@@ -49,6 +55,24 @@ struct RandomizerState {
     void SeedRng(const char* str);
     // Increments the RNG state and returns a value in a range [0, n).
     uint32_t Rand(uint32_t range);
+    
+    // Changes the selected menu option; `change` controls how to change it,
+    // -1 / +1 for decreasing / increasing, 0 for toggling or advancing.
+    // Will also make any other changes necessary for the option to function
+    // (e.g. changing Mario's level and BP for No-EXP mode).
+    void ChangeOption(int32_t option, int32_t change);
+    // Returns the appropriate value for the specified option
+    // (e.g. 0 or 1 for boolean options, or the percent for HP/ATK modifiers).
+    int32_t GetOptionValue(int32_t option) const;
+    // Writes the menu strings for the specified option to the supplied buffers,
+    // and may optionally write a special color to use (set to 0 if default).
+    void GetOptionStrings(
+        int32_t option, char* name, char* value, uint32_t* color) const;
+    
+    // Returns the number of Star Powers obtained.
+    int32_t StarPowersObtained() const;
+    // Returns whether Star Power / audience functions should be enabled.
+    bool StarPowerEnabled() const;
 } __attribute__((__packed__));
 
 static_assert(sizeof(RandomizerState) <= 0x38);

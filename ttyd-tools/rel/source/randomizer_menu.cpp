@@ -6,7 +6,6 @@
 #include "randomizer.h"
 #include "randomizer_state.h"
 
-#include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
 #include <ttyd/system.h>
 
@@ -17,22 +16,6 @@
 namespace mod::pit_randomizer {
 
 namespace {
-    
-using ::ttyd::mario_pouch::PouchData;
-    
-// Menu states.
-namespace MenuState {
-    enum e {
-        INVALID_MENU_STATE = 0,
-        CHANGE_PAGE,
-        NUM_CHEST_REWARDS,
-        HP_MODIFIER,
-        ATK_MODIFIER,
-        MERLEE,
-        SUPERGUARDS_COST_FP,
-        NO_EXP_MODE,
-    };
-}
 
 // Pre-Pit room name.
 const char kStartRoomName[] = "tik_06";
@@ -63,7 +46,7 @@ uint16_t last_command_ = 0;
 int32_t time_button_held_ = kFadeoutEndTime;
 int32_t menu_selection_ = 1;
 int32_t menu_page_ = 1;
-int32_t menu_state_ = MenuState::NUM_CHEST_REWARDS;
+int32_t menu_state_ = 0;
 
 bool ShouldDisplayMenu() {
     return InMainGameModes() && !strcmp(GetCurrentMap(), kStartRoomName) &&
@@ -83,18 +66,29 @@ bool ShouldTickOrAutotick(int32_t time_held) {
     return false;
 }
 
-uint32_t GetActiveColor(int32_t state, uint8_t alpha) {
-    return (menu_state_ == state ? -0xffffU : -0xffU) | alpha;
+int32_t GetMenuState(int32_t page, int32_t selection) {
+    switch (100 * page + selection) {
+        case 101: return RandomizerState::NUM_CHEST_REWARDS;
+        case 102: return RandomizerState::NO_EXP_MODE;
+        case 103: return RandomizerState::START_WITH_NO_ITEMS;
+        case 104: return RandomizerState::MERLEE;
+        
+        case 201: return RandomizerState::SUPERGUARDS_COST_FP;
+        case 202: return RandomizerState::SWITCH_PARTY_COST_FP;
+        case 203: return RandomizerState::HP_MODIFIER;
+        case 204: return RandomizerState::ATK_MODIFIER;
+        
+        default:  return RandomizerState::CHANGE_PAGE;
+    }
+}
+
+uint32_t GetActiveColor(int32_t selection, uint8_t alpha) {
+    return (menu_selection_ == selection ? -0xffffU : -0xffU) | alpha;
 }
 
 void DrawMenuString(
     const char* str, float x, float y, uint32_t color, int32_t alignment) {
     DrawText(str, x, y, 0xffu, true, color, 0.75f, alignment);
-}
-
-void DrawOnOffString(bool onoff, float x, float y, uint8_t alpha) {
-    DrawText(onoff ? "On" : "Off", x, y, alpha, true,
-             onoff ? 0xc100ffU : 0xe50000ffU, 0.75f, /* right-center */ 5);
 }
 
 }
@@ -152,46 +146,15 @@ void RandomizerMenu::Update() {
         }
     }
         
-    switch (100 * menu_page_ + menu_selection_) {
-        case 101: {
-            menu_state_ = MenuState::NUM_CHEST_REWARDS;
-            break;
-        }
-        case 102: {
-            menu_state_ = MenuState::HP_MODIFIER;
-            break;
-        }
-        case 103: {
-            menu_state_ = MenuState::ATK_MODIFIER;
-            break;
-        }
-        case 201: {
-            menu_state_ = MenuState::MERLEE;
-            break;
-        }
-        case 202: {
-            menu_state_ = MenuState::SUPERGUARDS_COST_FP;
-            break;
-        }
-        case 203: {
-            menu_state_ = MenuState::NO_EXP_MODE;
-            break;
-        }
-        default: {
-            menu_state_ = MenuState::CHANGE_PAGE;
-            break;
-        }
-    }
-    
+    menu_state_ = GetMenuState(menu_page_, menu_selection_);
     RandomizerState& state = g_Randomizer->state_;
-    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     
     if (time_button_held_ < 0) return;
     switch (last_command_) {
         case kMenuUpCommand: {
             if (time_button_held_ == 0) {
                 if (menu_selection_ == 1) {
-                    menu_selection_ = 4;
+                    menu_selection_ = 5;
                 } else {
                     --menu_selection_;
                 }
@@ -200,7 +163,7 @@ void RandomizerMenu::Update() {
         }
         case kMenuDownCommand: {
             if (time_button_held_ == 0) {
-                if (menu_selection_ == 4) {
+                if (menu_selection_ == 5) {
                     menu_selection_ = 1;
                 } else {
                     ++menu_selection_;
@@ -208,106 +171,36 @@ void RandomizerMenu::Update() {
             }
             break;
         }
+        case kMenuLeftCommand:
+        case kMenuRightCommand:
         case kMenuSelectCommand: {
-        lblSelectCommand:
-            if (time_button_held_ == 0) {
-                switch (menu_state_) {
-                    case MenuState::CHANGE_PAGE: {
-                        menu_page_ = menu_page_ ^ 3;
-                        break;
+            int32_t direction = 0;
+            if (last_command_ == kMenuRightCommand) direction = 1;
+            if (last_command_ == kMenuLeftCommand) direction = -1;
+            
+            switch (menu_state_) {
+                case RandomizerState::HP_MODIFIER:
+                case RandomizerState::ATK_MODIFIER: {
+                    if (ShouldTickOrAutotick(time_button_held_)) {
+                        state.ChangeOption(menu_state_, direction);
                     }
-                    case MenuState::MERLEE: {
-                        state.options_ ^= RandomizerState::MERLEE;
-                        if (state.options_ & RandomizerState::MERLEE) {
-                            pouch.merlee_curse_uses_remaining = 99;
-                            pouch.turns_until_merlee_activation = -1;
-                        } else {
-                            pouch.merlee_curse_uses_remaining = 0;
-                            pouch.turns_until_merlee_activation = 0;
-                        }
-                        break;
+                    break;
+                }
+                case RandomizerState::CHANGE_PAGE: {
+                    if (time_button_held_ == 0) {
+                        menu_page_ ^= 3;    // Switch pages.
                     }
-                    case MenuState::SUPERGUARDS_COST_FP: {
-                        state.options_ ^= RandomizerState::SUPERGUARDS_COST_FP;
-                        break;
+                    break;
+                }
+                default: {
+                    if (time_button_held_ == 0) {
+                        state.ChangeOption(menu_state_, direction);
                     }
-                    case MenuState::NO_EXP_MODE: {
-                        state.options_ ^= RandomizerState::NO_EXP_MODE;
-                        if (state.options_ & RandomizerState::NO_EXP_MODE) {
-                            pouch.rank = 3;
-                            pouch.level = 99;
-                            pouch.unallocated_bp += 90;
-                            pouch.total_bp += 90;
-                        } else {
-                            pouch.rank = 0;
-                            pouch.level = 1;
-                            pouch.unallocated_bp -= 90;
-                            pouch.total_bp -= 90;
-                        }
-                        break;
-                    }
-                    default: break;
+                    break;
                 }
             }
             break;
         }
-        case kMenuLeftCommand: {
-            if (ShouldTickOrAutotick(time_button_held_)) {
-                switch (menu_state_) {
-                    case MenuState::NUM_CHEST_REWARDS: {
-                        if ((state.options_ & 
-                            RandomizerState::NUM_CHEST_REWARDS) > 0) {
-                            --state.options_;
-                        } else {
-                            state.options_ = 5;
-                        }
-                        break;
-                    }
-                    case MenuState::HP_MODIFIER: {
-                        if (state.hp_multiplier_ > 1)
-                            --state.hp_multiplier_;
-                        break;
-                    }
-                    case MenuState::ATK_MODIFIER: {
-                        if (state.atk_multiplier_ > 1)
-                            --state.atk_multiplier_;
-                        break;
-                    }
-                    default: break;
-                }
-            }
-            // Can also be treated as a "select" input.
-            goto lblSelectCommand;
-        }
-        case kMenuRightCommand: {
-            if (ShouldTickOrAutotick(time_button_held_)) {
-                switch (menu_state_) {
-                    case MenuState::NUM_CHEST_REWARDS: {
-                        if ((state.options_ & 
-                            RandomizerState::NUM_CHEST_REWARDS) < 5) {
-                            ++state.options_;
-                        } else {
-                            state.options_ = 0;
-                        }
-                        break;
-                    }
-                    case MenuState::HP_MODIFIER: {
-                        if (state.hp_multiplier_ < 1000)
-                            ++state.hp_multiplier_;
-                        break;
-                    }
-                    case MenuState::ATK_MODIFIER: {
-                        if (state.atk_multiplier_ < 1000)
-                            ++state.atk_multiplier_;
-                        break;
-                    }
-                    default: break;
-                }
-            }
-            // Can also be treated as a "select" input.
-            goto lblSelectCommand;
-        }
-        default: break;
     }
 }
 
@@ -341,70 +234,36 @@ void RandomizerMenu::Draw() {
 
     const uint32_t window_color = static_cast<uint8_t>(alpha * 4 / 5);
     
-    const uint32_t kMenuHeight = 19 * 4 - 4 + kMenuPadding * 2;
+    const uint32_t kMenuHeight = 19 * 5 - 4 + kMenuPadding * 2;
     DrawWindow(window_color, kMenuX, kMenuY, kMenuWidth, kMenuHeight, 10);
     
     const int32_t kTextX = kMenuX + kMenuPadding;
     const int32_t kValueX = kMenuX + kMenuWidth - kMenuPadding;
     int32_t kRowY = kMenuY - kMenuPadding - 8;
     
-    char buf[128];
-    uint32_t color;
+    char name_buf[128];
+    char value_buf[16];
+    uint32_t color, special_color;
     
     const RandomizerState& state = g_Randomizer->state_;
     
-    if (menu_page_ == 1) {
-        const uint32_t num_rewards =
-            state.options_ & RandomizerState::NUM_CHEST_REWARDS;
-        const char kChestRewardNumString[2] = { 
-            static_cast<char>('0' + num_rewards), '\0'
-        };
-        color = GetActiveColor(MenuState::NUM_CHEST_REWARDS, alpha);
-        sprintf(buf, "Rewards per chest:");
-        DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        sprintf(buf, num_rewards > 0 ? kChestRewardNumString : "Random");
-        DrawMenuString(buf, kValueX, kRowY, color, /* right-center */ 5);
-        kRowY -= 19;
-        
-        color = GetActiveColor(MenuState::HP_MODIFIER, alpha);
-        sprintf(buf, "Enemy HP multiplier:");
-        DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        sprintf(buf, "%" PRId32 "%s", state.hp_multiplier_, "%");
-        DrawMenuString(buf, kValueX, kRowY, color, /* right-center */ 5);
-        kRowY -= 19;
-        
-        color = GetActiveColor(MenuState::ATK_MODIFIER, alpha);
-        sprintf(buf, "Enemy ATK multiplier:");
-        DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        sprintf(buf, "%" PRId32 "%s", state.atk_multiplier_, "%");
-        DrawMenuString(buf, kValueX, kRowY, color, /* right-center */ 5);
-        kRowY -= 19;
-    } else if (menu_page_ == 2) {
-        color = GetActiveColor(MenuState::MERLEE, alpha);
-        sprintf(buf, "Infinite Merlee curses:");
-        DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        DrawOnOffString(state.options_ & RandomizerState::MERLEE, 
-                        kValueX, kRowY, alpha);
-        kRowY -= 19;
-        
-        color = GetActiveColor(MenuState::SUPERGUARDS_COST_FP, alpha);
-        sprintf(buf, "Superguards cost 1 FP:");
-        DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        DrawOnOffString(state.options_ & RandomizerState::SUPERGUARDS_COST_FP, 
-                        kValueX, kRowY, alpha);
-        kRowY -= 19;
-        
-        color = GetActiveColor(MenuState::NO_EXP_MODE, alpha);
-        sprintf(buf, "No EXP, Max BP mode:");
-        DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
-        DrawOnOffString(state.options_ & RandomizerState::NO_EXP_MODE, 
-                        kValueX, kRowY, alpha);
+    for (int32_t selection = 1; selection <= 4; ++selection) {
+        // Get text strings & color for options on the current page.
+        color = GetActiveColor(selection, alpha);
+        int32_t menu_state = GetMenuState(menu_page_, selection);
+        state.GetOptionStrings(menu_state, name_buf, value_buf, &special_color);
+        // Draw the row's description and current value.
+        DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
+        if (special_color) color = special_color;
+        DrawMenuString(value_buf, kValueX, kRowY, color, /* right-center */ 5);
+        // Advance to the next row's Y position.
         kRowY -= 19;
     }
     
-    color = GetActiveColor(MenuState::CHANGE_PAGE, alpha);
-    sprintf(buf, "Next Page (%" PRId32 " of 2)", menu_page_);
-    DrawMenuString(buf, kTextX, kRowY, color, /* left-center */ 3);
+    // Print the current page information in the bottom row.
+    color = GetActiveColor(5, alpha);
+    sprintf(name_buf, "Next Page (%" PRId32 " of 2)", menu_page_);
+    DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
 }
 
 }

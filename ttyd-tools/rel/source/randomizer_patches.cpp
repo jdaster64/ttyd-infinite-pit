@@ -555,6 +555,12 @@ void OnFileLoad(bool new_file) {
         ttyd::mario_pouch::pouchEquipBadgeID(ItemType::FP_PLUS);
         ttyd::mario_pouch::pouchGetItem(ItemType::HP_PLUS);
         ttyd::mario_pouch::pouchEquipBadgeID(ItemType::HP_PLUS);
+        // Give a starter set of items, by default.
+        ttyd::mario_pouch::pouchGetItem(ItemType::THUNDER_BOLT);
+        ttyd::mario_pouch::pouchGetItem(ItemType::FIRE_FLOWER);
+        ttyd::mario_pouch::pouchGetItem(ItemType::HONEY_SYRUP);
+        ttyd::mario_pouch::pouchGetItem(ItemType::MUSHROOM);
+        
         pouch.current_hp = 15;
         pouch.current_fp = 10;
         pouch.total_bp = 9;

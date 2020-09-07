@@ -1,18 +1,25 @@
 #include "randomizer_state.h"
 
+#include "common_functions.h"
+#include "common_types.h"
 #include "patch.h"
 #include "randomizer.h"
 
 #include <gc/OSTime.h>
+#include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
 
-#include <cstdint>
+#include <cinttypes>
+#include <cstdio>
 #include <cstring>
 
 namespace mod::pit_randomizer {
     
 namespace {
+    
+using ::ttyd::mario_pouch::PouchData;
+namespace ItemType = ::ttyd::item_data::ItemType;
 
 const char* GetSavefileName() {
     return ttyd::mariost::g_MarioSt->saveFileName;
@@ -126,6 +133,197 @@ void RandomizerState::SeedRng(const char* str) {
 uint32_t RandomizerState::Rand(uint32_t range) {
     rng_state_ = rng_state_ * 0x41c64e6d + 12345;
     return ((rng_state_ >> 16) & 0x7fff) % range;
+}
+
+void RandomizerState::ChangeOption(int32_t option, int32_t change) {
+    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    
+    switch (option) {
+        case NUM_CHEST_REWARDS: {
+            int32_t value = GetOptionValue(option) + change;
+            if (value < 0) value = 5;
+            if (value > 5) value = 0;
+            options_ = (options_ & ~NUM_CHEST_REWARDS) | value;
+            break;
+        }
+        case NO_EXP_MODE: {
+            options_ ^= NO_EXP_MODE;
+            if (options_ & NO_EXP_MODE) {
+                pouch.rank = 3;
+                pouch.level = 99;
+                pouch.unallocated_bp += 90;
+                pouch.total_bp += 90;
+            } else {
+                pouch.rank = 0;
+                pouch.level = 1;
+                pouch.unallocated_bp -= 90;
+                pouch.total_bp -= 90;
+            }
+            break;
+        }
+        case START_WITH_NO_ITEMS: {
+            options_ ^= START_WITH_NO_ITEMS;
+            if (options_ & START_WITH_NO_ITEMS) {
+                // Delete starter items.
+                for (int32_t i = 0; i < 20; ++i) {
+                    pouch.items[i] = 0;
+                }
+            } else {
+                // Re-add starter items.
+                ttyd::mario_pouch::pouchGetItem(ItemType::THUNDER_BOLT);
+                ttyd::mario_pouch::pouchGetItem(ItemType::FIRE_FLOWER);
+                ttyd::mario_pouch::pouchGetItem(ItemType::HONEY_SYRUP);
+                ttyd::mario_pouch::pouchGetItem(ItemType::MUSHROOM);
+            }
+            break;
+        }
+        case MERLEE: {
+            options_ ^= MERLEE;
+            if (options_ & MERLEE) {
+                pouch.merlee_curse_uses_remaining = 99;
+                pouch.turns_until_merlee_activation = -1;
+            } else {
+                pouch.merlee_curse_uses_remaining = 0;
+                pouch.turns_until_merlee_activation = 0;
+            }
+            break;
+        }
+        case SUPERGUARDS_COST_FP: {
+            options_ ^= SUPERGUARDS_COST_FP;
+            break;
+        }
+        case SWITCH_PARTY_COST_FP: {
+            int32_t value = GetOptionValue(option) + change;
+            if (value < 0) value = 3;
+            if (value > 3) value = 0;
+            options_ = (options_ & ~SWITCH_PARTY_COST_FP) | 
+                       (SWITCH_PARTY_COST_FP / 3 * value);
+            break;
+        }
+        case HP_MODIFIER: {
+            hp_multiplier_ += change;
+            if (hp_multiplier_ < 1) hp_multiplier_ = 1;
+            if (hp_multiplier_ > 1000) hp_multiplier_ = 1000;
+            break;
+        }
+        case ATK_MODIFIER: {
+            atk_multiplier_ += change;
+            if (atk_multiplier_ < 1) atk_multiplier_ = 1;
+            if (atk_multiplier_ > 1000) atk_multiplier_ = 1000;
+            break;
+        }
+    }
+}
+
+int32_t RandomizerState::GetOptionValue(int32_t option) const {
+    switch (option) {
+        case NUM_CHEST_REWARDS:
+            return (options_ & NUM_CHEST_REWARDS);
+        case HP_MODIFIER:
+            return hp_multiplier_;
+        case ATK_MODIFIER:
+            return atk_multiplier_;
+        case SWITCH_PARTY_COST_FP:
+            return (options_ & SWITCH_PARTY_COST_FP) / (SWITCH_PARTY_COST_FP/3);
+        default:
+            return (options_ & option) != 0;
+    }
+}
+
+void RandomizerState::GetOptionStrings(
+    int32_t option, char* name, char* value, uint32_t* color) const {
+    // Set name.
+    switch (option) {
+        case NUM_CHEST_REWARDS: {
+            sprintf(name, "Rewards per chest:");
+            break;
+        }
+        case NO_EXP_MODE: {
+            sprintf(name, "No EXP, Max BP mode:");
+            break;
+        }
+        case START_WITH_NO_ITEMS: {
+            sprintf(name, "Starter set of items:");
+            break;
+        }
+        case MERLEE: {
+            sprintf(name, "Infinite Merlee curses:");
+            break;
+        }
+        case SUPERGUARDS_COST_FP: {
+            sprintf(name, "Superguards cost 1 FP:");
+            break;
+        }
+        case SWITCH_PARTY_COST_FP: {
+            sprintf(name, "Partner switch cost:");
+            break;
+        }
+        case HP_MODIFIER: {
+            sprintf(name, "Enemy HP multiplier:");
+            break;
+        }
+        case ATK_MODIFIER: {
+            sprintf(name, "Enemy ATK multiplier:");
+            break;
+        }
+    }
+    
+    // Set value.
+    int32_t option_value = GetOptionValue(option);
+    *color = 0;
+    switch (option) {
+        case NUM_CHEST_REWARDS: {
+            if (option_value == 0) {
+                sprintf(value, "Varies");
+            } else {
+                sprintf(value, "%" PRId32, option_value);
+            }
+            break;
+        }
+        case START_WITH_NO_ITEMS: {
+            // Reversed options (defaults to "On").
+            if (!option_value) {
+                sprintf(value, "On");
+                *color = 0x00c100ffU;
+            } else {
+                sprintf(value, "Off");
+                *color = 0xe50000ffU;
+            }
+            break;
+        }
+        case SWITCH_PARTY_COST_FP: {
+            if (option_value) {
+                sprintf(value, "%" PRId32 " FP", option_value);
+            } else {
+                sprintf(value, "Off");
+                *color = 0xe50000ffU;
+            }
+            break;
+        }
+        case HP_MODIFIER: 
+        case ATK_MODIFIER: {
+            sprintf(value, "%" PRId32 "%s", option_value, "%");
+            break;
+        }
+        default: {
+            if (option_value) {
+                sprintf(value, "On");
+                *color = 0x00c100ffU;
+            } else {
+                sprintf(value, "Off");
+                *color = 0xe50000ffU;
+            }
+            break;
+        }
+    }
+}
+
+int32_t RandomizerState::StarPowersObtained() const {
+    return CountSetBits(GetBitMask(5, 12) & reward_flags_);
+}
+
+bool RandomizerState::StarPowerEnabled() const {
+    return CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0;
 }
 
 }
