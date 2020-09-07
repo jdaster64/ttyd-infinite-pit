@@ -87,6 +87,9 @@ extern "C" {
     void CharlietonPitPriceListPatchEnd();
     void CharlietonPitPriceItemPatchStart();
     void CharlietonPitPriceItemPatchEnd();
+    // action_menu_patches.s
+    void StartSpendFpOnSwitchPartner();
+    void BranchBackSpendFpOnSwitchPartner();
     // battle_end_patches.s
     void StartGivePlayerInvuln();
     void BranchBackGivePlayerInvuln();
@@ -126,7 +129,9 @@ extern "C" {
     void useSpecialItems(ttyd::win_party::WinPartyData** party_data) {
         mod::pit_randomizer::UseSpecialItemsInMenu(party_data);
     }
-    
+    void spendFpOnSwitchPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
+        mod::pit_randomizer::SpendFpOnSwitchingPartner(unit);
+    }
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
         uint32_t unk0) {
@@ -994,6 +999,14 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                 strats[i].cost <= ttyd::battle_unit::BtlUnit_GetFp(unit);
             strats[i].unk_08 = !strats[i].enabled;  // 1 if disabled: "no FP" msg
         }
+        
+        // Handle switch partner cost, if enabled.
+        if (strats[0].type == 0 && (g_Randomizer->state_.options_ & 
+            RandomizerState::SWITCH_PARTY_COST_FP)) {
+            strats[0].cost = 1;
+            strats[0].enabled = ttyd::battle_unit::BtlUnit_GetFp(unit) > 0;
+            strats[0].unk_08 = !strats[0].enabled;  // 1 if disabled: "no FP" msg
+        }
     } else {
         auto* weapons = reinterpret_cast<BattleWorkCommandWeapon*>(win_data[2]);
         if (!weapons) return;
@@ -1022,6 +1035,16 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                 kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
             weapons[i].name = g_MoveBadgeTextBuffers[idx];
         }
+    }
+}
+
+void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
+    if (g_Randomizer->state_.options_ & RandomizerState::SWITCH_PARTY_COST_FP) {
+        // Spend 1 FP (and track total FP spent in BattleActRec).
+        int32_t fp = ttyd::battle_unit::BtlUnit_GetFp(unit);
+        ttyd::battle_unit::BtlUnit_SetFp(unit, fp - 1);
+        ttyd::battle_actrecord::BtlActRec_AddCount(
+            &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent);
     }
 }
 
@@ -2222,6 +2245,15 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGswfInitHookAddr2),
         &kSkipGswfInitOpcode, sizeof(kSkipGswfInitOpcode));
+        
+    // Add code that subtracts FP for switching partners (if option enabled).
+    const int32_t kSwitchPartnerConfirmBeginHookAddress = 0x801204c8;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSwitchPartnerConfirmBeginHookAddress),
+        reinterpret_cast<void*>(StartSpendFpOnSwitchPartner));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSpendFpOnSwitchPartner),
+        reinterpret_cast<void*>(kSwitchPartnerConfirmBeginHookAddress + 4));
         
     // Make defeating a group of enemies still holding stolen items always make
     // you have temporary intangibility, even if you recovered some of them, to

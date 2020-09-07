@@ -42,6 +42,9 @@ int32_t GetSelectedLevelWeaponCost(
 // if is_strategies_menu = false.
 void CheckForSelectingWeaponLevel(bool is_strategies_menu);
 
+// Spends FP for switching partners, if the option is enabled.
+void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit);
+
 // Correctly displays multi-digit Charge / ATK / DEF-change number icons.
 void DisplayUpDownNumberIcons(
     int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,

@@ -6,11 +6,13 @@ namespace mod::pit_randomizer {
 
 struct RandomizerState {
     enum Options_Flags {
-        NUM_CHEST_REWARDS   = 0x7,      // 0 ~ 5 (0 = random); changes seeding
-        MERLEE              = 0x10,     // Infinite Merlee curses
-        SUPERGUARDS_COST_FP = 0x20,     // Superguards cost 1 FP
-        NO_EXP_MODE         = 0x40,     // Start at level 99 w/99 BP, no EXP
-        START_WITH_FX       = 0x100,    // Start with Attack FX badges
+        NUM_CHEST_REWARDS       = 0x7,      // 0 ~ 5 (0 = random); changes seeds
+        MERLEE                  = 0x10,     // Infinite Merlee curses
+        SUPERGUARDS_COST_FP     = 0x20,     // Superguards cost 1 FP
+        NO_EXP_MODE             = 0x40,     // Start at level 99 w/99 BP, no EXP
+        START_WITH_FX           = 0x100,    // Start with Attack FX badges
+        START_WITH_ITEMS        = 0x200,    // Start with a preset set of items
+        SWITCH_PARTY_COST_FP    = 0x400,    // Switching partners costs 1 FP
     };
 
     // Save file revision; makes it possible to add fields while maintaining
