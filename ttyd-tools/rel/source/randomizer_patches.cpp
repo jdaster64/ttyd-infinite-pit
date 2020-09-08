@@ -111,6 +111,9 @@ extern "C" {
     void BranchBackFixItemWinPartyDispOrder();
     void StartFixItemWinPartySelectOrder();
     void BranchBackFixItemWinPartySelectOrder();
+    void StartCheckForUnusableItemInMenu();
+    void ConditionalBranchCheckForUnusableItemInMenu();
+    void BranchBackCheckForUnusableItemInMenu();
     void StartUseSpecialItems();
     void BranchBackUseSpecialItems();
     
@@ -125,6 +128,9 @@ extern "C" {
     
     void getPartyMemberMenuOrder(ttyd::win_party::WinPartyData** party_data) {
         mod::pit_randomizer::GetPartyMemberMenuOrder(party_data);
+    }
+    bool checkForUnusableItemInMenu() {
+        return mod::pit_randomizer::CheckForUnusableItemInMenu();
     }
     void useSpecialItems(ttyd::win_party::WinPartyData** party_data) {
         mod::pit_randomizer::UseSpecialItemsInMenu(party_data);
@@ -1128,6 +1134,49 @@ void GetPartyMemberMenuOrder(WinPartyData** out_party_data) {
     }
 }
 
+bool CheckForUnusableItemInMenu() {
+    void* winPtr = ttyd::win_main::winGetPtr();
+    const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
+    
+    // If not a Shine Sprite, item is not unusable; can return.
+    if (item != ItemType::GOLD_BAR_X3) return false;
+    
+    // If the player isn't actively making a selection, can return safely.
+    uint32_t& buttons = reinterpret_cast<uint32_t*>(winPtr)[0x4 / 4];
+    if (!(buttons & ButtonId::A) || (buttons & ButtonId::B)) return false;
+    
+    WinPartyData* party_data[7];
+    GetPartyMemberMenuOrder(party_data);
+    int32_t& party_member_target = reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
+    
+    // Mario is selected.
+    if (party_member_target == 0) {
+        if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::SHINE_SPRITES_MARIO)) {
+            // If Star Powers are enabled and you've upgraded SP less than 4,
+            // the Shine Sprite can be used to increase it further.
+            if (g_Randomizer->state_.StarPowerEnabled() &&
+                ttyd::mario_pouch::pouchGetMaxAP() - 
+                g_Randomizer->state_.StarPowersObtained() * 100 < 400)
+                return false;
+        } else {
+            party_member_target = 1;
+        }
+    }
+    if (party_member_target > 0) {
+        // If the selected partner's max HP < 200, it can be increased further.
+        int32_t selected_party_id = 
+            party_data[party_member_target - 1]->partner_id;
+        int16_t* hp_table = 
+            ttyd::mario_pouch::_party_max_hp_table + selected_party_id * 4;
+        if (hp_table[2] < 200) return false;
+    }
+    
+    // The item cannot be used; play a sound effect and return true.
+    ttyd::sound::SoundEfxPlayEx(0x266, 0, 0x64, 0x40);
+    return true;
+}
+
 void UseSpecialItemsInMenu(WinPartyData** party_data) {
     void* winPtr = ttyd::win_main::winGetPtr();
     const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
@@ -1136,7 +1185,9 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
     if (item == ItemType::CAKE || item == ItemType::GOLD_BAR_X3) {
         int32_t& party_member_target = 
             reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
-        if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3) {
+        if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3 &&
+            !g_Randomizer->state_.GetOptionValue(
+                RandomizerState::SHINE_SPRITES_MARIO)) {
             // If Mario is selected for using a Shine Sprite, change the
             // target to the active party member instead.
             party_member_target = 1;
@@ -1164,6 +1215,14 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 ttyd::mario_pouch::pouchGetFP() +
                 GetBonusCakeRestoration());
         } else if (item == ItemType::GOLD_BAR_X3) {
+            // Mario selected; add +0.5 max SP and restore all SP.
+            if (selected_party_id == 0) {
+                PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+                pouch.max_sp += 50;
+                pouch.current_sp = pouch.max_sp;
+                return;
+            }
+            
             ttyd::mario_pouch::PouchPartyData* pouch_data =
                 ttyd::mario_pouch::pouchGetPtr()->party_data + selected_party_id;
             int16_t* hp_table = 
@@ -1494,8 +1553,8 @@ bool CheckIfPlayerDefeated() {
 }
 
 void DisplayStarPowerNumber() {
-    // Don't display SP if Mario hasn't gotten any Star Powers yet.
-    if (ttyd::mario_pouch::pouchGetMaxAP() < 100) return;
+    // Don't display SP if Star Powers aren't yet enabled.
+    if (!g_Randomizer->state_.StarPowerEnabled()) return;
     
     // Don't try to display SP if the status bar is not on-screen.
     float menu_height = *reinterpret_cast<float*>(
@@ -1513,6 +1572,7 @@ void DisplayStarPowerNumber() {
 
 void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
     int32_t max_star_power = ttyd::mario_pouch::pouchGetMaxAP();
+    if (max_star_power > 800) max_star_power = 800;
     if (star_power > max_star_power) star_power = max_star_power;
     if (star_power < 0) star_power = 0;
     
@@ -1529,7 +1589,8 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
         ttyd::icondrv::iconDispGx(
             1.f, &pos, 0x10, ttyd::statuswindow::gauge_wakka[part_frame]);
     }
-    for (int32_t i = 0; i < max_star_power / 100; ++i) {
+    // Draw grey orbs up to the max amount of SP / 100 (rounded up, max of 8).
+    for (int32_t i = 0; i < (max_star_power + 99) / 100; ++i) {
         gc::vec3 pos = {
             static_cast<float>(x + 32.f * i), 
             static_cast<float>(y + 12.f),
@@ -2336,6 +2397,20 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackFixItemWinPartySelectOrder),
         reinterpret_cast<void*>(kWinItemSelectPartyTableEndHookAddress));
+        
+    // Apply patch to item menu code to check for invalid item targets
+    // (e.g. using Shine Sprites on fully-upgraded partners or Mario).
+    const int32_t kWinItemCheckPlayerInputBeginHookAddress = 0x8016cd74;
+    const int32_t kWinItemCheckPlayerInputEndHookAddress = 0x8016d1a4;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kWinItemCheckPlayerInputBeginHookAddress),
+        reinterpret_cast<void*>(StartCheckForUnusableItemInMenu));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckForUnusableItemInMenu),
+        reinterpret_cast<void*>(kWinItemCheckPlayerInputBeginHookAddress + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(ConditionalBranchCheckForUnusableItemInMenu),
+        reinterpret_cast<void*>(kWinItemCheckPlayerInputEndHookAddress));
         
     // Apply patch to item menu code to properly use Shine Sprite items.
     const int32_t kWinItemCheckBackgroundHookAddress = 0x8016cfd0;

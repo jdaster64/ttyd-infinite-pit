@@ -14,6 +14,7 @@ struct RandomizerState {
         START_WITH_NO_ITEMS     = 0x200,    // Start with a preset set of items
         SWITCH_PARTY_COST_FP    = 0xc00,    // Switching partners costs 1-3 FP
         YOSHI_COLOR_SELECT      = 0x1000,   // Manually selecting Yoshi color
+        SHINE_SPRITES_MARIO     = 0x2000,   // Increase max SP w/Shine Sprites
         
         // Options that aren't controlled by flags (used by menu state).
         CHANGE_PAGE             = -100,

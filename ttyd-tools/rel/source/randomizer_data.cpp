@@ -1192,7 +1192,8 @@ int16_t PickChestReward() {
         // be obtained; the total weight should be 10x unobtained count, split
         // among all the ones that can be afforded.
         int32_t sp_weight = 0;
-        switch (8 - CountSetBits(GetBitMask(5, 12) & state.reward_flags_)) {
+        const int32_t number_star_powers = state.StarPowersObtained();
+        switch (8 - number_star_powers) {
             case 8: sp_weight = 80 / 1; break;
             case 7: sp_weight = 70 / 2; break;
             case 6: sp_weight = 60 / 2; break;
@@ -1238,18 +1239,18 @@ int16_t PickChestReward() {
                     break;
                 case ItemType::DIAMOND_STAR:
                 case ItemType::EMERALD_STAR:
-                    if (pouch.max_sp < 100) weights[i] = 0;
+                    if (number_star_powers < 1) weights[i] = 0;
                     break;
                 case ItemType::GOLD_STAR:
-                    if (pouch.max_sp < 200) weights[i] = 0;
+                    if (number_star_powers < 2) weights[i] = 0;
                     break;
                 case ItemType::RUBY_STAR:
                 case ItemType::SAPPHIRE_STAR:
                 case ItemType::GARNET_STAR:
-                    if (pouch.max_sp < 300) weights[i] = 0;
+                    if (number_star_powers < 3) weights[i] = 0;
                     break;
                 case ItemType::CRYSTAL_STAR:
-                    if (pouch.max_sp < 500) weights[i] = 0;
+                    if (number_star_powers < 5) weights[i] = 0;
                     break;
                 case -1:
                 case -2:

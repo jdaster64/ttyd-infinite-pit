@@ -40,9 +40,10 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
     };
     int16_t* hp_table = ttyd::mario_pouch::_party_max_hp_table + 4;
     for (int32_t i = 0; i < 7; ++i) {
-        const int32_t addl_hp = partner_upgrades[i] > 2 ? 
-            (partner_upgrades[i] - 2) * 5 : 0;
-        hp_table[i * 4 + 2] = kDefaultUltraRankMaxHp[i] + addl_hp;
+        int32_t hp = kDefaultUltraRankMaxHp[i] +
+            (partner_upgrades[i] > 2 ? (partner_upgrades[i] - 2) * 5 : 0);
+        if (hp > 200) hp = 200;
+        hp_table[i * 4 + 2] = hp;
     }
 }
 

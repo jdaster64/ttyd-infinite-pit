@@ -25,6 +25,7 @@ const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
 const int32_t kMenuWidth            = 320;
 const int32_t kMenuPadding          = 15;
+const int32_t kOptionsPerPage       = 5;
 const int32_t kFadeoutStartTime     = 600;
 const int32_t kFadeoutEndTime       = 600 + 15;
 const int32_t kFadeinTextStartTime  = 600 + 105;
@@ -154,7 +155,7 @@ void RandomizerMenu::Update() {
         case kMenuUpCommand: {
             if (time_button_held_ == 0) {
                 if (menu_selection_ == 1) {
-                    menu_selection_ = 5;
+                    menu_selection_ = kOptionsPerPage;
                 } else {
                     --menu_selection_;
                 }
@@ -163,7 +164,7 @@ void RandomizerMenu::Update() {
         }
         case kMenuDownCommand: {
             if (time_button_held_ == 0) {
-                if (menu_selection_ == 5) {
+                if (menu_selection_ == kOptionsPerPage) {
                     menu_selection_ = 1;
                 } else {
                     ++menu_selection_;
@@ -234,7 +235,7 @@ void RandomizerMenu::Draw() {
 
     const uint32_t window_color = static_cast<uint8_t>(alpha * 4 / 5);
     
-    const uint32_t kMenuHeight = 19 * 5 - 4 + kMenuPadding * 2;
+    const uint32_t kMenuHeight = 19 * kOptionsPerPage - 4 + kMenuPadding * 2;
     DrawWindow(window_color, kMenuX, kMenuY, kMenuWidth, kMenuHeight, 10);
     
     const int32_t kTextX = kMenuX + kMenuPadding;
@@ -247,7 +248,7 @@ void RandomizerMenu::Draw() {
     
     const RandomizerState& state = g_Randomizer->state_;
     
-    for (int32_t selection = 1; selection <= 4; ++selection) {
+    for (int32_t selection = 1; selection < kOptionsPerPage; ++selection) {
         // Get text strings & color for options on the current page.
         color = GetActiveColor(selection, alpha);
         int32_t menu_state = GetMenuState(menu_page_, selection);
@@ -261,7 +262,7 @@ void RandomizerMenu::Draw() {
     }
     
     // Print the current page information in the bottom row.
-    color = GetActiveColor(5, alpha);
+    color = GetActiveColor(kOptionsPerPage, alpha);
     sprintf(name_buf, "Next Page (%" PRId32 " of 2)", menu_page_);
     DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
 }

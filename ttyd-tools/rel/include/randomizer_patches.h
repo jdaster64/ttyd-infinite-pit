@@ -53,7 +53,9 @@ void DisplayUpDownNumberIcons(
 // Stores pointers to WinPartyData entries in the correct order based
 // on the currently active partner and partners currently obtained.
 void GetPartyMemberMenuOrder(ttyd::win_party::WinPartyData** out_party_data);
-
+// If the player attempts to use the currently selected item in the pause
+// menu on an invalid target, prevents it and returns true.
+bool CheckForUnusableItemInMenu();
 // Ranks up and fully heals the selected party member when using a Shine Sprite,
 // or restores random HP/FP if using a Strawberry Cake.
 void UseSpecialItemsInMenu(ttyd::win_party::WinPartyData** party_data);
