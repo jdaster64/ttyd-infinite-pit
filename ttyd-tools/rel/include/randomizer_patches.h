@@ -152,6 +152,9 @@ EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
 // Increments the actual current Pit floor, and the corresponding GSW value.
 EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
 
+// Increments the randomly selected Yoshi color & marks it as manually changed.
+EVT_DECLARE_USER_FUNC(IncrementYoshiColor, 0)
+
 // Gets a unique id for an item to spawn when buying items from Charlieton
 // with a maxed inventory.
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)

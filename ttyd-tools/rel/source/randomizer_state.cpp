@@ -103,13 +103,19 @@ bool RandomizerState::Load(bool new_save) {
         char filenameChars[9];
         rng_state_ = static_cast<uint32_t>(gc::OSTime::OSGetTime());
         for (int32_t i = 0; i < 8; ++i) {
-            int32_t ch = Rand(52);
-            if (ch < 26) {
+            // Pick uppercase / lowercase characters randomly (excluding I / l).
+            int32_t ch = Rand(50);
+            if (ch < 25) {
                 filenameChars[i] = ch + 'a';
+                if (filenameChars[i] == 'l') filenameChars[i] = 'z';
             } else {
-                filenameChars[i] = (ch - 26) + 'A';
+                filenameChars[i] = (ch - 25) + 'A';
+                if (filenameChars[i] == 'I') filenameChars[i] = 'Z';
             }
         }
+        // If a heart was in the initial filename, put one at the end of the
+        // random one as well.
+        if (options_ & START_WITH_FX) filenameChars[7] = '\xd0';
         filenameChars[8] = 0;
         // Copy generated filename to MarioSt.
         strcpy(const_cast<char*>(filename), filenameChars);

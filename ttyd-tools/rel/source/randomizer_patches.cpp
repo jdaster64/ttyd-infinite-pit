@@ -366,6 +366,12 @@ RUN_CHILD_EVT(FloorIncrementEvt)
 RETURN()
 EVT_END()
 
+// Runs when taking the right loading zone in the pre-Pit room.
+EVT_BEGIN(PrePitRoomLoopEvt)
+USER_FUNC(IncrementYoshiColor)
+RETURN()
+EVT_END()
+
 // Event that sets up a Pit enemy NPC, and opens a pipe when it is defeated.
 EVT_BEGIN(EnemyNpcSetupEvt)
 SET(LW(0), GSW(1321))
@@ -696,6 +702,8 @@ void OnModuleLoaded(OSModuleInfo* module) {
                 module_ptr + kTik06RightBeroEntryOffset);
             tik_06_e_bero->target_map = "tik_06";
             tik_06_e_bero->target_bero = tik_06_e_bero->name;
+            tik_06_e_bero->out_evt_code = reinterpret_cast<void*>(
+                const_cast<int32_t*>(PrePitRoomLoopEvt));
             
             // Patch over Hammer Bros. HP check.
             mod::patch::writePatch(
@@ -2767,6 +2775,13 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         gsw_floor += ((actual_floor / 10) % 10 == 9) ? 90 : 80;
     }
     ttyd::swdrv::swByteSet(1321, gsw_floor);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(IncrementYoshiColor) {
+    g_Randomizer->state_.options_ |= RandomizerState::YOSHI_COLOR_SELECT;
+    int32_t color = ttyd::mario_pouch::pouchGetPartyColor(4);
+    ttyd::mario_pouch::pouchSetPartyColor(4, (color + 1) % 7);
     return 2;
 }
 

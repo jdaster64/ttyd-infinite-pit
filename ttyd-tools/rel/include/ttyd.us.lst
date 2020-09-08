@@ -645,6 +645,7 @@
 // mario_pouch.o
 // .text
 800d2e28:pouchSetPartyColor
+800d2e44:pouchGetPartyColor
 800d328c:pouchEquipBadgeID
 800d3300:pouchEquipCheckBadge
 800d35a8:pouchReviseMarioParam

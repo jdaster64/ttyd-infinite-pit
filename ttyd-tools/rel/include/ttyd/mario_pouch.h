@@ -66,7 +66,7 @@ static_assert(sizeof(PouchData) == 0x5d4);
 // pouchGetYoshiName
 // pouchSetYoshiName
 void pouchSetPartyColor(int32_t party_member, int32_t color);  // 4 = Yoshi
-// pouchGetPartyColor
+int32_t pouchGetPartyColor(int32_t party_member);
 // pouchCheckMail
 // pouchOpenMail
 // pouchReceiveMail

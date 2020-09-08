@@ -2,7 +2,9 @@
 
 #include "randomizer.h"
 #include "randomizer_data.h"
+#include "randomizer_state.h"
 
+#include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
 
 #include <cinttypes>
@@ -122,6 +124,19 @@ constexpr const char* kKeyLookups[] = {
     "tik_06_02",
 };
 
+const char* GetYoshiTextColor() {
+    const char* kYoshiColorStrings[] = {
+        "00c100", "e50000", "0000e5", "d07000",
+        "e080d0", "404040", "90b0c0", "000000",
+    };
+    if (!g_Randomizer->state_.GetOptionValue(
+        RandomizerState::YOSHI_COLOR_SELECT)) {
+        return kYoshiColorStrings[7];
+    } else {
+        return kYoshiColorStrings[ttyd::mario_pouch::pouchGetPartyColor(4)];
+    }
+}
+
 }
     
 const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
@@ -179,10 +194,10 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
             return buf;
         }
         case MsgKey::MSG_JON_KANBAN_3: {
-            sprintf(buf, "<kanban>\nYour seed: %s\n"
+            sprintf(buf, "<kanban>\nYour seed: <col %sff>%s\n</col>"
                 "(Name your file \"random\" or \"\xde\"\n"
                 "to have one picked randomly.)<k>",
-                ttyd::mariost::g_MarioSt->saveFileName);
+                GetYoshiTextColor(), ttyd::mariost::g_MarioSt->saveFileName);
             return buf;
         }
         case MsgKey::TIK_06_02: {
