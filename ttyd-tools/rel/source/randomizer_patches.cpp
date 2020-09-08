@@ -106,6 +106,10 @@ extern "C" {
     // pouch_alloc_patches.s
     void StartCheckPouchAlloc();
     void BranchBackCheckPouchAlloc();
+    // status_window_patches.s
+    void StartPreventDpadShortcutsOutsidePit();
+    void ConditionalBranchPreventDpadShortcutsOutsidePit();
+    void BranchBackPreventDpadShortcutsOutsidePit();
     // win_item_patches.s
     void StartFixItemWinPartyDispOrder();
     void BranchBackFixItemWinPartyDispOrder();
@@ -143,6 +147,9 @@ extern "C" {
         uint32_t unk0) {
         mod::pit_randomizer::DisplayUpDownNumberIcons(
             number, tex_obj, icon_mtx, view_mtx, unk0);
+    }
+    bool checkOutsidePit() {
+        return strcmp("jon", mod::GetCurrentArea()) != 0;
     }
 }
 
@@ -2379,6 +2386,21 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackDispUpdownNumberIcons),
         reinterpret_cast<void*>(kEffUpdownDispEndHookAddress));
+        
+    // Apply patches to statusWinDisp to prevent D-Pad shortcuts from appearing
+    // if the player is outside the Pit (so it doesn't interfere with the
+    // Infinite Pit options menu).
+    const int32_t kStatusWinDpadIconsDispBeginHookAddress = 0x8013d140;
+    const int32_t kStatusWinDpadIconsDispEndHookAddress = 0x8013d404;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kStatusWinDpadIconsDispBeginHookAddress),
+        reinterpret_cast<void*>(StartPreventDpadShortcutsOutsidePit));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackPreventDpadShortcutsOutsidePit),
+        reinterpret_cast<void*>(kStatusWinDpadIconsDispBeginHookAddress + 4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(ConditionalBranchPreventDpadShortcutsOutsidePit),
+        reinterpret_cast<void*>(kStatusWinDpadIconsDispEndHookAddress));
     
     // Apply patches to seq_mapChangeMain code to run additional logic when
     // loading or unloading a map.
@@ -2685,6 +2707,10 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     
     PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     
+    // If on a Bonetail floor and Bonetail is already defeated,
+    // skip the item / condition generation to keep seeding consistent.
+    if (ttyd::swdrv::swGet(0x13dc)) return 2;
+
     // Set the enemies' held items.
     NpcBattleInfo* battle_info = &npc->battleInfo;
     for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {

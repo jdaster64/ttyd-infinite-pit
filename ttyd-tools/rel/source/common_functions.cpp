@@ -51,6 +51,10 @@ bool InMainGameModes() {
            !next_map_demo && !next_map_title;
 }
 
+const char* GetCurrentArea() {
+    return ttyd::mariost::g_MarioSt->currentAreaName;
+}
+
 const char* GetCurrentMap() {
     return ttyd::mariost::g_MarioSt->currentMapName;
 }

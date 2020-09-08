@@ -769,10 +769,12 @@ bool GetEnemyStats(
             // Enemies like Mini-Yuxes should never grant EXP.
             *out_level = 0;
         } else {
-            // Enemies' level will always be the same amount higher than Mario,
+            // Enemies' level will always be the same relative to than Mario,
             // typically giving 3 ~ 10 EXP depending on strength and group size.
+            // (The EXP gained will reduce slightly after floor 100.)
             if (ei->level_offset <= 10) {
-                int32_t level_offset = ei->level_offset + 5;
+                int32_t level_offset = 
+                    ei->level_offset + (g_Randomizer->state_.floor_ < 100 ? 5 : 2);
                 *out_level =
                     ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
             } else {

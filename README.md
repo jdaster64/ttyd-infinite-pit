@@ -56,5 +56,5 @@ installation process.
 
 ### Known Issues
 
-*   No major issues as of v1.05.
+*   No major issues as of the previous version.
 
