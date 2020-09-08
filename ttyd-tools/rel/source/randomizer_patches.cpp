@@ -1013,10 +1013,16 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
         }
         
         // Handle switch partner cost, if enabled.
-        if (strats[0].type == 0 && (g_Randomizer->state_.options_ & 
-            RandomizerState::SWITCH_PARTY_COST_FP)) {
-            strats[0].cost = 1;
-            strats[0].enabled = ttyd::battle_unit::BtlUnit_GetFp(unit) > 0;
+        int32_t switch_fp_cost = g_Randomizer->state_.GetOptionValue(
+            RandomizerState::SWITCH_PARTY_COST_FP);
+        if (strats[0].type == 0 && switch_fp_cost) {
+            // Reduce switch partner cost by Flower Savers.
+            switch_fp_cost -= unit->badges_equipped.flower_saver;
+            if (switch_fp_cost < 1) switch_fp_cost = 1;
+            
+            strats[0].cost = switch_fp_cost;
+            strats[0].enabled =
+                ttyd::battle_unit::BtlUnit_GetFp(unit) >= switch_fp_cost;
             strats[0].unk_08 = !strats[0].enabled;  // 1 if disabled: "no FP" msg
         }
     } else {
@@ -1051,12 +1057,18 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
 }
 
 void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
-    if (g_Randomizer->state_.options_ & RandomizerState::SWITCH_PARTY_COST_FP) {
-        // Spend 1 FP (and track total FP spent in BattleActRec).
+    int32_t switch_fp_cost = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::SWITCH_PARTY_COST_FP);
+    if (switch_fp_cost > 0) {
+        switch_fp_cost -= unit->badges_equipped.flower_saver;
+        if (switch_fp_cost < 1) switch_fp_cost = 1;
+        
+        // Spend FP (and track total FP spent in BattleActRec).
         int32_t fp = ttyd::battle_unit::BtlUnit_GetFp(unit);
-        ttyd::battle_unit::BtlUnit_SetFp(unit, fp - 1);
-        ttyd::battle_actrecord::BtlActRec_AddCount(
-            &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent);
+        ttyd::battle_unit::BtlUnit_SetFp(unit, fp - switch_fp_cost);
+        ttyd::battle_actrecord::BtlActRec_AddPoint(
+            &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent,
+            switch_fp_cost);
     }
 }
 
