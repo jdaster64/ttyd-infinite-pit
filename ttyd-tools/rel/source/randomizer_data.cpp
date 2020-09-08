@@ -738,19 +738,15 @@ bool GetEnemyStats(
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
             
     if (out_hp) {
-        int32_t hp = (ei->hp_scale * base_hp_pct + 50);
-        hp = hp * g_Randomizer->state_.hp_multiplier_ / 100;
-        hp /= 100;
-        hp = hp < 1 ? 1 : hp;
-        *out_hp = hp > 9999 ? 9999 : hp;
+        int32_t hp = Min(ei->hp_scale * base_hp_pct, 1000000);
+        hp *= g_Randomizer->state_.hp_multiplier_;
+        *out_hp = Clamp((hp + 5000) / 10000, 1, 9999);
     }
     if (out_atk) {
-        int32_t atk = (ei->atk_scale * base_atkdef_pct + 50);
+        int32_t atk = Min(ei->atk_scale * base_atkdef_pct, 1000000);
         atk += (base_attack_power - ei->atk_base) * 100;
-        atk = atk * g_Randomizer->state_.atk_multiplier_ / 100;
-        atk /= 100;
-        atk = atk < 1 ? 1 : atk;
-        *out_atk = atk > 99 ? 99 : atk;
+        atk *= g_Randomizer->state_.atk_multiplier_;
+        *out_atk = Clamp((atk + 5000) / 10000, 1, 99);
     }
     if (out_def) {
         if (ei->def_scale == 0) {

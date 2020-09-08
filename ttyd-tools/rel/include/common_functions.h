@@ -62,4 +62,16 @@ int32_t CountSetBits(uint32_t x);
 // Assumes 0 <= start_bit <= end_bit <= 31.
 uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit);
 
+// Template functions for min / max / clamping a value to a range.
+template <class T> inline T Min(const T& lhs, const T& rhs) {
+    return lhs < rhs ? lhs : rhs;
+}
+template <class T> inline T Max(const T& lhs, const T& rhs) {
+    return lhs > rhs ? lhs : rhs;
+}
+template <class T> inline T Clamp(const T& value, const T& min_value,
+                                  const T& max_value) {
+    return Max(Min(value, max_value), min_value);
+}
+
 }
