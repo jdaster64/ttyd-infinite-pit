@@ -96,6 +96,9 @@ bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
 // Checks for enemies to use additional types of items.
 void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
 
+// Sums attack target weights for attacks that target randomly,
+// ensuring that individual target weights are always > 0.
+int32_t SumWeaponTargetRandomWeights(int32_t* weights);
 // Changes the order that certain attacks select their targets in
 // (selecting the user last, if the user is included).
 void ReorderWeaponTargets();

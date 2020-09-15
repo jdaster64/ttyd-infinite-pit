@@ -98,6 +98,9 @@ extern "C" {
     // eff_updown_disp_patches.s
     void StartDispUpdownNumberIcons();
     void BranchBackDispUpdownNumberIcons();
+    // enemy_sampling_patches.s
+    void StartSampleRandomTarget();
+    void BranchBackSampleRandomTarget();
     // map_change_patches.s
     void StartMapLoad();
     void BranchBackMapLoad();
@@ -141,6 +144,9 @@ extern "C" {
     }
     void spendFpOnSwitchPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
         mod::pit_randomizer::SpendFpOnSwitchingPartner(unit);
+    }
+    int32_t sumWeaponTargetRandomWeights(int32_t* weights) {
+        return mod::pit_randomizer::SumWeaponTargetRandomWeights(weights);
     }
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
@@ -1528,6 +1534,16 @@ void* EnemyUseAdditionalItemsCheck(BattleWorkUnit* unit) {
     }
 }
 
+int32_t SumWeaponTargetRandomWeights(int32_t* weights) {
+    int32_t sum = 0;
+    auto& twork = ttyd::battle::g_BattleWork->weapon_targets_work;
+    for (int32_t i = 0; i < twork.num_targets; ++i) {
+        if (weights[i] <= 0) weights[i] = 1;
+        sum += weights[i];
+    }
+    return sum;
+}
+
 void ReorderWeaponTargets() {
     auto& twork = ttyd::battle::g_BattleWork->weapon_targets_work;
     
@@ -1845,6 +1861,12 @@ void ApplyItemAndAttackPatches() {
             if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
                 item.weapon_params =
                     &ttyd::battle_item_data::ItemWeaponData_CookingItem;
+            } else if (item.weapon_params && item.hp_restored) {
+                // For HP restoration items with weapon structs, give them
+                // Mushroom-like target weighting (heal the least healthy).
+                item.weapon_params->target_weighting_flags =
+                    ttyd::battle_item_data::ItemWeaponData_Kinoko.
+                        target_weighting_flags;
             }
             // Fix sorting order.
             if (item.type_sort_order > 0x31) {
@@ -2322,6 +2344,16 @@ void ApplyItemAndAttackPatches() {
         target_property_flags &= ~0x2000;
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
         base_fp_cost = 5;
+
+    // Prevent partner status buff moves from being used on Infatuated enemies.
+    ttyd::unit_party_christine::partyWeapon_ChristineKiss.
+        target_class_flags |= 0x10;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaKiss.
+        target_class_flags |= 0x10;
+    ttyd::unit_party_clauda::partyWeapon_ClaudaKumogakureAttack.
+        target_class_flags |= 0x10;
+    ttyd::unit_party_vivian::partyWeapon_VivianShadowGuard.
+        target_class_flags |= 0x10;
     
     // Sweet Feast and Showstopper both cost 4 SP.
     ttyd::battle_mario::marioWeapon_Genki1.base_sp_cost = 4;
@@ -2565,6 +2597,16 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGetItemWeaponNameOpAddr),
         &kGetItemWeaponNameOpcode, sizeof(uint32_t));
+        
+    // Sums weapon targets' random weights, ensuring that each weight is > 0.
+    const int32_t kEnemySamplingRandomWeightBeginHookAddress = 0x800ff528;
+    const int32_t kEnemySamplingRandomWeightEndHookAddress = 0x800ff544;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEnemySamplingRandomWeightBeginHookAddress),
+        reinterpret_cast<void*>(StartSampleRandomTarget));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSampleRandomTarget),
+        reinterpret_cast<void*>(kEnemySamplingRandomWeightEndHookAddress));
         
     // Changes targeting order for certain attacks so the user hits themselves
     // after all other targets.
