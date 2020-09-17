@@ -72,7 +72,7 @@ void DrawOptionsMenu() {
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v1.12 r34 by jdaster64\n"
+        "PM:TTYD Infinite Pit v1.12.1 r35 by jdaster64\n"
         "https://github.com/jdaster64/ttyd-infinite-pit\n"
         "Guide / Other mods: https://goo.gl/vjJjVd";
     DrawCenteredTextWindow(
@@ -81,7 +81,7 @@ void DrawTitleScreenInfo() {
 
 // Handles printing stuff to the screen for debugging purposes; no longer used.
 void DrawDebuggingFunctions() {
-    uint32_t& enemyTypeToTest = g_Randomizer->state_.debug_[0];
+    int32_t enemyTypeToTest = g_Randomizer->state_.debug_[0];
     
     // D-Pad Up or Down to change the type of enemy to test.
     if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
@@ -93,8 +93,8 @@ void DrawDebuggingFunctions() {
     } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
         enemyTypeToTest -= 10;
     }
-    if (enemyTypeToTest > 101) enemyTypeToTest = 101;
-    if (enemyTypeToTest < 1) enemyTypeToTest = 1;
+    enemyTypeToTest = Clamp(enemyTypeToTest, 1, 101);
+    g_Randomizer->state_.debug_[0] = enemyTypeToTest;
     
     // Print the current enemy type to the screen at all times.
     char buf[16];

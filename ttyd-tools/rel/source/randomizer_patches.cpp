@@ -1571,8 +1571,8 @@ void ReorderWeaponTargets() {
 bool CheckIfPlayerDefeated() {
     for (int32_t ai = 0; ai < 3; ++ai) {
         auto* battleWork = ttyd::battle::g_BattleWork;
-        auto& alliance = battleWork->alliance_information[ai];
-        if (alliance.identifier == 2) {
+        auto* alliances = battleWork->alliance_information;
+        if (alliances[ai].identifier == 2) {
             int32_t idx = 0;
             for (; idx < 64; ++idx) {
                 BattleWorkUnit* unit = battleWork->battle_units[idx];
@@ -1587,7 +1587,7 @@ bool CheckIfPlayerDefeated() {
                 }
             }
             if (idx == 64) {  // Didn't break early (i.e. none are alive)
-                alliance.loss_condition_met = true;
+                alliances[ai].loss_condition_met = true;
                 return true;
             }
         }
