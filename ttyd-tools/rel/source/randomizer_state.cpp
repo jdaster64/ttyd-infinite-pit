@@ -330,7 +330,8 @@ int32_t RandomizerState::StarPowersObtained() const {
 }
 
 bool RandomizerState::StarPowerEnabled() const {
-    return CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0;
+    return GetOptionValue(ALWAYS_ENABLE_AUDIENCE) || 
+           (CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0);
 }
 
 }

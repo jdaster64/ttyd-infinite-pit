@@ -8,6 +8,7 @@
 
 namespace mod {
 
+extern const uint32_t kTik06PitBeroEntryOffset;
 extern const uint32_t kTik06RightBeroEntryOffset;
 extern const uint32_t kPitBattleSetupTblOffset;
 extern const uint32_t kPitEnemy100Offset;

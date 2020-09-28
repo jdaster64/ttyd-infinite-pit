@@ -109,6 +109,23 @@ extern "C" {
     // pouch_alloc_patches.s
     void StartCheckPouchAlloc();
     void BranchBackCheckPouchAlloc();
+    // star_power_patches.s
+    void StartEnableAppealCheck();
+    void BranchBackEnableAppealCheck();
+    void StartAddAudienceCheck();
+    void BranchBackAddAudienceCheck();
+    void StartDisplayAudienceCheck();
+    void BranchBackDisplayAudienceCheck();
+    void StartSaveAudienceCountCheck();
+    void BranchBackSaveAudienceCountCheck();
+    void StartSetInitialAudienceCheck();
+    void BranchBackSetInitialAudienceCheck();
+    void StartObjectFallOnAudienceCheck();
+    void BranchBackObjectFallOnAudienceCheck();
+    void StartAddPuniToAudienceCheck();
+    void BranchBackAddPuniToAudienceCheck();
+    void StartEnableIncrementingBingoCheck();
+    void BranchBackEnableIncrementingBingoCheck();
     // status_window_patches.s
     void StartPreventDpadShortcutsOutsidePit();
     void ConditionalBranchPreventDpadShortcutsOutsidePit();
@@ -156,6 +173,9 @@ extern "C" {
     }
     bool checkOutsidePit() {
         return strcmp("jon", mod::GetCurrentArea()) != 0;
+    }
+    bool checkStarPowersEnabled() {
+        return mod::pit_randomizer::g_Randomizer->state_.StarPowerEnabled();
     }
 }
 
@@ -376,6 +396,15 @@ EVT_END()
 // Wrapper for modified floor-incrementing event.
 EVT_BEGIN(FloorIncrementEvtHook)
 RUN_CHILD_EVT(FloorIncrementEvt)
+RETURN()
+EVT_END()
+
+// Runs when taking the pipe to enter the Pit.
+// TODO: Properly encapsulate, enable all partners; testing with Goombella.
+EVT_BEGIN(PitStartPipeEvt)
+// USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, 1)
+// USER_FUNC(FullyHealPartyMember, 1)
+// USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, 1, 0, 0, 0)
 RETURN()
 EVT_END()
 
@@ -710,6 +739,12 @@ void OnModuleLoaded(OSModuleInfo* module) {
         g_PitModulePtr = module_ptr;
     } else {
         if (module_id == ModuleId::TIK) {
+            // Run custom event code when entering the Pit pipe.
+            BeroEntry* tik_06_pipe_bero = reinterpret_cast<BeroEntry*>(
+                module_ptr + kTik06PitBeroEntryOffset);
+            tik_06_pipe_bero->out_evt_code = reinterpret_cast<void*>(
+                const_cast<int32_t*>(PitStartPipeEvt));
+            
             // Make tik_06 (pre-Pit room)'s right exit loop back to itself.
             BeroEntry* tik_06_e_bero = reinterpret_cast<BeroEntry*>(
                 module_ptr + kTik06RightBeroEntryOffset);
@@ -1186,9 +1221,9 @@ bool CheckForUnusableItemInMenu() {
     if (party_member_target == 0) {
         if (g_Randomizer->state_.GetOptionValue(
             RandomizerState::SHINE_SPRITES_MARIO)) {
-            // If Star Powers are enabled and you've upgraded SP less than 4,
+            // If you have a Star Power and you've upgraded SP less than 4,
             // the Shine Sprite can be used to increase it further.
-            if (g_Randomizer->state_.StarPowerEnabled() &&
+            if (ttyd::mario_pouch::pouchGetMaxAP() > 0 &&
                 ttyd::mario_pouch::pouchGetMaxAP() - 
                 g_Randomizer->state_.StarPowersObtained() * 100 < 400)
                 return false;
@@ -1596,8 +1631,8 @@ bool CheckIfPlayerDefeated() {
 }
 
 void DisplayStarPowerNumber() {
-    // Don't display SP if Star Powers aren't yet enabled.
-    if (!g_Randomizer->state_.StarPowerEnabled()) return;
+    // Don't display SP if no Star Powers have been unlocked yet.
+    if (ttyd::mario_pouch::pouchGetMaxAP() <= 0) return;
     
     // Don't try to display SP if the status bar is not on-screen.
     float menu_height = *reinterpret_cast<float*>(
@@ -2534,6 +2569,64 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kCharlietonPitListLengthHookAddr),
         &kLoadCharlietonPitListLengthOpcode, sizeof(uint32_t));
+        
+    // Enable Star Power features always, if the randomizer option is set.
+    const int32_t kEnableAppealHookAddr         = 0x801239e4;
+    const int32_t kAddAudienceHookAddr          = 0x801a1734;
+    const int32_t kDisplayAudienceHookAddr      = 0x801a6cb0;
+    const int32_t kSaveAudienceCountHookAddr    = 0x801a6b68;
+    const int32_t kSetInitialAudienceHookAddr   = 0x801a61ac;
+    const int32_t kObjectFallOnAudienceHookAddr = 0x801469e4;
+    const int32_t kAddPuniToAudienceHookAddr    = 0x801a15c8;
+    const int32_t kEnableBingoSlotsHookAddr     = 0x802034b4;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEnableAppealHookAddr),
+        reinterpret_cast<void*>(StartEnableAppealCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackEnableAppealCheck),
+        reinterpret_cast<void*>(kEnableAppealHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kAddAudienceHookAddr),
+        reinterpret_cast<void*>(StartAddAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAddAudienceCheck),
+        reinterpret_cast<void*>(kAddAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kDisplayAudienceHookAddr),
+        reinterpret_cast<void*>(StartDisplayAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackDisplayAudienceCheck),
+        reinterpret_cast<void*>(kDisplayAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSaveAudienceCountHookAddr),
+        reinterpret_cast<void*>(StartSaveAudienceCountCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSaveAudienceCountCheck),
+        reinterpret_cast<void*>(kSaveAudienceCountHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSetInitialAudienceHookAddr),
+        reinterpret_cast<void*>(StartSetInitialAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSetInitialAudienceCheck),
+        reinterpret_cast<void*>(kSetInitialAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kObjectFallOnAudienceHookAddr),
+        reinterpret_cast<void*>(StartObjectFallOnAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackObjectFallOnAudienceCheck),
+        reinterpret_cast<void*>(kObjectFallOnAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kAddPuniToAudienceHookAddr),
+        reinterpret_cast<void*>(StartAddPuniToAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAddPuniToAudienceCheck),
+        reinterpret_cast<void*>(kAddPuniToAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEnableBingoSlotsHookAddr),
+        reinterpret_cast<void*>(StartEnableIncrementingBingoCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackEnableIncrementingBingoCheck),
+        reinterpret_cast<void*>(kEnableBingoSlotsHookAddr + 0x4));
         
     // Enable the crash handler.
     const int32_t kCrashHandlerEnableOpAddr = 0x80009b2c;

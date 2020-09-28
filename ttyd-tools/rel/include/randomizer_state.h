@@ -15,6 +15,7 @@ struct RandomizerState {
         SWITCH_PARTY_COST_FP    = 0xc00,    // Switching partners costs 1-3 FP
         YOSHI_COLOR_SELECT      = 0x1000,   // Manually selecting Yoshi color
         SHINE_SPRITES_MARIO     = 0x2000,   // Increase max SP w/Shine Sprites
+        ALWAYS_ENABLE_AUDIENCE  = 0x4000,   // Always enable SP features
         
         // Options that aren't controlled by flags (used by menu state).
         CHANGE_PAGE             = -100,

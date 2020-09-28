@@ -12,6 +12,7 @@
 namespace mod {
 
 // TODO: #ifdef switch for multiple regions.
+const uint32_t kTik06PitBeroEntryOffset = 0x1f240;
 const uint32_t kTik06RightBeroEntryOffset = 0x1f2f4;
 const uint32_t kPitBattleSetupTblOffset = 0x1d460;
 const uint32_t kPitEnemy100Offset = 0xef90;
