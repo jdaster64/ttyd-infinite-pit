@@ -33,6 +33,10 @@ namespace MsgKey {
         MENU_DAMAGE_GAESHI,
         MENU_FIRE_NAGURI,
         MENU_ICE_NAGURI,
+        MENU_KIKEN_DE_POWER,
+        MENU_KIKEN_DE_POWER_P,
+        MENU_PINCH_DE_GANBARU,
+        MENU_PINCH_DE_GANBARU_P,
         MENU_TAMATSUKI_JUMP,
         MENU_TSURANUKI_NAGURI,
         MSG_2BAI_DAMAGE,
@@ -48,7 +52,11 @@ namespace MsgKey {
         MSG_JON_KANBAN_1,
         MSG_JON_KANBAN_3,
         MSG_KAME_NO_NOROI,
+        MSG_KIKEN_DE_POWER,
+        MSG_KIKEN_DE_POWER_P,
         MSG_NANCY_FRAPPE,
+        MSG_PINCH_DE_GANBARU,
+        MSG_PINCH_DE_GANBARU_P,
         MSG_PKR_MONOSIRI,
         MSG_PTR_MEROMERO_KISS,
         MSG_PWD_KUMOGAKURE,
@@ -90,6 +98,10 @@ constexpr const char* kKeyLookups[] = {
     "menu_damage_gaeshi",
     "menu_fire_naguri",
     "menu_ice_naguri",
+    "menu_kiken_de_power",
+    "menu_kiken_de_power_p",
+    "menu_pinch_de_ganbaru",
+    "menu_pinch_de_ganbaru_p",
     "menu_tamatsuki_jump",
     "menu_tsuranuki_naguri",
     "msg_2bai_damage",
@@ -105,7 +117,11 @@ constexpr const char* kKeyLookups[] = {
     "msg_jon_kanban_1",
     "msg_jon_kanban_3",
     "msg_kame_no_noroi",
+    "msg_kiken_de_power",
+    "msg_kiken_de_power_p",
     "msg_nancy_frappe",
+    "msg_pinch_de_ganbaru",
+    "msg_pinch_de_ganbaru_p",
     "msg_pkr_monosiri",
     "msg_ptr_meromero_kiss",
     "msg_pwd_kumogakure",
@@ -351,6 +367,38 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
         case MsgKey::MENU_DAMAGE_FLOWER_P:
             return "Recover 1 FP whenever your\n"
                    "partner receives damage.";
+        case MsgKey::MSG_KIKEN_DE_POWER:
+        case MsgKey::MENU_KIKEN_DE_POWER:
+            if (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::WEAKER_RUSH_BADGES)) {
+                return "Increase Attack power by 2\n"
+                       "when Mario is in Peril.";
+            }
+            return nullptr;
+        case MsgKey::MSG_KIKEN_DE_POWER_P:
+        case MsgKey::MENU_KIKEN_DE_POWER_P:
+            if (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::WEAKER_RUSH_BADGES)) {
+                return "Increase Attack power by 2\n"
+                       "when your partner is in Peril.";
+            }
+            return nullptr;
+        case MsgKey::MSG_PINCH_DE_GANBARU:
+        case MsgKey::MENU_PINCH_DE_GANBARU:
+            if (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::WEAKER_RUSH_BADGES)) {
+                return "Increase Attack power by 1\n"
+                       "when Mario is in Danger.";
+            }
+            return nullptr;
+        case MsgKey::MSG_PINCH_DE_GANBARU_P:
+        case MsgKey::MENU_PINCH_DE_GANBARU_P:
+            if (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::WEAKER_RUSH_BADGES)) {
+                return "Increase Attack power by 1\n"
+                       "when your ally is in Danger.";
+            }
+            return nullptr;
     }
     // Should not be reached.
     return nullptr;

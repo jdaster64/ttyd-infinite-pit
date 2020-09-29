@@ -109,6 +109,11 @@ extern "C" {
     // pouch_alloc_patches.s
     void StartCheckPouchAlloc();
     void BranchBackCheckPouchAlloc();
+    // rush_badge_patches.s
+    void StartGetDangerStrength();
+    void BranchBackGetDangerStrength();
+    void StartGetPerilStrength();
+    void BranchBackGetPerilStrength();
     // star_power_patches.s
     void StartEnableAppealCheck();
     void BranchBackEnableAppealCheck();
@@ -176,6 +181,18 @@ extern "C" {
     }
     bool checkStarPowersEnabled() {
         return mod::pit_randomizer::g_Randomizer->state_.StarPowerEnabled();
+    }
+    int32_t getDangerStrength(int32_t num_badges) {
+        bool weaker_rush_badges =
+            mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
+                mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
+        return num_badges * (weaker_rush_badges ? 1 : 2);
+    }
+    int32_t getPerilStrength(int32_t num_badges) {
+        bool weaker_rush_badges =
+            mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
+                mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
+        return num_badges * (weaker_rush_badges ? 2 : 5);
     }
 }
 
@@ -2569,6 +2586,22 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kCharlietonPitListLengthHookAddr),
         &kLoadCharlietonPitListLengthOpcode, sizeof(uint32_t));
+        
+    // Add code that weakens Power / Mega Rush badges if the option is set.
+    const int32_t kPowerRushHookAddr    = 0x800fd93c;
+    const int32_t kMegaRushHookAddr     = 0x800fd91c;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kPowerRushHookAddr),
+        reinterpret_cast<void*>(StartGetDangerStrength));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackGetDangerStrength),
+        reinterpret_cast<void*>(kPowerRushHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kMegaRushHookAddr),
+        reinterpret_cast<void*>(StartGetPerilStrength));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackGetPerilStrength),
+        reinterpret_cast<void*>(kMegaRushHookAddr + 0x4));
         
     // Enable Star Power features always, if the randomizer option is set.
     const int32_t kEnableAppealHookAddr         = 0x801239e4;
