@@ -733,7 +733,10 @@ bool GetEnemyStats(
     int32_t base_hp_pct = 
         floor_group > 9 ?
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
-    int32_t base_atkdef_pct = 
+    int32_t base_atk_pct = 
+        floor_group > 9 ?
+            100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
+    int32_t base_def_pct = 
         floor_group > 9 ?
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
             
@@ -743,7 +746,7 @@ bool GetEnemyStats(
         *out_hp = Clamp((hp + 5000) / 10000, 1, 9999);
     }
     if (out_atk) {
-        int32_t atk = Min(ei->atk_scale * base_atkdef_pct, 1000000);
+        int32_t atk = Min(ei->atk_scale * base_atk_pct, 1000000);
         atk += (base_attack_power - ei->atk_base) * 100;
         atk *= g_Randomizer->state_.atk_multiplier_;
         *out_atk = Clamp((atk + 5000) / 10000, 1, 99);
@@ -753,7 +756,7 @@ bool GetEnemyStats(
             *out_def = 0;
         } else {
             // Enemies with def_scale > 0 should always have at least 1 DEF.
-            int32_t def = (ei->def_scale * base_atkdef_pct + 50) / 100;
+            int32_t def = (ei->def_scale * base_def_pct + 50) / 100;
             def = def < 1 ? 1 : def;
             *out_def = def > 99 ? 99 : def;
         }

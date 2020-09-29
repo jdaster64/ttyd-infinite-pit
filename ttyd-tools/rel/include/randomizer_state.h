@@ -6,7 +6,7 @@ namespace mod::pit_randomizer {
 
 struct RandomizerState {
     enum Options_Flags {
-        NUM_CHEST_REWARDS       = 0x7,      // 0 ~ 5 (0 = random); changes seeds
+        // Options that do not change seeding.
         MERLEE                  = 0x10,     // Infinite Merlee curses
         SUPERGUARDS_COST_FP     = 0x20,     // Superguards cost 1 FP
         NO_EXP_MODE             = 0x40,     // Start at level 99 w/99 BP, no EXP
@@ -17,6 +17,19 @@ struct RandomizerState {
         SHINE_SPRITES_MARIO     = 0x2000,   // Increase max SP w/Shine Sprites
         ALWAYS_ENABLE_AUDIENCE  = 0x4000,   // Always enable SP features
         WEAKER_RUSH_BADGES      = 0x8000,   // Rush badges increase ATK less
+        
+        // Options that DO change seeding.
+        NUM_CHEST_REWARDS       = 0x7,      // 0 ~ 5 (0 = random); changes seeds
+        POST_100_SCALING        = 0x30000,  // Sets HP / ATK scale after fl. 100
+        START_WITH_PARTNERS     = 0x40000,  // Start with all base-rank partners
+        START_WITH_SWEET_TREAT  = 0x80000,  // Start with Sweet Treat
+        BATTLE_REWARD_MODE      = 0x300000, // Alternate battle reward schemes
+        
+        // Individual modes of composite options.
+        POST_100_ATK_SCALING    = 0x10000,
+        POST_100_DEF_SCALING    = 0x20000,
+        CONDITION_DROPS_HELD    = 0x100000, // Enemy drops gated by conditions
+        NO_HELD_ITEMS           = 0x200000, // Conditions only, no held items
         
         // Options that aren't controlled by flags (used by menu state).
         CHANGE_PAGE             = -100,
