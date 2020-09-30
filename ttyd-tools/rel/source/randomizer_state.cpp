@@ -195,16 +195,27 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
             }
             break;
         }
-        case SUPERGUARDS_COST_FP: {
-            options_ ^= SUPERGUARDS_COST_FP;
-            break;
-        }
         case SWITCH_PARTY_COST_FP: {
             int32_t value = GetOptionValue(option) + change;
             if (value < 0) value = 3;
             if (value > 3) value = 0;
             options_ = (options_ & ~SWITCH_PARTY_COST_FP) | 
                        (SWITCH_PARTY_COST_FP / 3 * value);
+            break;
+        }
+        case BATTLE_REWARD_MODE: {
+            if (change == 0) change = 1;
+            int32_t value = GetOptionValue(option) + change * (option / 3);
+            if (value < 0) value = NO_HELD_ITEMS;
+            if (value > NO_HELD_ITEMS) value = 0;
+            options_ = (options_ & ~option) | value;
+            break;
+        }
+        case POST_100_SCALING: {
+            int32_t value = GetOptionValue(option) + change * (option / 3);
+            if (value < 0) value = option;
+            if (value > option) value = 0;
+            options_ = (options_ & ~option) | value;
             break;
         }
         case HP_MODIFIER: {
@@ -217,6 +228,10 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
             atk_multiplier_ += change;
             if (atk_multiplier_ < 1) atk_multiplier_ = 1;
             if (atk_multiplier_ > 1000) atk_multiplier_ = 1000;
+            break;
+        }
+        default: {
+            options_ ^= option;
             break;
         }
     }
@@ -232,6 +247,9 @@ int32_t RandomizerState::GetOptionValue(int32_t option) const {
             return atk_multiplier_;
         case SWITCH_PARTY_COST_FP:
             return (options_ & SWITCH_PARTY_COST_FP) / (SWITCH_PARTY_COST_FP/3);
+        case POST_100_SCALING:
+        case BATTLE_REWARD_MODE:
+            return (options_ & option);
         default:
             return (options_ & option) != 0;
     }
@@ -245,12 +263,32 @@ void RandomizerState::GetOptionStrings(
             sprintf(name, "Rewards per chest:");
             break;
         }
+        case BATTLE_REWARD_MODE: {
+            sprintf(name, "Battle drops:");
+            break;
+        }
+        case START_WITH_PARTNERS: {
+            sprintf(name, "Start with all partners:");
+            break;
+        }
+        case START_WITH_SWEET_TREAT: {
+            sprintf(name, "Start with Sweet Treat:");
+            break;
+        }
         case NO_EXP_MODE: {
             sprintf(name, "No EXP, Max BP mode:");
             break;
         }
         case START_WITH_NO_ITEMS: {
             sprintf(name, "Starter set of items:");
+            break;
+        }
+        case SHINE_SPRITES_MARIO: {
+            sprintf(name, "Use Shines on Mario for +SP:");
+            break;
+        }
+        case ALWAYS_ENABLE_AUDIENCE: {
+            sprintf(name, "Audience always present:");
             break;
         }
         case MERLEE: {
@@ -265,6 +303,10 @@ void RandomizerState::GetOptionStrings(
             sprintf(name, "Partner switch cost:");
             break;
         }
+        case WEAKER_RUSH_BADGES: {
+            sprintf(name, "Power/Mega Rush power:");
+            break;
+        }
         case HP_MODIFIER: {
             sprintf(name, "Enemy HP multiplier:");
             break;
@@ -273,12 +315,41 @@ void RandomizerState::GetOptionStrings(
             sprintf(name, "Enemy ATK multiplier:");
             break;
         }
+        case POST_100_HP_SCALING: {
+            sprintf(name, "Late-Pit HP scaling:");
+            break;
+        }
+        case POST_100_ATK_SCALING: {
+            sprintf(name, "Late-Pit ATK scaling:");
+            break;
+        }
+        case POST_100_SCALING: {
+            sprintf(name, "Late-Pit stat scaling:");
+            break;
+        }
     }
     
     // Set value.
     int32_t option_value = GetOptionValue(option);
     *color = 0;
     switch (option) {
+        case BATTLE_REWARD_MODE: {
+            switch (option_value) {
+                case 0: {
+                    sprintf(value, "Held + bonus");
+                    break;
+                }
+                case CONDITION_DROPS_HELD: {
+                    sprintf(value, "Condition-gated");
+                    break;
+                }
+                case NO_HELD_ITEMS: {
+                    sprintf(value, "Conditions only");
+                    break;
+                }
+            }
+            break;
+        }
         case NUM_CHEST_REWARDS: {
             if (option_value == 0) {
                 sprintf(value, "Varies");
@@ -307,9 +378,39 @@ void RandomizerState::GetOptionStrings(
             }
             break;
         }
+        case POST_100_SCALING: {
+            switch (option_value) {
+                case 0: {
+                    sprintf(value, "+5%% HP + ATK");
+                    break;
+                }
+                case POST_100_HP_SCALING: {
+                    sprintf(value, "+10%% HP, +5%% ATK");
+                    break;
+                }
+                case POST_100_ATK_SCALING: {
+                    sprintf(value, "+5%% HP, +10%% ATK");
+                    break;
+                }
+                case POST_100_SCALING: {
+                    sprintf(value, "+10%% HP + ATK");
+                    break;
+                }
+            }
+            break;
+        }
         case HP_MODIFIER: 
         case ATK_MODIFIER: {
             sprintf(value, "%" PRId32 "%s", option_value, "%");
+            break;
+        }
+        case POST_100_HP_SCALING:
+        case POST_100_ATK_SCALING: {
+            sprintf(value, option_value ? "+10%%" : "+5%%");
+            break;
+        }
+        case WEAKER_RUSH_BADGES: {
+            sprintf(value, option_value ? "+1/+2" : "+2/+5");
             break;
         }
         default: {

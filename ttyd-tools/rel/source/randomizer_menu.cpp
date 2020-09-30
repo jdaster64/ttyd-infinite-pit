@@ -23,8 +23,9 @@ const char kStartRoomName[] = "tik_06";
 // Menu constants.
 const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
-const int32_t kMenuWidth            = 320;
+const int32_t kMenuWidth            = 360;
 const int32_t kMenuPadding          = 15;
+const int32_t kNumOptionPages       = 4;
 const int32_t kOptionsPerPage       = 5;
 const int32_t kFadeoutStartTime     = 600;
 const int32_t kFadeoutEndTime       = 600 + 15;
@@ -70,14 +71,24 @@ bool ShouldTickOrAutotick(int32_t time_held) {
 int32_t GetMenuState(int32_t page, int32_t selection) {
     switch (100 * page + selection) {
         case 101: return RandomizerState::NUM_CHEST_REWARDS;
-        case 102: return RandomizerState::NO_EXP_MODE;
-        case 103: return RandomizerState::START_WITH_NO_ITEMS;
-        case 104: return RandomizerState::MERLEE;
+        case 102: return RandomizerState::BATTLE_REWARD_MODE;
+        case 103: return RandomizerState::START_WITH_PARTNERS;
+        case 104: return RandomizerState::START_WITH_SWEET_TREAT;
         
-        case 201: return RandomizerState::SUPERGUARDS_COST_FP;
-        case 202: return RandomizerState::SWITCH_PARTY_COST_FP;
-        case 203: return RandomizerState::HP_MODIFIER;
-        case 204: return RandomizerState::ATK_MODIFIER;
+        case 201: return RandomizerState::NO_EXP_MODE;
+        case 202: return RandomizerState::START_WITH_NO_ITEMS;
+        case 203: return RandomizerState::SHINE_SPRITES_MARIO;
+        case 204: return RandomizerState::ALWAYS_ENABLE_AUDIENCE;
+        
+        case 301: return RandomizerState::MERLEE;
+        case 302: return RandomizerState::SUPERGUARDS_COST_FP;
+        case 303: return RandomizerState::SWITCH_PARTY_COST_FP;
+        case 304: return RandomizerState::WEAKER_RUSH_BADGES;
+        
+        case 401: return RandomizerState::HP_MODIFIER;
+        case 402: return RandomizerState::ATK_MODIFIER;
+        case 403: return RandomizerState::POST_100_HP_SCALING;
+        case 404: return RandomizerState::POST_100_ATK_SCALING;
         
         default:  return RandomizerState::CHANGE_PAGE;
     }
@@ -189,7 +200,9 @@ void RandomizerMenu::Update() {
                 }
                 case RandomizerState::CHANGE_PAGE: {
                     if (time_button_held_ == 0) {
-                        menu_page_ ^= 3;    // Switch pages.
+                        menu_page_ += direction ? direction : 1;
+                        if (menu_page_ < 1) menu_page_ = kNumOptionPages;
+                        if (menu_page_ > kNumOptionPages) menu_page_ = 1;
                     }
                     break;
                 }
@@ -263,8 +276,17 @@ void RandomizerMenu::Draw() {
     
     // Print the current page information in the bottom row.
     color = GetActiveColor(kOptionsPerPage, alpha);
-    sprintf(name_buf, "Next Page (%" PRId32 " of 2)", menu_page_);
+    sprintf(
+        name_buf, "Change Page (%" PRId32 "/%" PRId32 ")", 
+        menu_page_, kNumOptionPages);
     DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
+    // Print a warning over selections that change seeding.
+    if (menu_page_ == 1 && menu_selection_ != kOptionsPerPage) {
+        sprintf(name_buf, "*Affects seeding");
+        DrawText(
+            name_buf, kValueX, kRowY + 1, 0xffu, true, 
+            /* color = red */ 0xff0000ffU, 0.575f, /* right-top */ 2);
+    }
 }
 
 }

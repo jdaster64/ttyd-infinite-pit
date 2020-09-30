@@ -26,10 +26,10 @@ struct RandomizerState {
         BATTLE_REWARD_MODE      = 0x300000, // Alternate battle reward schemes
         
         // Individual modes of composite options.
-        POST_100_ATK_SCALING    = 0x10000,
-        POST_100_DEF_SCALING    = 0x20000,
-        CONDITION_DROPS_HELD    = 0x100000, // Enemy drops gated by conditions
-        NO_HELD_ITEMS           = 0x200000, // Conditions only, no held items
+        POST_100_HP_SCALING     = 0x10000,
+        POST_100_ATK_SCALING    = 0x20000,
+        CONDITION_DROPS_HELD    = 0x100000, // Held item drop gated by condition
+        NO_HELD_ITEMS           = 0x200000, // Condition items only, none held
         
         // Options that aren't controlled by flags (used by menu state).
         CHANGE_PAGE             = -100,
