@@ -132,6 +132,9 @@ void ApplyItemAndAttackPatches();
 // Apply miscellaneous small patches that do not require function hooks.
 void ApplyMiscPatches();
 
+// Initializes all selected options on initially entering the Pit.
+EVT_DECLARE_USER_FUNC(InitOptionsOnPitEntry, 0)
+
 // Fetches information required for dynamically spawning an enemy NPC,
 // such as the model name, battle id, and initial position.
 EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)

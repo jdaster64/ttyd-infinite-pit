@@ -406,7 +406,7 @@ void RandomizerState::GetOptionStrings(
         }
         case POST_100_HP_SCALING:
         case POST_100_ATK_SCALING: {
-            sprintf(value, option_value ? "+10%%" : "+5%%");
+            sprintf(value, option_value ? "+10%% / set" : "+5%% / set");
             break;
         }
         case WEAKER_RUSH_BADGES: {

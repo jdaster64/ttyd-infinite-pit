@@ -417,11 +417,8 @@ RETURN()
 EVT_END()
 
 // Runs when taking the pipe to enter the Pit.
-// TODO: Properly encapsulate, enable all partners; testing with Goombella.
 EVT_BEGIN(PitStartPipeEvt)
-// USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, 1)
-// USER_FUNC(FullyHealPartyMember, 1)
-// USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, 1, 0, 0, 0)
+USER_FUNC(InitOptionsOnPitEntry)
 RETURN()
 EVT_END()
 
@@ -2784,6 +2781,41 @@ void ApplyMiscPatches() {
             if (!result) result = CheckIfPlayerDefeated();
             return result;
         });
+}
+
+EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::START_WITH_PARTNERS)) {
+        // Enable and fully heal all partners.
+        for (int32_t i = 1; i <= 7; ++i) {
+            evt->evtArguments[0] = i;
+            ttyd::evt_pouch::evt_pouch_party_join(evt, isFirstCall);
+            FullyHealPartyMember(evt, isFirstCall);
+        }
+        // Put Goombella on the field.
+        evt->evtArguments[0] = 0;
+        evt->evtArguments[1] = 1;
+        evt->evtArguments[2] = 0;
+        evt->evtArguments[3] = 0;
+        evt->evtArguments[4] = 0;
+        ttyd::evt_mario::evt_mario_set_party_pos(evt, isFirstCall);
+        // Do NOT disable partners from the reward pool; they will be
+        // replaced with extra Shine Sprites.
+    }
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::START_WITH_SWEET_TREAT)) {
+        // Give the player Sweet Treat + 1.00 SP.
+        ttyd::mario_pouch::pouchGetItem(ItemType::MAGICAL_MAP);
+        auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        pouch.max_sp += 100;
+        pouch.current_sp = pouch.max_sp;
+        pouch.star_powers_obtained |= 1;
+        // Disable Sweet Treat from the rewards pool.
+        g_Randomizer->state_.reward_flags_ |= (1 << 5);
+    }
+    // All other options are handled immediately on setting them,
+    // or are checked explicitly every time they are relevant.
+    return 2;
 }
 
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {

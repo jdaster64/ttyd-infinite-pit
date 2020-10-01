@@ -730,12 +730,18 @@ bool GetEnemyStats(
     if (!ei) return false;
     
     int32_t floor_group = g_Randomizer->state_.floor_ / 10;
+    
+    int32_t hp_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::POST_100_HP_SCALING) ? 10 : 5;
+    int32_t atk_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::POST_100_ATK_SCALING) ? 10 : 5;
+        
     int32_t base_hp_pct = 
         floor_group > 9 ?
-            100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
+            100 + (floor_group - 9) * hp_scale : kStatPercents[floor_group];
     int32_t base_atk_pct = 
         floor_group > 9 ?
-            100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
+            100 + (floor_group - 9) * atk_scale : kStatPercents[floor_group];
     int32_t base_def_pct = 
         floor_group > 9 ?
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
@@ -1290,6 +1296,14 @@ int16_t PickChestReward() {
         // Pick a random pool badge.
         reward = PickRandomItem(/* seeded = */ true, 0, 0, 1, 0);
     }
+    
+    // If partners were unlocked from beginning and a partner was selected,
+    // replace the reward with an extra Shine Sprite.
+    if (reward < 0 && g_Randomizer->state_.GetOptionValue(
+        RandomizerState::START_WITH_PARTNERS)) {
+        reward = ItemType::GOLD_BAR_X3;
+    }
+    
     return reward;
 }
 
