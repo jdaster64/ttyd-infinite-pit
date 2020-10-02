@@ -130,11 +130,11 @@ int32_t IntegerToFmtString(int32_t val, char* out_buf, int32_t max_val) {
     if (val > max_val) val = max_val;
     if (val >= 1'000'000) {
         return sprintf(
-            out_buf, "%" PRId32 ",%02" PRId32 ",%02" PRId32, 
+            out_buf, "%" PRId32 ",%03" PRId32 ",%03" PRId32, 
             val / 1'000'000, val / 1000 % 1000, val % 1000);
     } else if (val >= 1'000) {
         return sprintf(
-            out_buf, "%" PRId32 ",%02" PRId32, val / 1000, val % 1000);
+            out_buf, "%" PRId32 ",%03" PRId32, val / 1000, val % 1000);
     }
     return sprintf(out_buf, "%" PRId32, val);
 }
