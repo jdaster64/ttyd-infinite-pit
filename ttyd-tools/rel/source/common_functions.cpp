@@ -1,5 +1,7 @@
 #include "common_functions.h"
 
+#include "evt_cmd.h"
+
 #include <ttyd/mariost.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_mapchange.h>
@@ -18,7 +20,9 @@ const uint32_t kPitBattleSetupTblOffset = 0x1d460;
 const uint32_t kPitEnemy100Offset = 0xef90;
 const uint32_t kPitTreasureTableOffset = 0x11320;
 const uint32_t kPitRewardFloorReturnBeroEntryOffset = 0x12520;
+const uint32_t kPitBossFloorEntryBeroEntryOffset = 0x1240c;
 const uint32_t kPitBossFloorReturnBeroEntryOffset = 0x12448;
+const uint32_t kPitBossFloorSetupEvtOffset = 0x124c0;
 const uint32_t kPitMoverLastSpawnFloorOffset = 0x119a0;
 const uint32_t kPitCharlietonSpawnChanceOffset = 0x11ea4;
 const uint32_t kPitCharlietonTalkEvtOffset = 0x11a1c;
@@ -29,6 +33,7 @@ const uint32_t kPitFloorIncrementEvtOffset = 0x123c4;
 const uint32_t kPitEnemySetupEvtOffset = 0x102a4;
 const uint32_t kPitOpenPipeEvtOffset = 0x120d0;
 const uint32_t kPitBonetailFirstEvtOffset = 0x14570;
+const uint32_t kPitReturnSignEvtOffset = 0x12374;
 const uint32_t kPitChainChompSetHomePosFuncOffset = 0x2d0;
 const uint32_t kPitSetupNpcExtraParametersFuncOffset = 0x388;
 const uint32_t kPitSetKillFlagFuncOffset = 0x3e8;
@@ -78,16 +83,15 @@ void LinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt) {
     int32_t op;
     do {
         op = *evt++;
-        // USER_FUNC, RUN_EVT, RUN_EVT_ID, RUN_CHILD_EVT
-        if ((op & 0xff) >= 91 && (op & 0xff) <= 94) {
-            if (static_cast<uint32_t>(*evt) < 0x80000000U) {
+        // Check each of the operation's arguments.
+        for (int32_t* next_op = evt + (op >> 16); evt < next_op; ++evt) {
+            if (static_cast<uint32_t>(*evt) >= 0x4000'0000U &&
+                static_cast<uint32_t>(*evt) < 0x8000'0000U) {
                 *evt = static_cast<int32_t>(
                     static_cast<uint32_t>(*evt) - ((0x40U + module_id) << 24) +
                     reinterpret_cast<uint32_t>(module_ptr));
             }
         }
-        // Skip forward by the number of args the operation has.
-        evt += (op >> 16);
     } while (op != 1);
 }
 
@@ -95,17 +99,17 @@ void UnlinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt) {
     int32_t op;
     do {
         op = *evt++;
-        // USER_FUNC, RUN_EVT, RUN_EVT_ID, RUN_CHILD_EVT
-        if ((op & 0xff) >= 91 && (op & 0xff) <= 94) {
-            if (static_cast<uint32_t>(*evt) >= 
-                reinterpret_cast<uint32_t>(module_ptr)) {
+        // Check each of the operation's arguments.
+        for (int32_t* next_op = evt + (op >> 16); evt < next_op; ++evt) {
+            if (static_cast<uint32_t>(*evt) >=
+                reinterpret_cast<uint32_t>(module_ptr) &&
+                static_cast<uint32_t>(*evt) < 
+                static_cast<uint32_t>(EVT_HELPER_POINTER_BASE)) {
                 *evt = static_cast<int32_t>(
                     static_cast<uint32_t>(*evt) + ((0x40U + module_id) << 24) -
                     reinterpret_cast<uint32_t>(module_ptr));
             }
         }
-        // Skip forward by the number of args the operation has.
-        evt += (op >> 16);
     } while (op != 1);
 }
 

@@ -472,6 +472,7 @@
 
 // evt_mobj.o
 // .text
+80067878:evt_mobj_signboard
 8006b948:evt_mobj_wait_animation_end
 8006c03c:evt_mobj_get_position
 // .data
@@ -552,8 +553,39 @@
 80077c08:fontmgrInit
 
 // evt_bero.o
+// .text
+8007a50c:evt_bero_get_info
 8007a9c0:evt_bero_exec_wait
 8007aa34:evt_bero_exec_onoff
+// .data
+80416060:default_entevt
+80416074:default_outevt
+8030cd78:bero_null
+8030cdb4:evt_bero_nonride_check
+8030ce48:bero_open_door_play_se
+8030d138:bero_close_door_play_se
+8030d428:bero_play_enter_anime
+8030d674:bero_play_out_anime
+8030d888:bero_case_init_check
+8030da14:bero_case_exec_none
+8030dac8:bero_case_exec_road
+8030dbf4:bero_case_exec_door
+8030dd58:bero_case_exec_pipe_sub
+8030e28c:bero_case_exec_pipe
+8030e554:bero_case_exec_gate
+8030e608:bero_case_entry
+8030e798:bero_case_entry_sub
+8030e8b4:bero_case_switch_on
+8030e900:bero_case_switch_off
+80416088:evt_bero_info_run_none
+8030e97c:evt_bero_info_run_road
+8030ea20:evt_bero_info_run_door
+8030eadc:evt_bero_info_run_pipe_sub00
+8030eba8:evt_bero_info_run_pipe
+8041609c:evt_bero_info_run_gate
+8030ec7c:evt_bero_info_run
+8030f060:evt_bero_initial_pos
+8030f2d8:evt_bero_mario_enter
 
 // windowdrv.o
 // 8007AD30:getWakuTexObj

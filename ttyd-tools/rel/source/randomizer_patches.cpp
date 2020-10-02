@@ -357,6 +357,23 @@ RUN_CHILD_EVT(ChestOpenEvt)
 RETURN()
 EVT_END()
 
+// Event that sets up the boss floor (adds a signboard by the chest).
+EVT_BEGIN(BossSetupEvt)
+SET(LW(0), REL_PTR(ModuleId::JON, kPitBossFloorEntryBeroEntryOffset))
+USER_FUNC(ttyd::evt_bero::evt_bero_get_info)
+RUN_CHILD_EVT(ttyd::evt_bero::evt_bero_info_run)
+USER_FUNC(
+    ttyd::evt_mobj::evt_mobj_signboard, PTR("board"), 190, 0, 200,
+    REL_PTR(ModuleId::JON, kPitReturnSignEvtOffset), LSWF(0))
+RETURN()
+EVT_END()
+
+// Wrapper for modified boss floor setup event.
+EVT_BEGIN(BossSetupEvtHook)
+RUN_CHILD_EVT(BossSetupEvt)
+RETURN()
+EVT_END()
+
 // Event that states an exit is disabled.
 EVT_BEGIN(DisabledBeroEvt)
 INLINE_EVT()
@@ -651,6 +668,14 @@ void OnModuleLoaded(OSModuleInfo* module) {
             reinterpret_cast<void*>(module_ptr + kPitEvtOpenBoxOffset),
             ChestOpenEvtHook, sizeof(ChestOpenEvtHook));
             
+        // Patch over boss floor setup script to spawn a sign in the boss room.
+        LinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(module_ptr),
+            const_cast<int32_t*>(BossSetupEvt));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kPitBossFloorSetupEvtOffset),
+            BossSetupEvtHook, sizeof(BossSetupEvtHook));
+            
         // Disable reward floors' return pipe and display a message if entered.
         BeroEntry* return_bero = reinterpret_cast<BeroEntry*>(
             module_ptr + kPitRewardFloorReturnBeroEntryOffset);
@@ -941,6 +966,9 @@ int32_t LoadMap() {
 
 void OnMapUnloaded() {
     if (g_PitModulePtr) {
+        UnlinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
+            const_cast<int32_t*>(BossSetupEvt));
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
             const_cast<int32_t*>(EnemyNpcSetupEvt));
