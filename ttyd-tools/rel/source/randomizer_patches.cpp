@@ -1518,9 +1518,13 @@ void GetDropMaterials(FbatBattleInformation* fbat_info) {
         }
     }
     
-    // Get item drop, based on the pre-set enemy held item index.
-    battle_info->wItemDropped = 
-        battle_info->wHeldItems[party_setup->held_item_weight];
+    // If using default battle reward mode, select the item drop based on
+    // the previously determined enemy held item index.
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
+        == 0) {
+        battle_info->wItemDropped = 
+            battle_info->wHeldItems[party_setup->held_item_weight];
+    }
 }
 
 // Global variable for the last type of item consumed;
@@ -2911,43 +2915,57 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     // skip the item / condition generation to keep seeding consistent.
     if (ttyd::swdrv::swGet(0x13dc)) return 2;
 
-    // Set the enemies' held items.
+    // Set the enemies' held items, if they get any.
+    const int32_t reward_mode =
+        g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
     NpcBattleInfo* battle_info = &npc->battleInfo;
-    for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
-        int32_t item =
-            PickRandomItem(/* seeded = */ true, 40, 20, 40, 0);
-        
-        // Indirectly attacking enemies should not hold defense-increasing
-        // badges if the player cannot damage them at base rank equipment /
-        // without a damaging Star Power.
-        if (pouch.jump_level < 2 && !(pouch.star_powers_obtained & 0x92)) {
-            const BattleUnitSetup& unit_setup = 
-                battle_info->pConfiguration->enemy_data[i];
-            switch (unit_setup.unit_kind_params->unit_type) {
-                case BattleUnitType::DULL_BONES:
-                case BattleUnitType::LAKITU:
-                case BattleUnitType::DARK_LAKITU:
-                case BattleUnitType::MAGIKOOPA:
-                case BattleUnitType::RED_MAGIKOOPA:
-                case BattleUnitType::WHITE_MAGIKOOPA:
-                case BattleUnitType::GREEN_MAGIKOOPA:
-                case BattleUnitType::HAMMER_BRO:
-                case BattleUnitType::BOOMERANG_BRO:
-                case BattleUnitType::FIRE_BRO:
-                    switch (item) {
-                        case ItemType::DEFEND_PLUS:
-                        case ItemType::DEFEND_PLUS_P:
-                        case ItemType::P_DOWN_D_UP:
-                        case ItemType::P_DOWN_D_UP_P:
-                            // Pick a new item, disallowing badges.
-                            item = PickRandomItem(
-                                /* seeded = */ true, 40, 20, 0, 0);
-                    }
-            }
+    if (reward_mode != RandomizerState::NO_HELD_ITEMS) {
+        // If item drops only come from conditions, spawn Shine Sprites
+        // as held items occasionally after floor 30.
+        int32_t shine_rate = 0;
+        if (g_Randomizer->state_.floor_ >= 30 &&
+            reward_mode == RandomizerState::CONDITION_DROPS_HELD) {
+            shine_rate = 13;
         }
-        
-        battle_info->wHeldItems[i] = item;
+            
+        for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
+            int32_t item =
+                PickRandomItem(/* seeded = */ true, 40, 20, 40, shine_rate);
+            
+            // Indirectly attacking enemies should not hold defense-increasing
+            // badges if the player cannot damage them at base rank equipment /
+            // without a damaging Star Power.
+            if (pouch.jump_level < 2 && !(pouch.star_powers_obtained & 0x92)) {
+                const BattleUnitSetup& unit_setup = 
+                    battle_info->pConfiguration->enemy_data[i];
+                switch (unit_setup.unit_kind_params->unit_type) {
+                    case BattleUnitType::DULL_BONES:
+                    case BattleUnitType::LAKITU:
+                    case BattleUnitType::DARK_LAKITU:
+                    case BattleUnitType::MAGIKOOPA:
+                    case BattleUnitType::RED_MAGIKOOPA:
+                    case BattleUnitType::WHITE_MAGIKOOPA:
+                    case BattleUnitType::GREEN_MAGIKOOPA:
+                    case BattleUnitType::HAMMER_BRO:
+                    case BattleUnitType::BOOMERANG_BRO:
+                    case BattleUnitType::FIRE_BRO:
+                        switch (item) {
+                            case ItemType::DEFEND_PLUS:
+                            case ItemType::DEFEND_PLUS_P:
+                            case ItemType::P_DOWN_D_UP:
+                            case ItemType::P_DOWN_D_UP_P:
+                                // Pick a new item, disallowing badges.
+                                item = PickRandomItem(
+                                    /* seeded = */ true, 40, 20, 0, shine_rate);
+                        }
+                }
+            }
+            
+            if (!item) item = ItemType::GOLD_BAR_X3;
+            battle_info->wHeldItems[i] = item;
+        }
     }
+    
     // Occasionally, set a battle condition for an optional bonus reward.
     SetBattleCondition(&npc->battleInfo);
     
@@ -3150,8 +3168,10 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
         item = PickRandomItem(/* seeded = */ false, 20, 10, 10, 60);
         if (!item) item = ItemType::COIN;
     }
-    if ((ac_result & 2) == 0 || !ttyd::mario_pouch::pouchGetItem(item)) {
-        // Action command unsuccessful, or inventory cannot hold the item.
+    if ((ac_result & 2) == 0 || item == ItemType::GOLD_BAR_X3 ||
+        !ttyd::mario_pouch::pouchGetItem(item)) {
+        // Action command unsuccessful, item = Shine Sprite (can't be stolen),
+        // or the player's inventory cannot hold the item.
         evtSetValue(evt, evt->evtArguments[1], 0);
     } else {
         // Remove the unit's held item.

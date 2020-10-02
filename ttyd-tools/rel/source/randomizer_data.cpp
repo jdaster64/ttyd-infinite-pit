@@ -925,14 +925,22 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    // Set conditions on about 1 in 4 battles randomly (and not on Bonetail).
     RandomizerState& state = g_Randomizer->state_;
-    if (state.floor_ % 10 == 9 || state.Rand(4)) return;
+    // No conditions on Bonetail fights (or reward floors).
+    if (state.floor_ % 10 == 9) return;
+    
+    // If using held items + bonus conditions, only pick one every ~4 floors.
+    const int32_t reward_mode =
+        state.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
+    if (reward_mode == 0 && state.Rand(4)) return;
+        
+    const int32_t shine_rate =
+        reward_mode == RandomizerState::NO_HELD_ITEMS ? 8 : 30;
     
     // Use the unused "random_item_weight" field to store the item reward.
     int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
     *item_reward = PickRandomItem(
-        /* seeded = */ true, 10, 10, 40, state.floor_ < 30 ? 0 : 30);
+        /* seeded = */ true, 10, 10, 40, state.floor_ < 30 ? 0 : shine_rate);
     // If the "none" case was picked, make it a Shine Sprite.
     if (*item_reward <= 0) *item_reward = ItemType::GOLD_BAR_X3;
     
@@ -1026,6 +1034,13 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     npc_info->ruleParameter0 = param;
     npc_info->ruleParameter1 = param;
     
+    // If the held item drop is contingent on the condition, override the item
+    // with a random one of the held items.
+    if (reward_mode == RandomizerState::CONDITION_DROPS_HELD) {
+        int32_t enemy_index = npc_info->pConfiguration->held_item_weight;
+        *item_reward = npc_info->wHeldItems[enemy_index];
+    }
+    
     // Assign the condition text.
     if (conditions[idx].param_max > 0 || 
         conditions[idx].type == MARIO_FINAL_HP_MORE) {
@@ -1043,7 +1058,14 @@ void GetBattleConditionString(char* out_buf) {
         fbat_info->wBattleInfo->pConfiguration->random_item_weight;
     const char* item_name = ttyd::msgdrv::msgSearch(
         ttyd::item_data::itemDataTable[item_reward].name);
-    sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);
+    
+    // If held item drop is contingent on condition, don't say which will drop.
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
+        == RandomizerState::CONDITION_DROPS_HELD) {
+        sprintf(out_buf, "Reward challenge:\n%s", g_ConditionTextBuf);
+    } else {
+        sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);
+    }
 }
 
 int32_t PickRandomItem(
