@@ -133,7 +133,7 @@ void ApplyItemAndAttackPatches();
 void ApplyMiscPatches();
 
 // Initializes all selected options on initially entering the Pit.
-EVT_DECLARE_USER_FUNC(InitOptionsOnPitEntry, 0)
+EVT_DECLARE_USER_FUNC(InitOptionsOnPitEntry, 5)
 
 // Fetches information required for dynamically spawning an enemy NPC,
 // such as the model name, battle id, and initial position.

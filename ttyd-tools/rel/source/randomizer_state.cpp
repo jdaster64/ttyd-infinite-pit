@@ -435,6 +435,35 @@ bool RandomizerState::StarPowerEnabled() const {
            (CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0);
 }
 
+void RandomizerState::SaveCurrentTime(bool pit_start) {
+    uint64_t current_time = gc::OSTime::OSGetTime();
+    // Use the otherwise unused Happy Lucky Lottery timestamps for saving
+    // the last time you entered the Pit, and the last time you saved the game.
+    if (pit_start) {
+        ttyd::mariost::g_MarioSt->hllSignLastReadTime = current_time;
+    }
+    ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = current_time;
+}
+
+const char* RandomizerState::GetCurrentTimeString() {
+    static char buf[16];
+    uint64_t current_time = gc::OSTime::OSGetTime();
+    const int64_t start_diff = 
+        current_time - ttyd::mariost::g_MarioSt->hllSignLastReadTime;
+    const int64_t last_save_diff = 
+        current_time - ttyd::mariost::g_MarioSt->hllPickLastReceivedTime;
+    // If the time since the last save is negative or the time was never set,
+    // return the empty string and clear the timebases previously set.
+    if (last_save_diff < 0 || !ttyd::mariost::g_MarioSt->hllSignLastReadTime) {
+        ttyd::mariost::g_MarioSt->hllSignLastReadTime = 0;
+        ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = 0;
+        return "";
+    }
+    // Otherwise, return the time since start as a string.
+    DurationTicksToFmtString(start_diff, buf);
+    return buf;
+}
+
 const char* RandomizerState::GetEncodedOptions() const {
     static char enc_options[11];
     enc_options[10] = '\0';
@@ -479,12 +508,12 @@ bool RandomizerState::GetPlayStats(char* out_buf) const {
         "<kanban>\n"
         "Seed: <col 0000ffff>%s</col>, Floor: <col ff0000ff>%" PRId32 "\n</col>"
         "Options: <col 0000ffff>%s\n</col>"
-        "Time: <col ff0000ff>",
+        "RTA Time: <col ff0000ff>",
         GetSavefileName(), floor_ + 1, GetEncodedOptions());
     out_buf += DurationTicksToFmtString(1LL<<60, out_buf);
     
     // Page 2: Battle time, turn count, run away count.
-    out_buf += sprintf(out_buf, "\n</col><k><p>Battle time: ");
+    out_buf += sprintf(out_buf, "\n</col><k><p>In-battle time: ");
     out_buf += DurationTicksToFmtString(1LL<<60, out_buf);
     out_buf += sprintf(out_buf, "\nTotal turns: ");
     out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);

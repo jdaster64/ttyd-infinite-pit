@@ -435,7 +435,8 @@ EVT_END()
 
 // Runs when taking the pipe to enter the Pit.
 EVT_BEGIN(PitStartPipeEvt)
-USER_FUNC(InitOptionsOnPitEntry)
+// Parameters are dummy values, and get overwritten during execution.
+USER_FUNC(InitOptionsOnPitEntry, 0, 0, 0, 0, 0)
 RETURN()
 EVT_END()
 
@@ -2845,6 +2846,8 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
         // Disable Sweet Treat from the rewards pool.
         g_Randomizer->state_.reward_flags_ |= (1 << 5);
     }
+    // Save the timestamp you entered the Pit.
+    g_Randomizer->state_.SaveCurrentTime(/* pit_start = */ true);
     // All other options are handled immediately on setting them,
     // or are checked explicitly every time they are relevant.
     return 2;
@@ -3031,6 +3034,7 @@ EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
 EVT_DEFINE_USER_FUNC(CheckPromptSave) {
     evtSetValue(evt, evt->evtArguments[0], g_PromptSave);
     if (g_PromptSave) {
+        g_Randomizer->state_.SaveCurrentTime();
         g_Randomizer->state_.Save();
         g_PromptSave = false;
     }

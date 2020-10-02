@@ -64,7 +64,7 @@ void (*g_statusWinDisp_trampoline)(void) = nullptr;
 void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 
 bool g_CueGameOver = false;
-bool g_DrawDebug = false;
+bool g_DrawDebug = true;
 
 void DrawOptionsMenu() {
     g_Randomizer->menu_.Draw();
@@ -79,28 +79,25 @@ void DrawTitleScreenInfo() {
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.7f, 0x000000E5u, 15, 10);
 }
 
-// Handles printing stuff to the screen for debugging purposes; no longer used.
+// Handles printing stuff to the screen for debugging purposes.
 void DrawDebuggingFunctions() {
-    int32_t enemyTypeToTest = g_Randomizer->state_.debug_[0];
+    static int32_t x = -260, y = -195;
     
-    // D-Pad Up or Down to change the type of enemy to test.
-    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
-        ++enemyTypeToTest;
-    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_RIGHT) {
-        enemyTypeToTest += 10;
-    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_DOWN) {
-        --enemyTypeToTest;
-    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
-        enemyTypeToTest -= 10;
-    }
-    enemyTypeToTest = Clamp(enemyTypeToTest, 1, 101);
-    g_Randomizer->state_.debug_[0] = enemyTypeToTest;
+    // D-Pad directions to change position of time display.
+    // if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
+        // y -= 1;
+    // } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_RIGHT) {
+        // x += 1;
+    // } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_DOWN) {
+        // y += 1;
+    // } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
+        // x -= 1;
+    // }
     
-    // Print the current enemy type to the screen at all times.
-    char buf[16];
-    sprintf(buf, "%d", enemyTypeToTest);
-    DrawCenteredTextWindow(
-        buf, -200, -150, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
+    // Print the current RTA timer and its position to the screen at all times.
+    char buf[32];
+    sprintf(buf, "%s", g_Randomizer->state_.GetCurrentTimeString());
+    DrawText(buf, x, y, 0xFF, true, ~0U, 0.75f, /* aligned center-left */ 3);
 }
 
 }
@@ -272,7 +269,7 @@ void Randomizer::Draw() {
     
     // Draw debugging overlay, if enabled.
     if (InMainGameModes() && g_DrawDebug) {
-        RegisterDrawCallback(DrawDebuggingFunctions, CameraId::k2d);
+        RegisterDrawCallback(DrawDebuggingFunctions, CameraId::kDebug3d);
     }
 }
 

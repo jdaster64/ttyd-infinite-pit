@@ -90,6 +90,12 @@ struct RandomizerState {
     // Returns whether Star Power / audience functions should be enabled.
     bool StarPowerEnabled() const;
     
+    // Saves the current clock time (used for calculating RTA time since start).
+    void SaveCurrentTime(bool pit_start = false);
+    // Get the current RTA play time as a string.
+    // Will return empty string if the start time was unset or incompatible.
+    const char* GetCurrentTimeString();
+    
     // Returns a base-64-esque encoding of this file's user-selectable options.
     const char* GetEncodedOptions() const;
     // Gets a string containing the player's play stats on this save file.
