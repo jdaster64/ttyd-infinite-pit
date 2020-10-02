@@ -435,4 +435,80 @@ bool RandomizerState::StarPowerEnabled() const {
            (CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0);
 }
 
+const char* RandomizerState::GetEncodedOptions() const {
+    static char enc_options[11];
+    enc_options[10] = '\0';
+    
+    uint64_t options = static_cast<uint32_t>(options_);
+    // Turn off purely-cosmetic / non-user-selectable options.
+    options &= ~START_WITH_FX;
+    options &= ~YOSHI_COLOR_SELECT;
+    // Shift hp and atk multipliers onto the end.
+    options <<= 24;
+    options += hp_multiplier_ << 12;
+    options += atk_multiplier_;
+    
+    // Convert to a base-64 scheme using A-Z, a-z, 0-9, !, ?.
+    for (int32_t i = 9; i >= 0; --i) {
+        const int32_t sextet = options & 63;
+        char next;
+        if (sextet < 26) {
+            next = 'A' + sextet;
+        } else if (sextet < 52) {
+            next = 'a' + sextet - 26;
+        } else if (sextet < 62) {
+            next = '0' + sextet - 52;
+        } else if (sextet < 63) {
+            next = '!';
+        } else {
+            next = '?';
+        }
+        enc_options[i] = next;
+        options >>= 6;
+    }
+    
+    return enc_options;
+}
+
+bool RandomizerState::GetPlayStats(char* out_buf) const {
+    // TODO: Hook in the final values once all play stats are implemented.
+    
+    // Page 1: Seed, floor, options & total play time.
+    out_buf += sprintf(
+        out_buf,
+        "<kanban>\n"
+        "Seed: <col 0000ffff>%s</col>, Floor: <col ff0000ff>%" PRId32 "\n</col>"
+        "Options: <col 0000ffff>%s\n</col>"
+        "Time: <col ff0000ff>",
+        GetSavefileName(), floor_ + 1, GetEncodedOptions());
+    out_buf += DurationTicksToFmtString(1LL<<60, out_buf);
+    
+    // Page 2: Battle time, turn count, run away count.
+    out_buf += sprintf(out_buf, "\n</col><k><p>Battle time: ");
+    out_buf += DurationTicksToFmtString(1LL<<60, out_buf);
+    out_buf += sprintf(out_buf, "\nTotal turns: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\nTimes ran away: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999);
+    
+    // Page 3: Damage dealt / taken, items used.
+    out_buf += sprintf(out_buf, "\n<k><p>Damage dealt: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\nDamage taken: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\nItems used: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999);
+    
+    // Page 4: Coins earned / spent, Shine Sprites used.
+    out_buf += sprintf(out_buf, "\n<k><p>Coins earned: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\nCoins spent: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\nShine Sprites used: ");
+    out_buf += IntegerToFmtString(1<<30, out_buf, 999);
+    out_buf += sprintf(out_buf, "\n<k>");
+    
+    return true;
+}
+
 }

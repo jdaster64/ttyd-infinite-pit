@@ -68,6 +68,14 @@ int32_t CountSetBits(uint32_t x);
 // Assumes 0 <= start_bit <= end_bit <= 31.
 uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit);
 
+// Converts a positive integer under a billion to a string with 1000-separators.
+// Returns the number of characters printed to the string.
+int32_t IntegerToFmtString(
+    int32_t val, char* out_buf, int32_t max_val = 999'999'999);
+// Converts a duration expressed in OSTicks (40.5M / sec) to HH:MM:SS.ss format.
+// Returns the number of characters printed to the string.
+int32_t DurationTicksToFmtString(int64_t val, char* out_buf);
+
 // Template functions for min / max / clamping a value to a range.
 template <class T> inline T Min(const T& lhs, const T& rhs) {
     return lhs < rhs ? lhs : rhs;

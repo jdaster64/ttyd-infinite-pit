@@ -8,7 +8,8 @@
 #include <ttyd/seq_title.h>
 #include <ttyd/system.h>
 
-#include <cstdint>
+#include <cinttypes>
+#include <cstdio>
 #include <cstring>
 
 namespace mod {
@@ -122,6 +123,36 @@ int32_t CountSetBits(uint32_t x) {
 
 uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit) {
     return (~0U >> (31-end_bit)) - (1U << start_bit) + 1;
+}
+
+int32_t IntegerToFmtString(int32_t val, char* out_buf, int32_t max_val) {
+    if (val < 0) return 0;
+    if (val > max_val) val = max_val;
+    if (val >= 1'000'000) {
+        return sprintf(
+            out_buf, "%" PRId32 ",%02" PRId32 ",%02" PRId32, 
+            val / 1'000'000, val / 1000 % 1000, val % 1000);
+    } else if (val >= 1'000) {
+        return sprintf(
+            out_buf, "%" PRId32 ",%02" PRId32, val / 1000, val % 1000);
+    }
+    return sprintf(out_buf, "%" PRId32, val);
+}
+
+int32_t DurationTicksToFmtString(int64_t val, char* out_buf) {
+    // Divide by the number of ticks in a centisecond (40.5M / 100).
+    val /= 405000;
+    // Maximum duration = 100 hours' worth of centiseconds.
+    if (val >= 100 * 60 * 60 * 100 || val < 0) {
+        val = 100 * 60 * 60 * 100 - 1;
+    }
+    const int32_t hours   = val / (60 * 60 * 100);
+    const int32_t minutes = val / (60 * 100) % 60;
+    const int32_t seconds = val / 100 % 60;
+    const int32_t centis  = val % 100;
+    return sprintf(
+        out_buf, "%02" PRId32 ":%02" PRId32 ":%02" PRId32 ".%02" PRId32,
+        hours, minutes, seconds, centis);
 }
 
 }

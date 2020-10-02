@@ -89,6 +89,12 @@ struct RandomizerState {
     int32_t StarPowersObtained() const;
     // Returns whether Star Power / audience functions should be enabled.
     bool StarPowerEnabled() const;
+    
+    // Returns a base-64-esque encoding of this file's user-selectable options.
+    const char* GetEncodedOptions() const;
+    // Gets a string containing the player's play stats on this save file.
+    // Returns false if no play stats are present on this save file.
+    bool GetPlayStats(char* out_buf) const;
 } __attribute__((__packed__));
 
 static_assert(sizeof(RandomizerState) <= 0x38);

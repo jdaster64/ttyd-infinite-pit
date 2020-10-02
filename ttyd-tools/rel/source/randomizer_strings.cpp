@@ -50,6 +50,7 @@ namespace MsgKey {
         MSG_DAMAGE_GAESHI,
         MSG_ICE_CANDY,
         MSG_JON_KANBAN_1,
+        MSG_JON_KANBAN_2,
         MSG_JON_KANBAN_3,
         MSG_KAME_NO_NOROI,
         MSG_KIKEN_DE_POWER,
@@ -115,6 +116,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_damage_gaeshi",
     "msg_ice_candy",
     "msg_jon_kanban_1",
+    "msg_jon_kanban_2",
     "msg_jon_kanban_3",
     "msg_kame_no_noroi",
     "msg_kiken_de_power",
@@ -157,7 +159,7 @@ const char* GetYoshiTextColor() {
     
 const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
     // Do not use for more than one custom message at a time!
-    static char buf[128];
+    static char buf[512];
     
     // Handle journal Tattle entries.
     if (strstr(msg_key, "menu_enemy_")) {
@@ -208,6 +210,10 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
             sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
                     g_Randomizer->state_.floor_ + 1);
             return buf;
+        }
+        case MsgKey::MSG_JON_KANBAN_2: {
+            if (g_Randomizer->state_.GetPlayStats(buf)) return buf;
+            return "<kanban>\nStart a new file to see\nplay stats here!\n<k>";
         }
         case MsgKey::MSG_JON_KANBAN_3: {
             sprintf(buf, "<kanban>\nYour seed: <col %sff>%s\n</col>"
