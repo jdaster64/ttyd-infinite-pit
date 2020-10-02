@@ -435,33 +435,114 @@ bool RandomizerState::StarPowerEnabled() const {
            (CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0);
 }
 
-void RandomizerState::SaveCurrentTime(bool pit_start) {
-    uint64_t current_time = gc::OSTime::OSGetTime();
-    // Use the otherwise unused Happy Lucky Lottery timestamps for saving
-    // the last time you entered the Pit, and the last time you saved the game.
-    if (pit_start) {
-        ttyd::mariost::g_MarioSt->hllSignLastReadTime = current_time;
+void RandomizerState::IncrementPlayStat(PlayStats stat, int32_t amount) {
+    int32_t offset, length, max;
+    switch (stat) {
+        case TURNS_SPENT: {
+            offset = 0;
+            length = 3;
+            max = 9'999'999;
+            break;
+        }
+        case TIMES_RAN_AWAY: {
+            offset = 3;
+            length = 2;
+            max = 9999;
+            break;
+        }
+        case ENEMY_DAMAGE: {
+            offset = 5;
+            length = 3;
+            max = 9'999'999;
+            break;
+        }
+        case PLAYER_DAMAGE: {
+            offset = 8;
+            length = 3;
+            max = 9'999'999;
+            break;
+        }
+        case ITEMS_USED: {
+            offset = 11;
+            length = 2;
+            max = 9999;
+            break;
+        }
+        case COINS_EARNED: {
+            offset = 13;
+            length = 3;
+            max = 9'999'999;
+            break;
+        }
+        case COINS_SPENT: {
+            offset = 16;
+            length = 3;
+            max = 9'999'999;
+            break;
+        }
+        default: return;
     }
-    ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = current_time;
+    int32_t current = 0;
+    for (int32_t i = offset; i < offset + length; ++i) {
+        current = (current << 8) + play_stats_[i];
+    }
+    current += amount;
+    if (current > max) current = max;
+    for (int32_t i = offset + length - 1; i <= offset; --i) {
+        play_stats_[i] = current & 0xff;
+        current >>= 8;
+    }
 }
 
-const char* RandomizerState::GetCurrentTimeString() {
-    static char buf[16];
-    uint64_t current_time = gc::OSTime::OSGetTime();
-    const int64_t start_diff = 
-        current_time - ttyd::mariost::g_MarioSt->hllSignLastReadTime;
-    const int64_t last_save_diff = 
-        current_time - ttyd::mariost::g_MarioSt->hllPickLastReceivedTime;
-    // If the time since the last save is negative or the time was never set,
-    // return the empty string and clear the timebases previously set.
-    if (last_save_diff < 0 || !ttyd::mariost::g_MarioSt->hllSignLastReadTime) {
-        ttyd::mariost::g_MarioSt->hllSignLastReadTime = 0;
-        ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = 0;
-        return "";
+int32_t RandomizerState::GetPlayStat(PlayStats stat) const {
+    int32_t offset, length;
+    switch (stat) {
+        case TURNS_SPENT: {
+            offset = 0;
+            length = 3;
+            break;
+        }
+        case TIMES_RAN_AWAY: {
+            offset = 3;
+            length = 2;
+            break;
+        }
+        case ENEMY_DAMAGE: {
+            offset = 5;
+            length = 3;
+            break;
+        }
+        case PLAYER_DAMAGE: {
+            offset = 8;
+            length = 3;
+            break;
+        }
+        case ITEMS_USED: {
+            offset = 11;
+            length = 2;
+            break;
+        }
+        case COINS_EARNED: {
+            offset = 13;
+            length = 3;
+            break;
+        }
+        case COINS_SPENT: {
+            offset = 16;
+            length = 3;
+            break;
+        }
+        case SHINE_SPRITES_USED: {
+            return ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
+        }
+        // Cannot be reached with a valid PlayStats type.
+        default: return 0;
     }
-    // Otherwise, return the time since start as a string.
-    DurationTicksToFmtString(start_diff, buf);
-    return buf;
+    int32_t result = 0;
+    for (int32_t i = offset; i < offset + length; ++i) {
+        result = (result << 8) + play_stats_[i];
+    }
+    return result;
 }
 
 const char* RandomizerState::GetEncodedOptions() const {
@@ -499,8 +580,16 @@ const char* RandomizerState::GetEncodedOptions() const {
     return enc_options;
 }
 
-bool RandomizerState::GetPlayStats(char* out_buf) const {
-    // TODO: Hook in the final values once all play stats are implemented.
+bool RandomizerState::GetPlayStatsString(char* out_buf) const {
+    const auto* mariost = ttyd::mariost::g_MarioSt;
+    const uint64_t current_time = gc::OSTime::OSGetTime();
+    const int64_t last_save_diff = 
+        current_time - mariost->hllPickLastReceivedTime;
+    // If the time was never initialized, or the current time is before
+    // the last save's time (indicating clock tampering), don't show any stats.
+    if (last_save_diff < 0 || !mariost->hllSignLastReadTime) {
+        return false;
+    }
     
     // Page 1: Seed, floor, options & total play time.
     out_buf += sprintf(
@@ -510,34 +599,66 @@ bool RandomizerState::GetPlayStats(char* out_buf) const {
         "Options: <col 0000ffff>%s\n</col>"
         "RTA Time: <col ff0000ff>",
         GetSavefileName(), floor_ + 1, GetEncodedOptions());
-    out_buf += DurationTicksToFmtString(1LL<<60, out_buf);
+    const int64_t start_diff = current_time - mariost->hllSignLastReadTime;
+    out_buf += DurationTicksToFmtString(start_diff, out_buf);
     
     // Page 2: Battle time, turn count, run away count.
     out_buf += sprintf(out_buf, "\n</col><k><p>In-battle time: ");
-    out_buf += DurationTicksToFmtString(1LL<<60, out_buf);
+    const int64_t battle_time = 
+        mariost->animationTimeIncludingBattle - mariost->animationTimeNoBattle;
+    out_buf += DurationTicksToFmtString(battle_time, out_buf);
     out_buf += sprintf(out_buf, "\nTotal turns: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += IntegerToFmtString(GetPlayStat(TURNS_SPENT), out_buf, 9'999'999);
     out_buf += sprintf(out_buf, "\nTimes ran away: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999);
+    out_buf += IntegerToFmtString(GetPlayStat(TIMES_RAN_AWAY), out_buf, 9'999);
     
     // Page 3: Damage dealt / taken, items used.
-    out_buf += sprintf(out_buf, "\n<k><p>Damage dealt: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
-    out_buf += sprintf(out_buf, "\nDamage taken: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\n<k><p>Enemy damage taken: ");
+    out_buf += IntegerToFmtString(GetPlayStat(ENEMY_DAMAGE), out_buf, 9'999'999);
+    out_buf += sprintf(out_buf, "\nPlayer damage taken: ");
+    out_buf += IntegerToFmtString(GetPlayStat(PLAYER_DAMAGE), out_buf, 9'999'999);
     out_buf += sprintf(out_buf, "\nItems used: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999);
+    out_buf += IntegerToFmtString(GetPlayStat(ITEMS_USED), out_buf, 9'999);
     
     // Page 4: Coins earned / spent, Shine Sprites used.
     out_buf += sprintf(out_buf, "\n<k><p>Coins earned: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += IntegerToFmtString(GetPlayStat(COINS_EARNED), out_buf, 9'999'999);
     out_buf += sprintf(out_buf, "\nCoins spent: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 9'999'999);
+    out_buf += IntegerToFmtString(GetPlayStat(COINS_SPENT), out_buf, 9'999'999);
     out_buf += sprintf(out_buf, "\nShine Sprites used: ");
-    out_buf += IntegerToFmtString(1<<30, out_buf, 999);
+    out_buf += IntegerToFmtString(GetPlayStat(SHINE_SPRITES_USED), out_buf, 999);
     out_buf += sprintf(out_buf, "\n<k>");
     
     return true;
+}
+
+void RandomizerState::SaveCurrentTime(bool pit_start) {
+    uint64_t current_time = gc::OSTime::OSGetTime();
+    // Use the otherwise unused Happy Lucky Lottery timestamps for saving
+    // the last time you entered the Pit, and the last time you saved the game.
+    if (pit_start) {
+        ttyd::mariost::g_MarioSt->hllSignLastReadTime = current_time;
+    }
+    ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = current_time;
+}
+
+const char* RandomizerState::GetCurrentTimeString() {
+    static char buf[16];
+    const uint64_t current_time = gc::OSTime::OSGetTime();
+    const int64_t start_diff = 
+        current_time - ttyd::mariost::g_MarioSt->hllSignLastReadTime;
+    const int64_t last_save_diff = 
+        current_time - ttyd::mariost::g_MarioSt->hllPickLastReceivedTime;
+    // If the time since the last save is negative or the time was never set,
+    // return the empty string and clear the timebases previously set.
+    if (last_save_diff < 0 || !ttyd::mariost::g_MarioSt->hllSignLastReadTime) {
+        ttyd::mariost::g_MarioSt->hllSignLastReadTime = 0;
+        ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = 0;
+        return "";
+    }
+    // Otherwise, return the time since start as a string.
+    DurationTicksToFmtString(start_diff, buf);
+    return buf;
 }
 
 }

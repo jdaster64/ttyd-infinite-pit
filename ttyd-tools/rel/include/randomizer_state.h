@@ -36,6 +36,18 @@ struct RandomizerState {
         HP_MODIFIER             = -101,     // Multiplier for enemy HP
         ATK_MODIFIER            = -102,     // Multiplier for enemy ATK
     };
+    
+    // Enum of stats that get tracked point by point throughout a run.
+    enum PlayStats {
+        TURNS_SPENT = 0,
+        TIMES_RAN_AWAY,
+        ENEMY_DAMAGE,
+        PLAYER_DAMAGE,
+        ITEMS_USED,
+        COINS_EARNED,
+        COINS_SPENT,
+        SHINE_SPRITES_USED,
+    };
 
     // Save file revision; makes it possible to add fields while maintaining
     // backwards compatibility, and detect when a vanilla file is loaded.
@@ -58,8 +70,9 @@ struct RandomizerState {
     int16_t     atk_multiplier_;
     uint32_t    options_;   // Bitfield of Options_Flags.
     
-    // State for debugging features.
-    uint32_t    debug_[4];
+    // Holds the value of various stats tracked over the course of a file
+    // (total turns in battle, number of items used, etc.)
+    uint8_t     play_stats_[20];
 
     // Initializes the randomizer state based on the current save file.
     // Returns whether the randomizer was successfully initialized.
@@ -90,19 +103,22 @@ struct RandomizerState {
     // Returns whether Star Power / audience functions should be enabled.
     bool StarPowerEnabled() const;
     
+    // Get or update various stats tracked over the course of a file.
+    void IncrementPlayStat(PlayStats stat, int32_t amount);
+    int32_t GetPlayStat(PlayStats stat) const;
+    // Returns a base-64-esque encoding of this file's user-selectable options.
+    const char* GetEncodedOptions() const;
+    // Gets a string containing the player's play stats on this save file.
+    // Returns false if no play stats are present on this save file.
+    bool GetPlayStatsString(char* out_buf) const;
+    
     // Saves the current clock time (used for calculating RTA time since start).
     void SaveCurrentTime(bool pit_start = false);
     // Get the current RTA play time as a string.
     // Will return empty string if the start time was unset or incompatible.
     const char* GetCurrentTimeString();
-    
-    // Returns a base-64-esque encoding of this file's user-selectable options.
-    const char* GetEncodedOptions() const;
-    // Gets a string containing the player's play stats on this save file.
-    // Returns false if no play stats are present on this save file.
-    bool GetPlayStats(char* out_buf) const;
 } __attribute__((__packed__));
 
-static_assert(sizeof(RandomizerState) <= 0x38);
+static_assert(sizeof(RandomizerState) <= 0x3c);
 
 }

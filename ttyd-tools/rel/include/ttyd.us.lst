@@ -695,6 +695,7 @@
 800d3d24:pouchGetMaxHP
 800d3d30:pouchGetHP
 800d3dd4:pouchSetCoin
+800d3e18:pouchAddCoin
 800d50cc:pouchGetItem
 800d59c8:pouchInit
 800d5eb0:pouchGetPtr
@@ -984,7 +985,7 @@
 800fd680:BattleCalculateFpDamage
 800fd790:BattleCalculateDamage
 // 800fde2c:BattleCheckPikkyoro
-// 800fdfd4:BattleDamageDirect
+800fdfd4:BattleDamageDirect
 
 // battle_event_cmd.o
 801054e8:btlevtcmd_WeaponAftereffect

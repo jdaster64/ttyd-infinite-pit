@@ -114,7 +114,7 @@ int16_t pouchGetHP();
 // pouchSetSuperCoin
 // pouchGetSuperCoin
 int16_t pouchSetCoin(int16_t coins);
-// pouchAddCoin
+int32_t pouchAddCoin(int16_t coins);
 // pouchGetCoin
 // pouchSortItem
 // comp_kind_r
