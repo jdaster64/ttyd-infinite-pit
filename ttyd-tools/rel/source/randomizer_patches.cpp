@@ -2856,7 +2856,8 @@ void ApplyMiscPatches() {
             return g_btlevtcmd_GetSelectEnemy_trampoline(evt, isFirstCall);
         });
         
-    // Force friendly enemies to never call for backup.
+    // Force friendly enemies to never call for backup, and certain enemies
+    // to stop calling for backup after turn 5.
     g_btlevtcmd_CheckSpace_trampoline = patch::hookFunction(
         ttyd::battle_event_cmd::btlevtcmd_CheckSpace,
         [](EvtEntry* evt, bool isFirstCall) {
@@ -2874,6 +2875,25 @@ void ApplyMiscPatches() {
                     // Treat the spot as full.
                     evtSetValue(evt, evt->evtArguments[0], 1);
                     return 2;
+                } else if (battleWork->turn_count > 5) {
+                    switch (unit->current_kind) {
+                        case BattleUnitType::POKEY:
+                        case BattleUnitType::POISON_POKEY:
+                        case BattleUnitType::DULL_BONES:
+                        case BattleUnitType::RED_BONES:
+                        case BattleUnitType::DRY_BONES:
+                        case BattleUnitType::DARK_BONES:
+                        case BattleUnitType::LAKITU:
+                        case BattleUnitType::DARK_LAKITU:
+                        case BattleUnitType::GREEN_FUZZY:
+                        case BattleUnitType::KOOPATROL:
+                        case BattleUnitType::DARK_KOOPATROL:
+                            // Treat the spot as full.
+                            evtSetValue(evt, evt->evtArguments[0], 1);
+                            return 2;
+                        default:
+                            break;
+                    }
                 }
             }
             return g_btlevtcmd_CheckSpace_trampoline(evt, isFirstCall);

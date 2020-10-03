@@ -716,6 +716,10 @@ void BuildBattle(
         weights.min_weight = g_CustomAudienceWeights[i];
         weights.max_weight = g_CustomAudienceWeights[i];
     }
+    // If Atomic Boo floor, change background music to miniboss theme.
+    if (floor % 100 == 48) {
+        battle_setup->music_name = "BGM_CHUBOSS_BATTLE1";
+    }
 }
 
 // Stat weights as percentages for certain Pit floors (00s, 10s, 20s, ... 90s).
