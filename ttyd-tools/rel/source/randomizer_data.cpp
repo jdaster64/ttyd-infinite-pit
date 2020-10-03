@@ -915,7 +915,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
     { "Appeal to the crowd at least %" PRId32 " times!", APPEAL_MORE, 3, 5 },
     { "Don't use any FP!", FP_LESS, 1, -1 },
     { "Don't use more than %" PRId32 " FP!", FP_LESS, 4, 11 },
-    { "Use at least %" PRId32 " FP!", FP_MORE, 1, 4 },
+    { "Use at least %" PRId32 " FP!", FP_MORE, 1, 5 },
     { "Mario must only Appeal and Defend!", MARIO_INACTIVE_TURNS, 255, -1 },
     { "Your partner must only Appeal and Defend!", PARTNER_INACTIVE_TURNS, 255, -1 },
     { "Appeal/Defend only for %" PRId32 " turns!", INACTIVE_TURNS, 2, 5 },
@@ -999,7 +999,17 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     
     // Finalize and assign selected condition's parameters.
     int32_t param = conditions[idx].param_min;
-    if (conditions[idx].param_max > 0) {
+    if (conditions[idx].type == FP_MORE && state.floor_ < 30) {
+        // v1.2: Special case; "Use FP" shouldn't appear too early in the Pit.
+        // Replace it with something random that doesn't have any parameters.
+        switch (state.Rand(4)) {
+            case 0: idx = 0;    break;  // No jump
+            case 1: idx = 2;    break;  // No hammer
+            case 2: idx = 6;    break;  // No damage w/Mario
+            case 3: idx = 18;   break;  // No spending FP
+        }
+        param = conditions[idx].param_min;
+    } else if (conditions[idx].param_max > 0) {
         param += state.Rand(conditions[idx].param_max - 
                             conditions[idx].param_min + 1);
     }
@@ -1007,7 +1017,7 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
         case TOTAL_DAMAGE_LESS:
         case TOTAL_DAMAGE_MORE:
         case FP_MORE:
-            param *= state.floor_ < 50 ? 2 : 5;
+            param *= state.floor_ < 50 ? 2 : 3;
             break;
         case MARIO_FINAL_HP_MORE:
             // Make it based on percentage of max HP.
