@@ -787,6 +787,15 @@ void OnModuleLoaded(OSModuleInfo* module) {
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + 0x5cecc),
             &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+        // Patch over Bandit, Badge Bandit confusion check for whether to steal.
+        uint32_t kCheckConfusedOrInfatuatedAddr =
+            reinterpret_cast<uint32_t>(CheckConfusedOrInfatuated);
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x2ffa8),
+            &kCheckConfusedOrInfatuatedAddr, sizeof(uint32_t));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x73e40),
+            &kCheckConfusedOrInfatuatedAddr, sizeof(uint32_t));
         // Fix Dark Koopatrol's normal attack if there are no valid targets.
         *reinterpret_cast<uint32_t*>(module_ptr + 0x51790) = 98;
         
@@ -824,6 +833,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
                 &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
             // Fix Koopatrol's normal attack if there are no valid targets.
             *reinterpret_cast<uint32_t*>(module_ptr + 0x3a4a8) = 98;
+
         } else if (module_id == ModuleId::TOU2) {
             // Patch over Hammer, Boomerang, and Fire Bros.' HP checks.
             mod::patch::writePatch(
@@ -860,6 +870,12 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x58b14),
                 &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            // Patch over Big Bandit confusion check for whether to steal items.
+            uint32_t kCheckConfusedOrInfatuatedAddr =
+                reinterpret_cast<uint32_t>(CheckConfusedOrInfatuated);
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x65220),
+                &kCheckConfusedOrInfatuatedAddr, sizeof(uint32_t));
         } else if (module_id == ModuleId::AJI) {
             // Make all varieties of Yux able to be hit by grounded attacks,
             // that way any partner is able to attack them.
@@ -2828,6 +2844,16 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kSkipUpgradeCutsceneOpAddr),
         &kSkipCutsceneOpcode, sizeof(uint32_t));
         
+    // Change frame windows for guarding / Superguarding at different levels
+    // of Simplifiers / Unsimplifiers to be more symmetric.
+    const int8_t kGuardFrames[] =     { 12, 10, 9, 8, 7, 6, 5, 0 };
+    const int8_t kSuperguardFrames[]  = { 5, 4, 4, 3, 2, 2, 1, 0 };
+    mod::patch::writePatch(
+        ttyd::battle_ac::guard_frames, kGuardFrames, sizeof(kGuardFrames));
+    mod::patch::writePatch(
+        ttyd::battle_ac::superguard_frames, kSuperguardFrames, 
+        sizeof(kSuperguardFrames));
+        
     // Disable the check for enemies only holding certain types of items.
     const int32_t kSkipEnemyHeldItemCheckOpAddr = 0x80125d54;
     const uint32_t kSkipEnemyHeldItemCheckOpcode = 0x60000000;  // nop
@@ -3281,6 +3307,18 @@ EVT_DEFINE_USER_FUNC(CheckNumEnemiesRemaining) {
             ++num_enemies;
     }
     evtSetValue(evt, evt->evtArguments[0], num_enemies);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(CheckConfusedOrInfatuated) {
+    // Check if Confused first (assumes token checked is 0x10).
+    ttyd::battle_event_cmd::btlevtcmd_CheckToken(evt, isFirstCall);
+    // Check if Infatuated.
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    if (unit->alliance == 0) evtSetValue(evt, evt->evtArguments[2], 1);
     return 2;
 }
 

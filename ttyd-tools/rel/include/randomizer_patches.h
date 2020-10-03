@@ -188,6 +188,10 @@ EVT_DECLARE_USER_FUNC(InfatuateChangeAlliance, 2)
 // making sure to account for both possible alliances.
 EVT_DECLARE_USER_FUNC(CheckNumEnemiesRemaining, 1)
 
+// Replaces the logic for Bandits checking if they are confused, so they don't
+// steal your items from enemies(!) when Infatuated.
+EVT_DECLARE_USER_FUNC(CheckConfusedOrInfatuated, 3)
+
 // Returns the percentage of max HP a battle unit currently has.
 EVT_DECLARE_USER_FUNC(GetPercentOfMaxHP, 2)
 

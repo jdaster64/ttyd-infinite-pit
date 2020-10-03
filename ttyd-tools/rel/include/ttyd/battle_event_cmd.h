@@ -187,7 +187,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectEnemy, 2)
 // btlevtcmd_ChangeKind
 // btlevtcmd_CheckCommandUnit
 // btlevtcmd_SetRegistStatus
-// btlevtcmd_CheckToken
+EVT_DECLARE_USER_FUNC(btlevtcmd_CheckToken, 3)
 // btlevtcmd_OffToken
 // btlevtcmd_OnToken
 // btlevtcmd_SetPartsBlur
