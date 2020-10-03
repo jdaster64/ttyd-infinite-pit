@@ -1270,23 +1270,15 @@ bool CheckForUnusableItemInMenu() {
     if (party_member_target == 0) {
         if (g_Randomizer->state_.GetOptionValue(
             RandomizerState::SHINE_SPRITES_MARIO)) {
-            // If you have a Star Power and you've upgraded SP less than 4,
-            // the Shine Sprite can be used to increase it further.
-            if (ttyd::mario_pouch::pouchGetMaxAP() > 0 &&
-                ttyd::mario_pouch::pouchGetMaxAP() - 
-                g_Randomizer->state_.StarPowersObtained() * 100 < 400)
-                return false;
+            // Can use Shine Sprites only when Mario has SP.
+            if (ttyd::mario_pouch::pouchGetMaxAP() > 0) return false;
         } else {
-            party_member_target = 1;
+            // Shine Sprites will be used on partners instead.
+            return false;
         }
-    }
-    if (party_member_target > 0) {
-        // If the selected partner's max HP < 200, it can be increased further.
-        int32_t selected_party_id = 
-            party_data[party_member_target - 1]->partner_id;
-        int16_t* hp_table = 
-            ttyd::mario_pouch::_party_max_hp_table + selected_party_id * 4;
-        if (hp_table[2] < 200) return false;
+    } else {
+        // Shine Sprites can always be used on partners.
+        return false;
     }
     
     // The item cannot be used; play a sound effect and return true.
@@ -1332,42 +1324,49 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 ttyd::mario_pouch::pouchGetFP() +
                 GetBonusCakeRestoration());
         } else if (item == ItemType::GOLD_BAR_X3) {
-            // Mario selected; add +0.5 max SP and restore all SP.
             if (selected_party_id == 0) {
+                // Mario selected; add +0.5 max SP (up to +7.0) and restore SP.
                 PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-                pouch.max_sp += 50;
+                if (pouch.max_sp - g_Randomizer->state_.StarPowersObtained() 
+                    * 100 < 700) {
+                    pouch.max_sp += 50;
+                }
                 pouch.current_sp = pouch.max_sp;
-                return;
-            }
-            
-            ttyd::mario_pouch::PouchPartyData* pouch_data =
-                ttyd::mario_pouch::pouchGetPtr()->party_data + selected_party_id;
-            int16_t* hp_table = 
-                ttyd::mario_pouch::_party_max_hp_table + selected_party_id * 4;
-                
-            // Rank the selected party member up and fully heal them.
-            if (pouch_data->hp_level < 2) {
-                ++pouch_data->hp_level;
-                ++pouch_data->attack_level;
-                ++pouch_data->tech_level;
             } else {
-                // Increase the Ultra Rank's max HP by 5.
-                if (hp_table[2] < 200) hp_table[2] += 5;
+                ttyd::mario_pouch::PouchPartyData* pouch_data =
+                    ttyd::mario_pouch::pouchGetPtr()->party_data +
+                    selected_party_id;
+                int16_t* hp_table = 
+                    ttyd::mario_pouch::_party_max_hp_table +
+                    selected_party_id * 4;
+                    
+                // Rank the selected party member up and fully heal them.
+                if (pouch_data->hp_level < 2) {
+                    ++pouch_data->hp_level;
+                    ++pouch_data->attack_level;
+                    ++pouch_data->tech_level;
+                } else {
+                    // Increase the Ultra Rank's max HP by 5.
+                    if (hp_table[2] < 200) hp_table[2] += 5;
+                }
+                pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
+                pouch_data->current_hp = hp_table[pouch_data->hp_level];
+                pouch_data->max_hp = hp_table[pouch_data->hp_level];
+                // Include HP Plus P in current / max stats.
+                const int32_t hp_plus_p_cnt =
+                    ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
+                pouch_data->current_hp += 5 * hp_plus_p_cnt;
+                pouch_data->max_hp += 5 * hp_plus_p_cnt;
+                
+                // Save the partner upgrade count to the randomizer state.
+                ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
             }
-            pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
-            pouch_data->current_hp = hp_table[pouch_data->hp_level];
-            pouch_data->max_hp = hp_table[pouch_data->hp_level];
-            // Include HP Plus P in current / max stats.
-            const int32_t hp_plus_p_cnt =
-                ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
-            pouch_data->current_hp += 5 * hp_plus_p_cnt;
-            pouch_data->max_hp += 5 * hp_plus_p_cnt;
-            // Save the partner upgrade count to the randomizer state.
-            ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
             
-            // Also, increment the number of actual Shine Sprites, so it shows
-            // the total used in the Mario menu.
-            ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
+            // Increment the number of actual Shine Sprites, so it shows
+            // the total count used in the Mario menu.
+            if (ttyd::mario_pouch::pouchGetPtr()->shine_sprites < 999) {
+                ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
+            }
         }
     }
     
