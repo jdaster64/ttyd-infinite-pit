@@ -242,6 +242,7 @@ void Randomizer::Init() {
     ApplyEnemyStatChangePatches();
     ApplyWeaponLevelSelectionPatches();
     ApplyItemAndAttackPatches();
+    ApplyPlayerStatTrackingPatches();
     ApplyMiscPatches();
     
     // Initialize the menu.

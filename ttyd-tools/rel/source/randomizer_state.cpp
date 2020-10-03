@@ -488,7 +488,7 @@ void RandomizerState::IncrementPlayStat(PlayStats stat, int32_t amount) {
     }
     current += amount;
     if (current > max) current = max;
-    for (int32_t i = offset + length - 1; i <= offset; --i) {
+    for (int32_t i = offset + length - 1; i >= offset; --i) {
         play_stats_[i] = current & 0xff;
         current >>= 8;
     }

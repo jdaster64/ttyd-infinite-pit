@@ -104,7 +104,7 @@ struct RandomizerState {
     bool StarPowerEnabled() const;
     
     // Get or update various stats tracked over the course of a file.
-    void IncrementPlayStat(PlayStats stat, int32_t amount);
+    void IncrementPlayStat(PlayStats stat, int32_t amount = 1);
     int32_t GetPlayStat(PlayStats stat) const;
     // Returns a base-64-esque encoding of this file's user-selectable options.
     const char* GetEncodedOptions() const;

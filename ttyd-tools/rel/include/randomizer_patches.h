@@ -129,6 +129,9 @@ void ApplyWeaponLevelSelectionPatches();
 // Apply patches to item, badge, and weapon data.
 void ApplyItemAndAttackPatches();
 
+// Apply miscellaneous small patches that track player stats and do nothing else.
+void ApplyPlayerStatTrackingPatches();
+
 // Apply miscellaneous small patches that do not require function hooks.
 void ApplyMiscPatches();
 
