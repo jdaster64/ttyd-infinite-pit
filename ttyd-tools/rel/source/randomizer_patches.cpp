@@ -95,6 +95,9 @@ extern "C" {
     void BranchBackGivePlayerInvuln();
     void StartBtlSeqEndJudgeRule();
     void BranchBackBtlSeqEndJudgeRule();
+    // crash_handler_patches.s
+    void StartCrashHandlerScale();
+    void BranchBackCrashHandlerScale();
     // eff_updown_disp_patches.s
     void StartDispUpdownNumberIcons();
     void BranchBackDispUpdownNumberIcons();
@@ -154,6 +157,11 @@ extern "C" {
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
+    
+    void scaleCrashHandlerText(gc::mtx34* mtx) {
+        // Sufficiently small to fit on one screen.
+        gc::mtx::PSMTXScale(mtx, 0.6, 0.72, 1.0);
+    }
     
     void getPartyMemberMenuOrder(ttyd::win_party::WinPartyData** party_data) {
         mod::pit_randomizer::GetPartyMemberMenuOrder(party_data);
@@ -2780,24 +2788,22 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kCrashHandlerEnableOpAddr),
         &kEnableHandlerOpcode, sizeof(uint32_t));
         
-    // Change the size of the crash handler text.
-    const uint32_t kCrashHandlerFontScaleAddr = 0x80428bc0;
-    const float kCrashHandlerNewFontScale = 0.6f;
+    // Make the crash handler text stay in place rather than scrolling.
+    const uint32_t kCrashHandlerLoopHookAddr = 0x8025e284;
+    const uint32_t kCrashHandlerLoopOpcode = 0x60000000;  // nop
     mod::patch::writePatch(
-        reinterpret_cast<void*>(kCrashHandlerFontScaleAddr),
-        &kCrashHandlerNewFontScale, sizeof(float));
+        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr),
+        &kCrashHandlerLoopOpcode, sizeof(uint32_t));
         
-    // Make the crash handler text loop.
-    const uint32_t kCrashHandlerLoopHookAddr1 = 0x8025e4a4;
-    const uint32_t kCrashHandlerLoopHookAddr2 = 0x8025e4a8;
-    const uint32_t kCrashHandlerLoopOpcode1 = 0x3b400000;   // li r26, 0
-    const uint32_t kCrashHandlerLoopOpcode2 = 0x4bfffdd4;   // b -0x22c
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr1),
-        &kCrashHandlerLoopOpcode1, sizeof(uint32_t));
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr2),
-        &kCrashHandlerLoopOpcode2, sizeof(uint32_t));
+    // Change the size of the crash handler text so it all fits on one screen.
+    const int32_t kScaleCrashHandlerBeginHookAddress = 0x8025e194;
+    const int32_t kScaleCrashHandlerEndHookAddress = 0x8025e1a0;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kScaleCrashHandlerBeginHookAddress),
+        reinterpret_cast<void*>(StartCrashHandlerScale));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCrashHandlerScale),
+        reinterpret_cast<void*>(kScaleCrashHandlerEndHookAddress));
         
     // Fix msgWindow off-by-one allocation error.
     const uint32_t kMsgWindowGetSizeToAllocAddr = 0x800816f4;

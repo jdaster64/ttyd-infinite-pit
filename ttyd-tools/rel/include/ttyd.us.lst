@@ -1653,6 +1653,7 @@
 8029dd30:PSMTXCopy
 8029dd64:PSMTXConcat
 8029e230:PSMTXTrans
+8029e2b0:PSMTXScale
 
 // os.a OSLink.c
 8029A340:OSNotifyLink
