@@ -24,6 +24,7 @@
 #include <ttyd/seqdrv.h>
 #include <ttyd/seq_battle.h>
 #include <ttyd/seq_title.h>
+#include <ttyd/sound.h>
 #include <ttyd/statuswindow.h>
 #include <ttyd/system.h>
 
@@ -64,7 +65,6 @@ void (*g_statusWinDisp_trampoline)(void) = nullptr;
 void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 
 bool g_CueGameOver = false;
-bool g_DrawDebug = true;
 
 void DrawOptionsMenu() {
     g_Randomizer->menu_.Draw();
@@ -79,25 +79,13 @@ void DrawTitleScreenInfo() {
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.7f, 0x000000E5u, 15, 10);
 }
 
-// Handles printing stuff to the screen for debugging purposes.
-void DrawDebuggingFunctions() {
-    static int32_t x = -260, y = -195;
-    
-    // D-Pad directions to change position of time display.
-    // if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
-        // y -= 1;
-    // } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_RIGHT) {
-        // x += 1;
-    // } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_DOWN) {
-        // y += 1;
-    // } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
-        // x -= 1;
-    // }
-    
+uint32_t secretCode_RtaTimer = 0b0001'0001'1010'1111;
+bool g_DrawRtaTimer = false;
+void DrawRtaTimer() {
     // Print the current RTA timer and its position to the screen at all times.
     char buf[32];
     sprintf(buf, "%s", g_Randomizer->state_.GetCurrentTimeString());
-    DrawText(buf, x, y, 0xFF, true, ~0U, 0.75f, /* aligned center-left */ 3);
+    DrawText(buf, -260, -195, 0xFF, true, ~0U, 0.75f, /* center-left */ 3);
 }
 
 }
@@ -251,6 +239,22 @@ void Randomizer::Init() {
 
 void Randomizer::Update() {
     menu_.Update();
+    
+    // Process cheat codes.
+    static uint32_t code_history = ~0U;
+    int32_t code = -1;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::L) code = 0;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::R) code = 1;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::X) code = 2;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::Y) code = 3;
+    if (code >= 0) {
+        code_history = (code_history << 2) | code;
+    }
+    if ((code_history & 0xFFFF) == secretCode_RtaTimer) {
+        code_history = ~0U;
+        g_DrawRtaTimer = true;
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
 }
 
 void Randomizer::Draw() {
@@ -268,9 +272,9 @@ void Randomizer::Draw() {
     // Draw options menu.
     RegisterDrawCallback(DrawOptionsMenu, CameraId::k2d);
     
-    // Draw debugging overlay, if enabled.
-    if (InMainGameModes() && g_DrawDebug) {
-        RegisterDrawCallback(DrawDebuggingFunctions, CameraId::kDebug3d);
+    // Draw RTA timer overlay, if enabled.
+    if (InMainGameModes() && g_DrawRtaTimer) {
+        RegisterDrawCallback(DrawRtaTimer, CameraId::kDebug3d);
     }
 }
 

@@ -214,8 +214,8 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
         case MsgKey::MSG_JON_KANBAN_2: {
             if (g_Randomizer->state_.GetPlayStatsString(buf)) return buf;
             return "<kanban>\n"
-                   "Start a new file to see\n"
-                   "your play stats here!\n<k>";
+                   "Start a new file to see some\n"
+                   "of your play stats here!\n<k>";
         }
         case MsgKey::MSG_JON_KANBAN_3: {
             sprintf(buf, "<kanban>\nYour seed: <col %sff>%s\n</col>"
