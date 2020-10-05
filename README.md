@@ -1,4 +1,4 @@
-### Paper Mario: TTYD Infinite Pit Mod (v1.22 r38) by Jdaster64
+### Paper Mario: TTYD Infinite Pit Mod (v1.23 r39) by Jdaster64
 
 ### Credits
 *   **PistonMiner** - For the initial REL framework and related tools, and 

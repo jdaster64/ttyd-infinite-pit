@@ -3086,7 +3086,11 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     const int32_t reward_mode =
         g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
     NpcBattleInfo* battle_info = &npc->battleInfo;
-    if (reward_mode != RandomizerState::NO_HELD_ITEMS) {
+    if (reward_mode == RandomizerState::NO_HELD_ITEMS) {
+        for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
+            battle_info->wHeldItems[i] = 0;
+        }
+    } else {
         // If item drops only come from conditions, spawn Shine Sprites
         // as held items occasionally after floor 30.
         int32_t shine_rate = 0;
