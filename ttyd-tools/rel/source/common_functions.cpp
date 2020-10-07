@@ -140,8 +140,10 @@ int32_t IntegerToFmtString(int32_t val, char* out_buf, int32_t max_val) {
 }
 
 int32_t DurationTicksToFmtString(int64_t val, char* out_buf) {
-    // Divide by the number of ticks in a centisecond (40.5M / 100).
-    val /= 405000;
+    // Divide by the number of ticks in a centisecond (bus speed / 400).
+    const int32_t kTicksPerCentisecond =
+        *reinterpret_cast<const int32_t*>(0x800000f8) / 400;
+    val /= kTicksPerCentisecond;
     // Maximum duration = 100 hours' worth of centiseconds.
     if (val >= 100 * 60 * 60 * 100 || val < 0) {
         val = 100 * 60 * 60 * 100 - 1;
