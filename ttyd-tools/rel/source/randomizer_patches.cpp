@@ -267,6 +267,7 @@ void (*g_BtlActRec_AddCount_trampoline)(uint8_t*) = nullptr;
 int32_t (*g_btlevtcmd_GetSelectEnemy_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool) = nullptr;
 uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
+void (*g_pouchReviseMarioParam_trampoline)() = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -1402,6 +1403,8 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
 
 void CheckBattleCondition() {
     auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
+    NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
+
     // Track the number of turns spent / number of run aways at fight's end.
     g_Randomizer->state_.IncrementPlayStat(
         RandomizerState::TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
@@ -1409,21 +1412,39 @@ void CheckBattleCondition() {
         g_Randomizer->state_.IncrementPlayStat(RandomizerState::TIMES_RAN_AWAY);
     }
     
-    const int32_t item_reward =
-        fbat_info->wBattleInfo->pConfiguration->random_item_weight;
     // Did not win the fight (e.g. ran away).
     if (fbat_info->wResult != 1) return;
+    
+    // Did not win the fight (an enemy still has a stolen item).
+    for (int32_t i = 0; i < 8; ++i) {
+        if (npc_info->wStolenItems[i] != 0) return;
+    }
+    
     // If condition is a success and rule is not 0, add a bonus item.
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
-        NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
-        for (int32_t i = 0; i < 8; ++i) {
-            // Only return a bonus item if the enemies were all defeated.
-            if (npc_info->wStolenItems[i] != 0) return;
-        }
+        const int32_t item_reward = npc_info->pConfiguration->random_item_weight;
         for (int32_t i = 0; i < 8; ++i) {
             if (npc_info->wBackItemIds[i] == 0) {
                 npc_info->wBackItemIds[i] = item_reward;
                 break;
+            }
+        }
+    }
+    
+    // If battle reward mode is ALL_HELD_ITEMS, award items other than the
+    // natural drop ones until there are no "recovered items" slots left.
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
+        == RandomizerState::ALL_HELD_ITEMS) {
+        for (int32_t i = 0; i < 8; ++i) {
+            const int32_t held_item = npc_info->wHeldItems[i];
+            // If there is a held item, and this isn't the natural drop...
+            if (held_item && i != npc_info->pConfiguration->held_item_weight) {
+                for (int32_t j = 0; j < 8; ++j) {
+                    if (npc_info->wBackItemIds[j] == 0) {
+                        npc_info->wBackItemIds[j] = held_item;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -1589,8 +1610,9 @@ void GetDropMaterials(FbatBattleInformation* fbat_info) {
     
     // If using default battle reward mode, select the item drop based on
     // the previously determined enemy held item index.
-    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
-        == 0) {
+    const int32_t reward_mode =
+        g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
+    if (reward_mode == 0 || reward_mode == RandomizerState::ALL_HELD_ITEMS) {
         battle_info->wItemDropped = 
             battle_info->wHeldItems[party_setup->held_item_weight];
     }
@@ -2480,6 +2502,17 @@ void ApplyItemAndAttackPatches() {
     // Sweet Feast and Showstopper both cost 4 SP.
     ttyd::battle_mario::marioWeapon_Genki1.base_sp_cost = 4;
     ttyd::battle_mario::marioWeapon_Suki.base_sp_cost = 4;
+    
+    // Apply patch to give the player infinite BP if NO_EXP_INFINITE_BP enabled.
+    g_pouchReviseMarioParam_trampoline = mod::patch::hookFunction(
+        ttyd::mario_pouch::pouchReviseMarioParam, [](){
+            g_pouchReviseMarioParam_trampoline();
+            if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)
+                == RandomizerState::NO_EXP_INFINITE_BP &&
+                !strcmp(GetCurrentArea(), "jon")) {
+                ttyd::mario_pouch::pouchGetPtr()->unallocated_bp = 99;
+            }
+        });
 }
 
 void ApplyPlayerStatTrackingPatches() {    
@@ -2982,6 +3015,13 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
         // Disable Sweet Treat from the rewards pool.
         g_Randomizer->state_.reward_flags_ |= (1 << 5);
     }
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)) {
+        auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        pouch.rank = 3;
+        pouch.level = 99;
+        pouch.unallocated_bp += 90;
+        pouch.total_bp += 90;
+    }    
     // Save the timestamp you entered the Pit.
     g_Randomizer->state_.SaveCurrentTime(/* pit_start = */ true);
     // All other options are handled immediately on setting them,

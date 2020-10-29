@@ -154,18 +154,11 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
             break;
         }
         case NO_EXP_MODE: {
-            options_ ^= NO_EXP_MODE;
-            if (options_ & NO_EXP_MODE) {
-                pouch.rank = 3;
-                pouch.level = 99;
-                pouch.unallocated_bp += 90;
-                pouch.total_bp += 90;
-            } else {
-                pouch.rank = 0;
-                pouch.level = 1;
-                pouch.unallocated_bp -= 90;
-                pouch.total_bp -= 90;
-            }
+            if (change == 0) change = 1;
+            int32_t value = GetOptionValue(option) + change * (option / 3);
+            if (value < 0) value = NO_EXP_INFINITE_BP;
+            if (value > NO_EXP_INFINITE_BP) value = 0;
+            options_ = (options_ & ~option) | value;
             break;
         }
         case START_WITH_NO_ITEMS: {
@@ -203,15 +196,9 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
                        (SWITCH_PARTY_COST_FP / 3 * value);
             break;
         }
-        case BATTLE_REWARD_MODE: {
-            if (change == 0) change = 1;
-            int32_t value = GetOptionValue(option) + change * (option / 3);
-            if (value < 0) value = NO_HELD_ITEMS;
-            if (value > NO_HELD_ITEMS) value = 0;
-            options_ = (options_ & ~option) | value;
-            break;
-        }
+        case BATTLE_REWARD_MODE:
         case POST_100_SCALING: {
+            if (change == 0) change = 1;
             int32_t value = GetOptionValue(option) + change * (option / 3);
             if (value < 0) value = option;
             if (value > option) value = 0;
@@ -249,6 +236,7 @@ int32_t RandomizerState::GetOptionValue(int32_t option) const {
             return (options_ & SWITCH_PARTY_COST_FP) / (SWITCH_PARTY_COST_FP/3);
         case POST_100_SCALING:
         case BATTLE_REWARD_MODE:
+        case NO_EXP_MODE:
             return (options_ & option);
         default:
             return (options_ & option) != 0;
@@ -276,7 +264,7 @@ void RandomizerState::GetOptionStrings(
             break;
         }
         case NO_EXP_MODE: {
-            sprintf(name, "No EXP, Max BP mode:");
+            sprintf(name, "No-EXP mode:");
             break;
         }
         case START_WITH_NO_ITEMS: {
@@ -333,10 +321,30 @@ void RandomizerState::GetOptionStrings(
     int32_t option_value = GetOptionValue(option);
     *color = 0;
     switch (option) {
+        case NO_EXP_MODE: {
+            switch (option_value) {
+                case 0: {
+                    sprintf(value, "Off");
+                    *color = 0xe50000ffU;
+                    break;
+                }
+                case NO_EXP_99_BP: {
+                    sprintf(value, "On (99 BP)");
+                    *color = 0x00c100ffU;
+                    break;
+                }
+                case NO_EXP_INFINITE_BP: {
+                    sprintf(value, "On (Infinite BP)");
+                    *color = 0x00c100ffU;
+                    break;
+                }
+            }
+            break;
+        }
         case BATTLE_REWARD_MODE: {
             switch (option_value) {
                 case 0: {
-                    sprintf(value, "Held + bonus");
+                    sprintf(value, "One held + bonus");
                     break;
                 }
                 case CONDITION_DROPS_HELD: {
@@ -345,6 +353,10 @@ void RandomizerState::GetOptionStrings(
                 }
                 case NO_HELD_ITEMS: {
                     sprintf(value, "Conditions only");
+                    break;
+                }
+                case ALL_HELD_ITEMS: {
+                    sprintf(value, "All held + bonus");
                     break;
                 }
             }

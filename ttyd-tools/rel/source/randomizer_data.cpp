@@ -936,7 +936,8 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     // If using held items + bonus conditions, only pick one every ~4 floors.
     const int32_t reward_mode =
         state.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
-    if (reward_mode == 0 && state.Rand(4)) return;
+    if ((reward_mode == 0 || reward_mode == RandomizerState::ALL_HELD_ITEMS) && 
+        state.Rand(4)) return;
         
     const int32_t shine_rate =
         reward_mode == RandomizerState::NO_HELD_ITEMS ? 8 : 30;

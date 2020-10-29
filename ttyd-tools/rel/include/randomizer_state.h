@@ -9,27 +9,44 @@ struct RandomizerState {
         // Options that do not change seeding.
         MERLEE                  = 0x10,     // Infinite Merlee curses
         SUPERGUARDS_COST_FP     = 0x20,     // Superguards cost 1 FP
-        NO_EXP_MODE             = 0x40,     // Start at level 99 w/99 BP, no EXP
+        NO_EXP_MODE             = 0xC0,     // Start at level 99, gain no EXP
         START_WITH_FX           = 0x100,    // Start with Attack FX badges
         START_WITH_NO_ITEMS     = 0x200,    // Start with a preset set of items
         SWITCH_PARTY_COST_FP    = 0xc00,    // Switching partners costs 1-3 FP
         YOSHI_COLOR_SELECT      = 0x1000,   // Manually selecting Yoshi color
         SHINE_SPRITES_MARIO     = 0x2000,   // Increase max SP w/Shine Sprites
         ALWAYS_ENABLE_AUDIENCE  = 0x4000,   // Always enable SP features
-        WEAKER_RUSH_BADGES      = 0x8000,   // Rush badges increase ATK less
         
         // Options that DO change seeding.
-        NUM_CHEST_REWARDS       = 0x7,      // 0 ~ 5 (0 = random); changes seeds
+        NUM_CHEST_REWARDS       = 0x7,      // 1 ~ 5 per chest (0 = varies)
         POST_100_SCALING        = 0x30000,  // Sets HP / ATK scale after fl. 100
         START_WITH_PARTNERS     = 0x40000,  // Start with all base-rank partners
         START_WITH_SWEET_TREAT  = 0x80000,  // Start with Sweet Treat
         BATTLE_REWARD_MODE      = 0x300000, // Alternate battle reward schemes
         
+        // Bonus options.
+        WEAKER_RUSH_BADGES      = 0x8000,       // Rush badges increase ATK less
+        CAP_BADGE_EVASION       = 0x400000,     // Max evasion from badge capped
+        HP_FP_DRAIN_PER_HIT     = 0x800000,     // Restore 1 HP/FP per hit
+        SWAP_CO_PL_SP_COST      = 0x8000000,    // Swap Clock Out and Power Lift
+        STAGE_HAZARD_OPTIONS    = 0x7000000,    // Stage hazard frequency, etc.
+        DAMAGE_RANGE            = 0x30000000,   // All damage has random ranges
+        AUDIENCE_ITEMS_RANDOM   = 0x40000000,   // Random audience item throws
+        
         // Individual modes of composite options.
+        NO_EXP_99_BP            = 0x40,
+        NO_EXP_INFINITE_BP      = 0x80,
         POST_100_HP_SCALING     = 0x10000,
         POST_100_ATK_SCALING    = 0x20000,
         CONDITION_DROPS_HELD    = 0x100000, // Held item drop gated by condition
         NO_HELD_ITEMS           = 0x200000, // Condition items only, none held
+        ALL_HELD_ITEMS          = 0x300000, // All held items drop + bonus
+        HAZARD_RATE_HIGH        = 0x1000000,
+        HAZARD_RATE_LOW         = 0x2000000,
+        HAZARD_RATE_NO_FOG      = 0x3000000,
+        HAZARD_RATE_OFF         = 0x4000000,
+        DAMAGE_RANGE_25         = 0x10000000,   // +/-25%, in increments of 5%
+        DAMAGE_RANGE_50         = 0x20000000,   // +/-50%, in increments of 10%
         
         // Options that aren't controlled by flags (used by menu state).
         CHANGE_PAGE             = -100,
