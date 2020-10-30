@@ -52,6 +52,7 @@ struct RandomizerState {
         CHANGE_PAGE             = -100,
         HP_MODIFIER             = -101,     // Multiplier for enemy HP
         ATK_MODIFIER            = -102,     // Multiplier for enemy ATK
+        INVALID_OPTION          = -999,
     };
     
     // Enum of stats that get tracked point by point throughout a run.

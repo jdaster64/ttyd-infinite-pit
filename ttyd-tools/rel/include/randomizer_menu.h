@@ -14,6 +14,10 @@ public:
     void Update();
     // Code that runs drawing-related code every frame.
     void Draw();
+    
+    // Determines whether individual pages of the options menu can be accessed.
+    // Used to unlock the two pages of bonus options.
+    void SetMenuPageVisibility(int32_t page, bool enabled);
 };
  
 }

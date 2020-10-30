@@ -205,6 +205,22 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
             options_ = (options_ & ~option) | value;
             break;
         }
+        case STAGE_HAZARD_OPTIONS: {
+            if (change == 0) change = 1;
+            int32_t value = GetOptionValue(option) + change * (option / 7);
+            if (value < 0) value = HAZARD_RATE_OFF;
+            if (value > HAZARD_RATE_OFF) value = 0;
+            options_ = (options_ & ~option) | value;
+            break;
+        }
+        case DAMAGE_RANGE: {
+            if (change == 0) change = 1;
+            int32_t value = GetOptionValue(option) + change * (option / 3);
+            if (value < 0) value = DAMAGE_RANGE_50;
+            if (value > DAMAGE_RANGE_50) value = 0;
+            options_ = (options_ & ~option) | value;
+            break;
+        }
         case HP_MODIFIER: {
             hp_multiplier_ += change;
             if (hp_multiplier_ < 1) hp_multiplier_ = 1;
@@ -226,17 +242,18 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
 
 int32_t RandomizerState::GetOptionValue(int32_t option) const {
     switch (option) {
-        case NUM_CHEST_REWARDS:
-            return (options_ & NUM_CHEST_REWARDS);
         case HP_MODIFIER:
             return hp_multiplier_;
         case ATK_MODIFIER:
             return atk_multiplier_;
         case SWITCH_PARTY_COST_FP:
             return (options_ & SWITCH_PARTY_COST_FP) / (SWITCH_PARTY_COST_FP/3);
-        case POST_100_SCALING:
+        case NUM_CHEST_REWARDS:
         case BATTLE_REWARD_MODE:
         case NO_EXP_MODE:
+        case POST_100_SCALING:
+        case STAGE_HAZARD_OPTIONS:
+        case DAMAGE_RANGE:
             return (options_ & option);
         default:
             return (options_ & option) != 0;
@@ -313,6 +330,34 @@ void RandomizerState::GetOptionStrings(
         }
         case POST_100_SCALING: {
             sprintf(name, "Late-Pit stat scaling:");
+            break;
+        }
+        case CAP_BADGE_EVASION: {
+            sprintf(name, "Cap badge evasion at 80%%:");
+            break;
+        }
+        case HP_FP_DRAIN_PER_HIT: {
+            sprintf(name, "PM64-style Drain badges:");
+            break;
+        }
+        case SWAP_CO_PL_SP_COST: {
+            sprintf(name, "Swap Clock Out & Power Lift:");
+            break;
+        }
+        case STAGE_HAZARD_OPTIONS: {
+            sprintf(name, "Stage hazard frequency:");
+            break;
+        }
+        case DAMAGE_RANGE: {
+            sprintf(name, "Damage randomization:");
+            break;
+        }
+        case AUDIENCE_ITEMS_RANDOM: {
+            sprintf(name, "Random audience items:");
+            break;
+        }
+        default: {
+            name[0] = '\0';
             break;
         }
     }
@@ -423,6 +468,53 @@ void RandomizerState::GetOptionStrings(
         }
         case WEAKER_RUSH_BADGES: {
             sprintf(value, option_value ? "+1/+2" : "+2/+5");
+            break;
+        }
+        case STAGE_HAZARD_OPTIONS: {
+            switch (option_value) {
+                case 0: {
+                    sprintf(value, "Default");
+                    break;
+                }
+                case HAZARD_RATE_HIGH: {
+                    sprintf(value, "High");
+                    break;
+                }
+                case HAZARD_RATE_LOW: {
+                    sprintf(value, "Low");
+                    break;
+                }
+                case HAZARD_RATE_NO_FOG: {
+                    sprintf(value, "No Fog");
+                    break;
+                }
+                case HAZARD_RATE_OFF: {
+                    sprintf(value, "Off");
+                    break;
+                }
+            }
+            break;
+        }
+        case DAMAGE_RANGE: {
+            switch (option_value) {
+                case 0: {
+                    sprintf(value, "Off");
+                    *color = 0xe50000ffU;
+                    break;
+                }
+                case DAMAGE_RANGE_25: {
+                    sprintf(value, "+/-25%%");
+                    break;
+                }
+                case DAMAGE_RANGE_50: {
+                    sprintf(value, "+/-50%%");
+                    break;
+                }
+            }
+            break;
+        }
+        case INVALID_OPTION: {
+            value[0] = '\0';
             break;
         }
         default: {

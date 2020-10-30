@@ -25,7 +25,7 @@ const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
 const int32_t kMenuWidth            = 360;
 const int32_t kMenuPadding          = 15;
-const int32_t kNumOptionPages       = 4;
+const int32_t kNumOptionPages       = 6;
 const int32_t kOptionsPerPage       = 5;
 const int32_t kFadeoutStartTime     = 600;
 const int32_t kFadeoutEndTime       = 600 + 15;
@@ -44,6 +44,7 @@ const int32_t kMenuCommandFastTickStart     = 96;
 const int32_t kMenuCommandFastTickRate      = 2;
 
 // Global menu state variables.
+int32_t pages_unlocked_ = 0b11110;
 uint16_t last_command_ = 0;
 int32_t time_button_held_ = kFadeoutEndTime;
 int32_t menu_selection_ = 1;
@@ -83,12 +84,22 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         case 301: return RandomizerState::MERLEE;
         case 302: return RandomizerState::SUPERGUARDS_COST_FP;
         case 303: return RandomizerState::SWITCH_PARTY_COST_FP;
-        case 304: return RandomizerState::WEAKER_RUSH_BADGES;
+        case 304: return RandomizerState::INVALID_OPTION;
         
         case 401: return RandomizerState::HP_MODIFIER;
         case 402: return RandomizerState::ATK_MODIFIER;
         case 403: return RandomizerState::POST_100_HP_SCALING;
         case 404: return RandomizerState::POST_100_ATK_SCALING;
+        
+        case 501: return RandomizerState::WEAKER_RUSH_BADGES;
+        case 502: return RandomizerState::CAP_BADGE_EVASION;
+        case 503: return RandomizerState::HP_FP_DRAIN_PER_HIT;
+        case 504: return RandomizerState::SWAP_CO_PL_SP_COST;
+        
+        case 601: return RandomizerState::STAGE_HAZARD_OPTIONS;
+        case 602: return RandomizerState::DAMAGE_RANGE;
+        case 603: return RandomizerState::AUDIENCE_ITEMS_RANDOM;
+        case 604: return RandomizerState::INVALID_OPTION;
         
         default:  return RandomizerState::CHANGE_PAGE;
     }
@@ -101,6 +112,25 @@ uint32_t GetActiveColor(int32_t selection, uint8_t alpha) {
 void DrawMenuString(
     const char* str, float x, float y, uint32_t color, int32_t alignment) {
     DrawText(str, x, y, 0xffu, true, color, 0.75f, alignment);
+}
+
+void ChangePage(int32_t direction) {
+    for (int32_t i = 0; i < kNumOptionPages; ++i) {
+        menu_page_ += direction;
+        if (menu_page_ < 1) menu_page_ += kNumOptionPages;
+        if (menu_page_ > kNumOptionPages) menu_page_ -= kNumOptionPages;
+        if (pages_unlocked_ & (1 << menu_page_)) break;
+    }
+}
+
+void ChangeSelection(int32_t direction) {
+    for (int32_t i = 1; i <= kOptionsPerPage; ++i) {
+        menu_selection_ += direction;
+        if (menu_selection_ < 1) menu_selection_ += kOptionsPerPage;
+        if (menu_selection_ > kOptionsPerPage) menu_selection_ -= kOptionsPerPage;
+        if (GetMenuState(menu_page_, menu_selection_)
+            != RandomizerState::INVALID_OPTION) break;
+    }
 }
 
 }
@@ -164,23 +194,11 @@ void RandomizerMenu::Update() {
     if (time_button_held_ < 0) return;
     switch (last_command_) {
         case kMenuUpCommand: {
-            if (time_button_held_ == 0) {
-                if (menu_selection_ == 1) {
-                    menu_selection_ = kOptionsPerPage;
-                } else {
-                    --menu_selection_;
-                }
-            }
+            if (time_button_held_ == 0) ChangeSelection(-1);
             break;
         }
         case kMenuDownCommand: {
-            if (time_button_held_ == 0) {
-                if (menu_selection_ == kOptionsPerPage) {
-                    menu_selection_ = 1;
-                } else {
-                    ++menu_selection_;
-                }
-            }
+            if (time_button_held_ == 0) ChangeSelection(1);
             break;
         }
         case kMenuLeftCommand:
@@ -200,9 +218,7 @@ void RandomizerMenu::Update() {
                 }
                 case RandomizerState::CHANGE_PAGE: {
                     if (time_button_held_ == 0) {
-                        menu_page_ += direction ? direction : 1;
-                        if (menu_page_ < 1) menu_page_ = kNumOptionPages;
-                        if (menu_page_ > kNumOptionPages) menu_page_ = 1;
+                        ChangePage(direction ? direction : 1);
                     }
                     break;
                 }
@@ -248,15 +264,17 @@ void RandomizerMenu::Draw() {
 
     const uint32_t window_color = static_cast<uint8_t>(alpha * 4 / 5);
     
-    const uint32_t kMenuHeight = 19 * kOptionsPerPage - 4 + kMenuPadding * 2;
-    DrawWindow(window_color, kMenuX, kMenuY, kMenuWidth, kMenuHeight, 10);
+    const uint32_t menu_height = 19 * kOptionsPerPage - 4 + kMenuPadding * 2;
+    const uint32_t menu_width = menu_page_ > 4 ? kMenuWidth + 20 : kMenuWidth;
+    
+    DrawWindow(window_color, kMenuX, kMenuY, menu_width, menu_height, 10);
     
     const int32_t kTextX = kMenuX + kMenuPadding;
-    const int32_t kValueX = kMenuX + kMenuWidth - kMenuPadding;
+    const int32_t kValueX = kMenuX + menu_width - kMenuPadding;
     int32_t kRowY = kMenuY - kMenuPadding - 8;
     
     char name_buf[128];
-    char value_buf[16];
+    char value_buf[32];
     uint32_t color, special_color;
     
     const RandomizerState& state = g_Randomizer->state_;
@@ -276,9 +294,13 @@ void RandomizerMenu::Draw() {
     
     // Print the current page information in the bottom row.
     color = GetActiveColor(kOptionsPerPage, alpha);
-    sprintf(
-        name_buf, "Change Page (%" PRId32 "/%" PRId32 ")", 
-        menu_page_, kNumOptionPages);
+    if (menu_page_ <= 4) {
+        sprintf(
+            name_buf, "Change Page (%" PRId32 "/%" PRId32 ")", menu_page_, 4);
+    } else {
+        sprintf(
+            name_buf, "Change Page (Bonus %" PRId32 ")", menu_page_ - 4);
+    }
     DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
     // Print a warning over selections that change seeding.
     if (menu_page_ == 1 && menu_selection_ != kOptionsPerPage) {
@@ -286,6 +308,15 @@ void RandomizerMenu::Draw() {
         DrawText(
             name_buf, kValueX, kRowY + 1, 0xffu, true, 
             /* color = red */ 0xff0000ffU, 0.575f, /* right-top */ 2);
+    }
+}
+
+void RandomizerMenu::SetMenuPageVisibility(int32_t page, bool enabled) {
+    if (page < 1 || page > kNumOptionPages) return;
+    if (enabled) {
+        pages_unlocked_ |= (1 << page);
+    } else {
+        pages_unlocked_ &= ~(1 << page);
     }
 }
 

@@ -79,7 +79,10 @@ void DrawTitleScreenInfo() {
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.7f, 0x000000E5u, 15, 10);
 }
 
-uint32_t secretCode_RtaTimer = 0b0001'0001'1010'1111;
+uint32_t secretCode_RtaTimer        = 034345566;
+uint32_t secretCode_BonusOptions1   = 012651265;
+uint32_t secretCode_BonusOptions2   = 043652131;
+
 bool g_DrawRtaTimer = false;
 void DrawRtaTimer() {
     // Print the current RTA timer and its position to the screen at all times.
@@ -241,18 +244,28 @@ void Randomizer::Update() {
     menu_.Update();
     
     // Process cheat codes.
-    static uint32_t code_history = ~0U;
-    int32_t code = -1;
-    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::L) code = 0;
-    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::R) code = 1;
-    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::X) code = 2;
-    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::Y) code = 3;
-    if (code >= 0) {
-        code_history = (code_history << 2) | code;
-    }
-    if ((code_history & 0xFFFF) == secretCode_RtaTimer) {
-        code_history = ~0U;
+    static uint32_t code_history = 0;
+    int32_t code = 0;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::A) code = 1;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::B) code = 2;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::L) code = 3;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::R) code = 4;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::X) code = 5;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::Y) code = 6;
+    if (code) code_history = (code_history << 3) | code;
+    if ((code_history & 0xFFFFFF) == secretCode_RtaTimer) {
+        code_history = 0;
         g_DrawRtaTimer = true;
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_BonusOptions1) {
+        code_history = 0;
+        menu_.SetMenuPageVisibility(5, true);
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_BonusOptions2) {
+        code_history = 0;
+        menu_.SetMenuPageVisibility(6, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
 }
