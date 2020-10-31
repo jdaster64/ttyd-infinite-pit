@@ -2985,6 +2985,42 @@ void ApplyMiscPatches() {
         });
 }
 
+void ApplySettingBasedPatches() {
+    // Increase badge BP cost and shop prices if HP/FP Drains heal per hit.
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::HP_FP_DRAIN_PER_HIT)) {
+        itemDataTable[ItemType::HP_DRAIN].bp_cost = 3;
+        itemDataTable[ItemType::HP_DRAIN_P].bp_cost = 3;
+        itemDataTable[ItemType::FP_DRAIN].bp_cost = 6;
+        itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 6;
+        
+        itemDataTable[ItemType::HP_DRAIN].buy_price = 150;
+        itemDataTable[ItemType::HP_DRAIN_P].buy_price = 150;
+        itemDataTable[ItemType::FP_DRAIN].buy_price = 150;
+        itemDataTable[ItemType::FP_DRAIN_P].buy_price = 150;
+    } else {
+        itemDataTable[ItemType::HP_DRAIN].bp_cost = 1;
+        itemDataTable[ItemType::HP_DRAIN_P].bp_cost = 1;
+        itemDataTable[ItemType::FP_DRAIN].bp_cost = 1;
+        itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
+        
+        itemDataTable[ItemType::HP_DRAIN].buy_price = 70;
+        itemDataTable[ItemType::HP_DRAIN_P].buy_price = 70;
+        itemDataTable[ItemType::FP_DRAIN].buy_price = 125;
+        itemDataTable[ItemType::FP_DRAIN_P].buy_price = 125;
+    }
+    
+    // Swap SP costs of Clock Out and Power Lift.
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::SWAP_CO_PL_SP_COST)) {
+        ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 3;
+        ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 2;
+    } else {
+        ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 2;
+        ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 3;
+    }
+}
+
 EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     if (g_Randomizer->state_.GetOptionValue(
         RandomizerState::START_WITH_PARTNERS)) {
@@ -3021,7 +3057,8 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
         pouch.level = 99;
         pouch.unallocated_bp += 90;
         pouch.total_bp += 90;
-    }    
+    }
+    ApplySettingBasedPatches();
     // Save the timestamp you entered the Pit.
     g_Randomizer->state_.SaveCurrentTime(/* pit_start = */ true);
     // All other options are handled immediately on setting them,

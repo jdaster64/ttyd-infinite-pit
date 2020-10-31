@@ -104,6 +104,7 @@ void Randomizer::Init() {
         ttyd::event::stg0_00_init, []() {
             // Replaces existing logic, includes loading the randomizer state.
             OnFileLoad(/* new_file = */ true);
+            ApplySettingBasedPatches();
         });
         
     g_cardCopy2Main_trampoline = patch::hookFunction(
@@ -114,6 +115,7 @@ void Randomizer::Init() {
             if (!g_Randomizer->state_.Load(/* new_save = */ false)) {
                 g_CueGameOver = true;
             }
+            ApplySettingBasedPatches();
         });
     
     g_OSLink_trampoline = patch::hookFunction(

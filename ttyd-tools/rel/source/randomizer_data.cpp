@@ -1341,6 +1341,16 @@ int16_t PickChestReward() {
         reward = ItemType::GOLD_BAR_X3;
     }
     
+    // If reward was Clock Out or Power Lift, swap them if the option is set.
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::SWAP_CO_PL_SP_COST)) {
+        if (reward == ItemType::EMERALD_STAR) {
+            reward = ItemType::GOLD_STAR;
+        } else if (reward == ItemType::GOLD_STAR) {
+            reward = ItemType::EMERALD_STAR;
+        }
+    }
+    
     return reward;
 }
 

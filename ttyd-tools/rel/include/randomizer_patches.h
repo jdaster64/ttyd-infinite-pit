@@ -135,6 +135,9 @@ void ApplyPlayerStatTrackingPatches();
 // Apply miscellaneous small patches that do not require function hooks.
 void ApplyMiscPatches();
 
+// Apply balance changes that are based on the current file's settings.
+void ApplySettingBasedPatches();
+
 // Initializes all selected options on initially entering the Pit.
 EVT_DECLARE_USER_FUNC(InitOptionsOnPitEntry, 5)
 
