@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gc/types.h>
+
 #include <cstdint>
 
 namespace ttyd::battle_database_common {
@@ -184,6 +186,37 @@ struct BattleWorkActRecord {
 
 static_assert(sizeof(BattleWorkActRecord) == 0x24);
 
+struct BattleWorkStageHazards {
+    uint32_t    unk_000;
+    gc::vec3    unk_004;  // rotation?
+    gc::vec3    unk_010;  // temp. rotation?
+    uint8_t     stage_effects_allowed;
+    uint8_t     pad_01d[3];
+    uint32_t    bg_a1_or_b_falling_evt_id;
+    uint32_t    bg_a1_evt_id;
+    uint32_t    bg_a2_evt_id;
+    
+    uint32_t    bg_b_scrolling_or_falling_evt_id;
+    uint32_t    bg_b_rotating_evt_id;
+    void*       nozzle_data;
+    void*       fall_object_data;
+    ttyd::battle_database_common::BattleWeapon* stage_jet_weapon_params[2];
+    ttyd::battle_database_common::BattleWeapon  stage_jet_temp_weapon_params[2];
+    int8_t      stage_jet_face_directions[3];
+    int8_t      stage_jet_changing_face_directions[3];
+    int8_t      current_stage_jet_type;
+    int8_t      pad_1cb;
+    uint32_t    stage_jet_change_event_id[3];
+    uint32_t    stage_jet_fire_event_id;
+    int32_t     fog_turn_count;
+    int32_t     fog_active;
+    uint32_t    wall_close_event_id;
+    uint32_t    ceiling_fall_event_id;
+    uint32_t    object_fall_event_id;
+};
+
+static_assert(sizeof(BattleWorkStageHazards) == 0x1f0);
+
 struct BattleWork {
     int16_t         turn_count;
     int16_t         pad_00002;
@@ -230,7 +263,7 @@ struct BattleWork {
     BattleWorkActRecord act_record_work;
     int8_t          after_reaction_queue[0x8 * 64];
     int8_t          stage_object_work[0x7c * 32];
-    int8_t          stage_hazard_work[0x1f0];
+    BattleWorkStageHazards stage_hazard_work;
     int8_t          icon_work[0x9c * 16];
     int8_t          unk_18c8c[0x114];
     int8_t          status_change_msg_work[0x258];

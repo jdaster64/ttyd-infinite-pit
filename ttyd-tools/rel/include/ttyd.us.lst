@@ -1146,6 +1146,9 @@
 // mario_party.o
 801410e8:marioGetParty
 
+// battle_stage_object.o
+80148374:_nozzle_type_init
+
 // evt_snd.o
 80152450:evt_snd_bgmoff_f
 8015249c:evt_snd_bgmoff

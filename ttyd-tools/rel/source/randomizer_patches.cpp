@@ -27,6 +27,7 @@
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
 #include <ttyd/battle_seq.h>
+#include <ttyd/battle_stage_object.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
@@ -276,6 +277,7 @@ int32_t (*g_pouchAddCoin_trampoline)(int16_t) = nullptr;
 void (*g_BtlActRec_AddCount_trampoline)(uint8_t*) = nullptr;
 int32_t (*g_btlevtcmd_GetSelectEnemy_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_WeaponAftereffect_trampoline)(EvtEntry*, bool) = nullptr;
 uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
 void (*g_pouchReviseMarioParam_trampoline)() = nullptr;
 
@@ -3115,6 +3117,74 @@ void ApplyMiscPatches() {
             uint32_t result = g_BattleCheckConcluded_trampoline(battleWork);
             if (!result) result = CheckIfPlayerDefeated();
             return result;
+        });
+        
+    // Change the chances of weapon-induced stage effects based on options.
+    g_btlevtcmd_WeaponAftereffect_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_WeaponAftereffect,
+        [](EvtEntry* evt, bool isFirstCall) {
+            // Make sure the stage jet type is initialized.
+            auto* battleWork = ttyd::battle::g_BattleWork;
+            ttyd::battle_stage_object::_nozzle_type_init();
+            
+            int8_t stage_hazard_chances[12];
+            // Store the original stage hazard chances.
+            auto& weapon = *reinterpret_cast<BattleWeapon*>(
+                evtGetValue(evt, evt->evtArguments[0]));
+            memcpy(stage_hazard_chances, &weapon.bg_a1_a2_fall_weight, 12);
+            
+            // Get the percentage to scale original chances by.
+            int32_t scale = 100;
+            switch (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::STAGE_HAZARD_OPTIONS)) {
+                case RandomizerState::HAZARD_RATE_HIGH: {
+                    scale = 250;
+                    break;
+                }
+                case RandomizerState::HAZARD_RATE_LOW: {
+                    scale = 50;
+                    break;
+                }
+                case RandomizerState::HAZARD_RATE_OFF: {
+                    scale = 0;
+                    break;
+                }
+                case RandomizerState::HAZARD_RATE_NO_FOG: {
+                    // If stage jet type 0, make it so it cannot fire.
+                    if (!battleWork->stage_hazard_work.current_stage_jet_type) {
+                        weapon.nozzle_turn_chance = 0;
+                        weapon.nozzle_fire_chance = 0;
+                    }
+                    break;
+                }
+                default: break;
+            }
+            
+            // Change the parameter values according to the selected scale.
+            weapon.bg_a1_fall_weight = 
+                Min((weapon.bg_a1_fall_weight * scale + 50) / 100, 100);
+            weapon.bg_a2_fall_weight = 
+                Min((weapon.bg_a2_fall_weight * scale + 50) / 100, 100);
+            weapon.bg_b_fall_weight = 
+                Min((weapon.bg_b_fall_weight * scale + 50) / 100, 100);
+            weapon.nozzle_turn_chance = 
+                Min((weapon.nozzle_turn_chance * scale + 50) / 100, 100);
+            weapon.nozzle_fire_chance = 
+                Min((weapon.nozzle_fire_chance * scale + 50) / 100, 100);
+            weapon.ceiling_fall_chance = 
+                Min((weapon.ceiling_fall_chance * scale + 50) / 100, 100);
+            weapon.object_fall_chance = 
+                Min((weapon.object_fall_chance * scale + 50) / 100, 100);
+            weapon.unused_stage_hazard_chance = 
+                Min((weapon.unused_stage_hazard_chance * scale + 50) / 100, 100);
+            
+            // Call the function that induces stage effects.
+            g_btlevtcmd_WeaponAftereffect_trampoline(evt, isFirstCall);
+            
+            // Copy back original values.
+            memcpy(&weapon.bg_a1_a2_fall_weight, stage_hazard_chances, 12);
+            
+            return 2;
         });
 }
 
