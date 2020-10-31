@@ -105,6 +105,10 @@ extern "C" {
     // enemy_sampling_patches.s
     void StartSampleRandomTarget();
     void BranchBackSampleRandomTarget();
+    // evasion_badge_patches.s
+    void StartCheckBadgeEvasion();
+    void ConditionalBranchCheckBadgeEvasion();
+    void BranchBackCheckBadgeEvasion();
     // map_change_patches.s
     void StartMapLoad();
     void BranchBackMapLoad();
@@ -202,6 +206,9 @@ extern "C" {
             mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
                 mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
         return num_badges * (weaker_rush_badges ? 2 : 5);
+    }
+    bool checkBadgeEvasion(ttyd::battle_unit::BattleWorkUnit* unit) {
+        return mod::pit_randomizer::CheckEvasionBadges(unit);
     }
 }
 
@@ -1598,6 +1605,39 @@ int32_t AlterFpDamageCalculation(
     return damage;
 }
 
+bool CheckEvasionBadges(BattleWorkUnit* unit) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::CAP_BADGE_EVASION)) {
+        float hit_chance = 100.f;
+        for (int32_t i = 0; i < unit->badges_equipped.pretty_lucky; ++i) {
+            hit_chance *= 0.90f;
+        }
+        for (int32_t i = 0; i < unit->badges_equipped.lucky_day; ++i) {
+            hit_chance *= 0.75f;
+        }
+        if (unit->current_hp <= unit->unit_kind_params->danger_hp) {
+            for (int32_t i = 0; i < unit->badges_equipped.close_call; ++i) {
+                hit_chance *= 0.67f;
+            }
+        }
+        if (hit_chance < 20.f) hit_chance = 20.f;
+        return ttyd::system::irand(100) >= hit_chance;
+    } else {
+        for (int32_t i = 0; i < unit->badges_equipped.pretty_lucky; ++i) {
+            if (ttyd::system::irand(100) >= 90) return true;
+        }
+        for (int32_t i = 0; i < unit->badges_equipped.lucky_day; ++i) {
+            if (ttyd::system::irand(100) >= 75) return true;
+        }
+        if (unit->current_hp <= unit->unit_kind_params->danger_hp) {
+            for (int32_t i = 0; i < unit->badges_equipped.close_call; ++i) {
+                if (ttyd::system::irand(100) >= 67) return true;
+            }
+        }
+    }
+    return false;
+}
+
 int32_t GetDrainRestoration(EvtEntry* evt, bool hp_drain) {
     auto* battleWork = ttyd::battle::g_BattleWork;
     int32_t id = evtGetValue(evt, evt->evtArguments[0]);
@@ -2850,6 +2890,20 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackGetPerilStrength),
         reinterpret_cast<void*>(kMegaRushHookAddr + 0x4));
+        
+    // Add code that puts a cap on the evasion from badges if the option is set.
+    const int32_t kPreCheckEvasionBeginHookAddress   = 0x800fbbec;
+    const int32_t kPreCheckEvasionEndHookAddress     = 0x800fbca0;
+    const int32_t kPreCheckEvasionReturnLuckyAddress = 0x800fbc8c;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kPreCheckEvasionBeginHookAddress),
+        reinterpret_cast<void*>(StartCheckBadgeEvasion));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckBadgeEvasion),
+        reinterpret_cast<void*>(kPreCheckEvasionEndHookAddress));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(ConditionalBranchCheckBadgeEvasion),
+        reinterpret_cast<void*>(kPreCheckEvasionReturnLuckyAddress));
         
     // Enable Star Power features always, if the randomizer option is set.
     const int32_t kEnableAppealHookAddr         = 0x801239e4;

@@ -85,6 +85,8 @@ int32_t AlterFpDamageCalculation(
     ttyd::battle_database_common::BattleWeapon* weapon,
     uint32_t* unk0, uint32_t unk1);
 
+// Replaces the vanilla logic for evasion badges; returns true if Lucky.
+bool CheckEvasionBadges(ttyd::battle_unit::BattleWorkUnit* unit);
 // Replaces the vanilla logic for HP or FP Drain restoration.
 int32_t GetDrainRestoration(ttyd::evtmgr::EvtEntry* evt, bool hp_drain);
 
