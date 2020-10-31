@@ -22,6 +22,7 @@
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_enemy_item.h>
 #include <ttyd/battle_event_cmd.h>
+#include <ttyd/battle_event_default.h>
 #include <ttyd/battle_item_data.h>
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
@@ -258,6 +259,8 @@ void (*g__getSickStatusParam_trampoline)(
     BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
 int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g__get_flower_suitoru_point_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g__get_heart_suitoru_point_trampoline)(EvtEntry*, bool) = nullptr;
 void (*g_BattleDamageDirect_trampoline)(
     int32_t, BattleWorkUnit*, BattleWorkUnitPart*, int32_t, int32_t,
     uint32_t, uint32_t, uint32_t) = nullptr;
@@ -1534,6 +1537,9 @@ int32_t AlterDamageCalculation(
     if (damage > 0 && target->current_kind == BattleUnitType::SHELL_SHIELD) {
         damage = 1;
     }
+    
+    // Increment HP/FP Drain counter if this was intended to be a damaging move.
+    if (weapon->damage_function) ++attacker->total_damage_dealt_this_attack;
         
     // Change ATK and DEF back, and return calculated damage.
     weapon->damage_function_params[0] = base_atk;
@@ -1565,6 +1571,34 @@ int32_t AlterFpDamageCalculation(
     // Change FP damage value back, and return calculated FP loss.
     weapon->fp_damage_function_params[0] = base_atk;
     return damage;
+}
+
+int32_t GetDrainRestoration(EvtEntry* evt, bool hp_drain) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    
+    int32_t drain = 0;
+    if (unit) {
+        int32_t num_badges = 0;
+        if (hp_drain) {
+            num_badges = unit->badges_equipped.hp_drain;
+        } else {
+            num_badges = unit->badges_equipped.fp_drain;
+        }
+        if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::HP_FP_DRAIN_PER_HIT)) {
+            // 1 point per damaging hit x num badges, max of 5.
+            drain = unit->total_damage_dealt_this_attack * num_badges;
+            if (drain > 5) drain = 5;
+        } else {
+            // 1 per badge if any damaging hits were dealt.
+            drain = !!unit->total_damage_dealt_this_attack * num_badges;
+        }
+    }
+    evtSetValue(evt, evt->evtArguments[1], drain);
+    return 2;
 }
 
 void GetDropMaterials(FbatBattleInformation* fbat_info) {
@@ -2502,6 +2536,26 @@ void ApplyItemAndAttackPatches() {
     // Sweet Feast and Showstopper both cost 4 SP.
     ttyd::battle_mario::marioWeapon_Genki1.base_sp_cost = 4;
     ttyd::battle_mario::marioWeapon_Suki.base_sp_cost = 4;
+    
+    // Replace HP/FP Drain logic; counts the number of intended damaging hits
+    // and restores 1 HP per badge if there were any (or 1 per hit, to a max
+    // of 5, if the PM64-style option is enabled).
+    g__get_heart_suitoru_point_trampoline = mod::patch::hookFunction(
+        ttyd::battle_event_default::_get_heart_suitoru_point,
+        [](EvtEntry* evt, bool isFirstCall) {
+            return GetDrainRestoration(evt, /* hp_drain = */ true);
+        });
+    g__get_flower_suitoru_point_trampoline = mod::patch::hookFunction(
+        ttyd::battle_event_default::_get_flower_suitoru_point,
+        [](EvtEntry* evt, bool isFirstCall) {
+            return GetDrainRestoration(evt, /* hp_drain = */ false);
+        });
+    // Disable the instruction that normally adds to damage dealt.
+    const int32_t kIncrementTotalDamageOpAddr = 0x800fe058;
+    const uint32_t kIncrementTotalDamageOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kIncrementTotalDamageOpAddr),
+        &kIncrementTotalDamageOpcode, sizeof(uint32_t));
     
     // Apply patch to give the player infinite BP if NO_EXP_INFINITE_BP enabled.
     g_pouchReviseMarioParam_trampoline = mod::patch::hookFunction(

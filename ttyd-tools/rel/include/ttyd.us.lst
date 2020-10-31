@@ -1001,6 +1001,10 @@
 8010ff74:btlevtcmd_SetHp
 80113304:btlevtcmd_KillUnit
 
+// battle_event_default.o
+801138d8:_get_flower_suitoru_point
+80113950:_get_heart_suitoru_point
+
 // battle_information.o
 801141bc:BattleInformationSetDropMaterial
 80114500:BattleInformationGetResult
@@ -1010,10 +1014,6 @@
 80114588:BattleInformationSetFirstAttack
 80114590:BattleInformationSetParty
 80114598:BattleInformationSetMode
-
-// battle_seq.o
-8011aa34:BattleCheckConcluded
-8011c350:_rule_disp
 
 // battle_mario.o
 // .text
@@ -1109,6 +1109,10 @@
 // battle_menu_disp.o
 80115b30:DrawOperationWin
 80115dac:DrawWeaponWin
+
+// battle_seq.o
+8011aa34:BattleCheckConcluded
+8011c350:_rule_disp
 
 // battle_monosiri.o
 8012ed2c:battleSetUnitMonosiriFlag
