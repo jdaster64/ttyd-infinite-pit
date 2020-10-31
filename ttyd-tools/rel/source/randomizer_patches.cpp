@@ -1540,6 +1540,18 @@ int32_t AlterDamageCalculation(
     
     // Increment HP/FP Drain counter if this was intended to be a damaging move.
     if (weapon->damage_function) ++attacker->total_damage_dealt_this_attack;
+    
+    // Randomize damage dealt, if option enabled.
+    const int32_t damage_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::DAMAGE_RANGE);
+    if (damage_scale != 0) {
+        // Generate a number from -25 to 25 in increments of 5.
+        int32_t scale = (ttyd::system::irand(11) - 5) * 5;
+        // Scale by 1x or 2x based on the setting.
+        scale *= (damage_scale / RandomizerState::DAMAGE_RANGE_25);
+        // Round damage modifier away from 0, based on the sign of the scale.
+        damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
+    }
         
     // Change ATK and DEF back, and return calculated damage.
     weapon->damage_function_params[0] = base_atk;
@@ -1568,6 +1580,19 @@ int32_t AlterFpDamageCalculation(
     // Run vanilla damage calculation.
     int32_t damage = g_BattleCalculateFpDamage_trampoline(
         attacker, target, target_part, weapon, unk0, unk1);
+    
+    // Randomize damage dealt, if option enabled.
+    const int32_t damage_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::DAMAGE_RANGE);
+    if (damage_scale != 0) {
+        // Generate a number from -25 to 25 in increments of 5.
+        int32_t scale = (ttyd::system::irand(11) - 5) * 5;
+        // Scale by 1x or 2x based on the setting.
+        scale *= (damage_scale / RandomizerState::DAMAGE_RANGE_25);
+        // Round damage modifier away from 0, based on the sign of the scale.
+        damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
+    }
+        
     // Change FP damage value back, and return calculated FP loss.
     weapon->fp_damage_function_params[0] = base_atk;
     return damage;
