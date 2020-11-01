@@ -219,16 +219,20 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
         }
         case MsgKey::MSG_JON_KANBAN_3: {
             sprintf(buf, "<kanban>\nYour seed: <col %sff>%s\n</col>"
-                "(Name your file \"random\" or \"\xde\"\n"
-                "to have one picked randomly.)<k>",
-                GetYoshiTextColor(), ttyd::mariost::g_MarioSt->saveFileName);
+                "Currently selected options:\n<col 0000ffff>%s\n</col><k>",
+                GetYoshiTextColor(),
+                ttyd::mariost::g_MarioSt->saveFileName, 
+                g_Randomizer->state_.GetEncodedOptions());
             return buf;
         }
         case MsgKey::TIK_06_02: {
             sprintf(buf, "<kanban>\n"
                 "Thanks for playing the PM:TTYD\n"
                 "Infinite Pit mod! Check the \n"
-                "sign in back for your seed.\n<k>");
+                "sign in back for your seed,\n<k><p>\n"
+                "and currently selected options.\n"
+                "If you want a random seed,\n"
+                "name your file \"random\" or \"\xde\".\n<k>");
             return buf;
         }
         case MsgKey::IN_2BAI_DAMAGE:
