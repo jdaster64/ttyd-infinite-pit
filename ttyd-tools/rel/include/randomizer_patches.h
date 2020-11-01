@@ -118,6 +118,14 @@ void DisplayStarPowerNumber();
 // since it wasn't built around receiving Star Powers out of order).
 void DisplayStarPowerOrbs(double x, double y, int32_t star_power);
 
+// Choose a random item for the audience to throw, if the option is enabled;
+// otherwise, returns the originally selected item.
+int32_t GetRandomAudienceItem(int32_t item_type);
+
+// Correctly returns whether there is space for an audience-thrown item
+// regardless of its type (using item / badge inventory, or none for cans, etc.)
+uint32_t FixAudienceItemSpaceCheck(uint32_t empty_item_slots, uint32_t item_type);
+
 // Replaces Pit Charlieton's stock with items from the random pool.
 void ReplaceCharlietonStock();
 

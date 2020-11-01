@@ -92,6 +92,11 @@ extern "C" {
     // action_menu_patches.s
     void StartSpendFpOnSwitchPartner();
     void BranchBackSpendFpOnSwitchPartner();
+    // audience_item_patches.s
+    void StartAudienceItem();
+    void BranchBackAudienceItem();
+    void StartAudienceItemSpaceFix();
+    void BranchBackAudienceItemSpaceFix();
     // battle_end_patches.s
     void StartGivePlayerInvuln();
     void BranchBackGivePlayerInvuln();
@@ -210,6 +215,14 @@ extern "C" {
     }
     bool checkBadgeEvasion(ttyd::battle_unit::BattleWorkUnit* unit) {
         return mod::pit_randomizer::CheckEvasionBadges(unit);
+    }
+    int32_t getAudienceItem(int32_t item_type) {
+        return mod::pit_randomizer::GetRandomAudienceItem(item_type);
+    }
+    uint32_t audienceFixItemSpaceCheck(
+        uint32_t empty_item_slots, uint32_t item_type) {
+        return mod::pit_randomizer::FixAudienceItemSpaceCheck(
+            empty_item_slots, item_type);
     }
 }
 
@@ -1889,6 +1902,41 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
     }
 }
 
+int32_t GetRandomAudienceItem(int32_t item_type) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::AUDIENCE_ITEMS_RANDOM)) {
+        item_type = PickRandomItem(/* seeded = */ false, 20, 10, 5, 15);
+        if (item_type <= 0) {
+            // Pick a coin, heart, flower, or random bad item if "none" selected.
+            switch (ttyd::system::irand(10)) {
+                case 0:  return ItemType::AUDIENCE_CAN;
+                case 1:  return ItemType::AUDIENCE_ROCK;
+                case 2:  return ItemType::AUDIENCE_BONE;
+                case 3:  return ItemType::AUDIENCE_HAMMER;
+                case 4:  
+                case 5:  return ItemType::HEART_PICKUP;
+                case 6:
+                case 7:  return ItemType::FLOWER_PICKUP;
+                default: return ItemType::COIN;
+            }
+        }
+    }
+    return item_type;
+}
+
+uint32_t FixAudienceItemSpaceCheck(uint32_t empty_item_slots, uint32_t item_type) {
+    if (item_type >= ItemType::POWER_JUMP) {
+        // Return 1 if there are any spaces left for badges.
+        return ttyd::mario_pouch::pouchGetHaveBadgeCnt() < 200 ? 1 : 0; 
+    } else if (item_type < ItemType::AUDIENCE_CAN) {
+        // The number of empty item slots was already checked.
+        return empty_item_slots;
+    } else {
+        // Item is a "harmful item" (can, etc.); skip the space check.
+        return 1;
+    }
+}
+
 void ReplaceCharlietonStock() {
     // Before setting stock, check if reloading an existing save file;
     // if so, set the RNG state to what it was at the start of the floor
@@ -2964,6 +3012,31 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackEnableIncrementingBingoCheck),
         reinterpret_cast<void*>(kEnableBingoSlotsHookAddr + 0x4));
+        
+    // Enable random audience items.
+    const int32_t kRandomAudienceItemHookAddress = 0x801a5c70;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kRandomAudienceItemHookAddress),
+        reinterpret_cast<void*>(StartAudienceItem));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAudienceItem),
+        reinterpret_cast<void*>(kRandomAudienceItemHookAddress + 4));
+    // Make sure the right inventory is checked for getting items from audience.
+    // Extend the range to check all item types:
+    const int32_t kAudienceCheckItemSpaceUpperBoundOpAddr = 0x801a5418;
+    const uint32_t kAudienceCheckItemSpaceUpperBoundOpcode = 
+        0x2c000153;  // cmpwi r0, 0x153
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kAudienceCheckItemSpaceUpperBoundOpAddr),
+        &kAudienceCheckItemSpaceUpperBoundOpcode, sizeof(uint32_t));
+    // Handle bad items and badges:
+    const int32_t kAudienceCheckItemSpaceHookAddress = 0x801a5424;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kAudienceCheckItemSpaceHookAddress),
+        reinterpret_cast<void*>(StartAudienceItemSpaceFix));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAudienceItemSpaceFix),
+        reinterpret_cast<void*>(kAudienceCheckItemSpaceHookAddress + 4));
         
     // Enable the crash handler.
     const int32_t kCrashHandlerEnableOpAddr = 0x80009b2c;

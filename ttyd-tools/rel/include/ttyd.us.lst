@@ -697,6 +697,7 @@
 800d3dd4:pouchSetCoin
 800d3e18:pouchAddCoin
 800d50cc:pouchGetItem
+800d5738:pouchGetHaveBadgeCnt
 800d59c8:pouchInit
 800d5eb0:pouchGetPtr
 // .data
