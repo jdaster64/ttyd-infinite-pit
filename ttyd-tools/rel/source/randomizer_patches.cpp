@@ -3196,9 +3196,11 @@ void ApplyMiscPatches() {
     g_btlevtcmd_WeaponAftereffect_trampoline = patch::hookFunction(
         ttyd::battle_event_cmd::btlevtcmd_WeaponAftereffect,
         [](EvtEntry* evt, bool isFirstCall) {
-            // Make sure the stage jet type is initialized.
+            // Make sure the stage jet type is initialized, if possible.
             auto* battleWork = ttyd::battle::g_BattleWork;
-            ttyd::battle_stage_object::_nozzle_type_init();
+            if (ttyd::mario_pouch::pouchGetPtr()->rank > 0) {
+                ttyd::battle_stage_object::_nozzle_type_init();
+            }
             
             int8_t stage_hazard_chances[12];
             // Store the original stage hazard chances.
@@ -3223,8 +3225,10 @@ void ApplyMiscPatches() {
                     break;
                 }
                 case RandomizerState::HAZARD_RATE_NO_FOG: {
-                    // If stage jet type 0, make it so it cannot fire.
-                    if (!battleWork->stage_hazard_work.current_stage_jet_type) {
+                    // If stage jets are uninitialized or fog-type jets,
+                    // make them unable to fire.
+                    if (battleWork->stage_hazard_work.current_stage_jet_type
+                        <= 0) {
                         weapon.nozzle_turn_chance = 0;
                         weapon.nozzle_fire_chance = 0;
                     }
