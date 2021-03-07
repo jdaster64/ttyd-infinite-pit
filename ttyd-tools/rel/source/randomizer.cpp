@@ -19,6 +19,8 @@
 #include <ttyd/dispdrv.h>
 #include <ttyd/event.h>
 #include <ttyd/evtmgr.h>
+#include <ttyd/item_data.h>
+#include <ttyd/mario_pouch.h>
 #include <ttyd/msgdrv.h>
 #include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
@@ -26,6 +28,7 @@
 #include <ttyd/seq_title.h>
 #include <ttyd/sound.h>
 #include <ttyd/statuswindow.h>
+#include <ttyd/swdrv.h>
 #include <ttyd/system.h>
 
 #include <cstdint>
@@ -45,6 +48,8 @@ using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::npcdrv::FbatBattleInformation;
 using ::ttyd::npcdrv::NpcEntry;
 using ::ttyd::seqdrv::SeqIndex;
+
+namespace ItemType = ::ttyd::item_data::ItemType;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
 void (*g_stg0_00_init_trampoline)(void) = nullptr;
@@ -72,7 +77,7 @@ void DrawOptionsMenu() {
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v1.31 r42 by jdaster64\n"
+        "PM:TTYD Infinite Pit v1.40 r43 by jdaster64\n"
         "https://github.com/jdaster64/ttyd-infinite-pit\n"
         "Guide / Other mods: https://goo.gl/vjJjVd";
     DrawCenteredTextWindow(
@@ -82,6 +87,8 @@ void DrawTitleScreenInfo() {
 uint32_t secretCode_RtaTimer        = 034345566;
 uint32_t secretCode_BonusOptions1   = 012651265;
 uint32_t secretCode_BonusOptions2   = 043652131;
+uint32_t secretCode_BonusOptions3   = 031313141;
+uint32_t secretCode_UnlockFxBadges  = 026122146;
 
 bool g_DrawRtaTimer = false;
 void DrawRtaTimer() {
@@ -269,6 +276,25 @@ void Randomizer::Update() {
         code_history = 0;
         menu_.SetMenuPageVisibility(6, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_BonusOptions3) {
+        code_history = 0;
+        menu_.SetMenuPageVisibility(7, true);
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_UnlockFxBadges) {
+        code_history = 0;
+        // Check Journal for whether the FX badges were already unlocked.
+        bool has_fx_badges = ttyd::swdrv::swGet(
+            ItemType::ATTACK_FX_R - ItemType::POWER_JUMP + 0x80);
+        if (!has_fx_badges && ttyd::mario_pouch::pouchGetHaveBadgeCnt() < 196) {
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_P);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_G);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_B);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_Y);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
+            ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+        }
     }
 }
 

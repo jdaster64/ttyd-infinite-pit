@@ -16,6 +16,25 @@
 
 namespace mod::pit_randomizer {
     
+// Bitfield for options introduced in v1.40 (implementation details).
+namespace Options_v1_40 {
+    enum e {
+        PARTNER_STARTING_RANK   = 0x3,
+        DANGER_PERIL_BY_PERCENT = 0x4,
+        MAX_BADGE_MOVE_LEVEL    = 0x18,
+        RANK_UP_REQUIREMENT     = 0x60,
+        // Values for composite options.
+        MAX_MOVE_LEVEL_1X       = 0x0,
+        MAX_MOVE_LEVEL_2X       = 0x8,
+        MAX_MOVE_LEVEL_RANK     = 0x10,
+        MAX_MOVE_LEVEL_INFINITE = 0x18,
+        RANK_UP_NORMAL          = 0x0,
+        RANK_UP_EARLIER         = 0x20,
+        RANK_UP_BY_FLOOR        = 0x40,
+        RANK_UP_ALWAYS_MAX      = 0x60,
+    };
+}
+    
 namespace {
     
 using ::ttyd::mario_pouch::PouchData;
@@ -233,6 +252,41 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
             if (atk_multiplier_ > 1000) atk_multiplier_ = 1000;
             break;
         }
+        case PARTNER_STARTING_RANK: {
+            if (change == 0) change = 1;
+            option = Options_v1_40::PARTNER_STARTING_RANK;
+            int32_t max_option = option * 2 / 3;
+            int32_t value = options_v1_40_ & option;
+            value += change * (option / 3);
+            if (value < 0) value = max_option;
+            if (value > max_option) value = 0;
+            options_v1_40_ = (options_v1_40_ & ~option) | value;
+            break;
+        }        
+        case DANGER_PERIL_BY_PERCENT: {
+            options_v1_40_ ^= Options_v1_40::DANGER_PERIL_BY_PERCENT;
+            break;
+        }        
+        case MAX_BADGE_MOVE_LEVEL: {
+            if (change == 0) change = 1;
+            option = Options_v1_40::MAX_BADGE_MOVE_LEVEL;
+            int32_t value = options_v1_40_ & option;
+            value += change * (option / 3);
+            if (value < 0) value = Options_v1_40::MAX_MOVE_LEVEL_INFINITE;
+            if (value > Options_v1_40::MAX_MOVE_LEVEL_INFINITE) value = 0;
+            options_v1_40_ = (options_v1_40_ & ~option) | value;
+            break;
+        }        
+        case RANK_UP_REQUIREMENT: {
+            if (change == 0) change = 1;
+            option = Options_v1_40::RANK_UP_REQUIREMENT;
+            int32_t value = options_v1_40_ & option;
+            value += change * (option / 3);
+            if (value < 0) value = Options_v1_40::RANK_UP_ALWAYS_MAX;
+            if (value > Options_v1_40::RANK_UP_ALWAYS_MAX) value = 0;
+            options_v1_40_ = (options_v1_40_ & ~option) | value;
+            break;
+        }        
         default: {
             options_ ^= option;
             break;
@@ -255,6 +309,32 @@ int32_t RandomizerState::GetOptionValue(int32_t option) const {
         case STAGE_HAZARD_OPTIONS:
         case DAMAGE_RANGE:
             return (options_ & option);
+        case PARTNER_STARTING_RANK:
+            return options_v1_40_ & Options_v1_40::PARTNER_STARTING_RANK;
+        case DANGER_PERIL_BY_PERCENT:
+            return (options_v1_40_ & Options_v1_40::DANGER_PERIL_BY_PERCENT) != 0;
+        case MAX_BADGE_MOVE_LEVEL:
+            switch (options_v1_40_ & Options_v1_40::MAX_BADGE_MOVE_LEVEL) {
+                case Options_v1_40::MAX_MOVE_LEVEL_1X:
+                    return MAX_MOVE_LEVEL_1X;
+                case Options_v1_40::MAX_MOVE_LEVEL_2X:
+                    return MAX_MOVE_LEVEL_2X;
+                case Options_v1_40::MAX_MOVE_LEVEL_RANK:
+                    return MAX_MOVE_LEVEL_RANK;
+                case Options_v1_40::MAX_MOVE_LEVEL_INFINITE:
+                    return MAX_MOVE_LEVEL_INFINITE;
+            }
+        case RANK_UP_REQUIREMENT:
+            switch (options_v1_40_ & Options_v1_40::RANK_UP_REQUIREMENT) {
+                case Options_v1_40::RANK_UP_NORMAL:
+                    return RANK_UP_NORMAL;
+                case Options_v1_40::RANK_UP_EARLIER:
+                    return RANK_UP_EARLIER;
+                case Options_v1_40::RANK_UP_BY_FLOOR:
+                    return RANK_UP_BY_FLOOR;
+                case Options_v1_40::RANK_UP_ALWAYS_MAX:
+                    return RANK_UP_ALWAYS_MAX;
+            }
         default:
             return (options_ & option) != 0;
     }
@@ -354,6 +434,22 @@ void RandomizerState::GetOptionStrings(
         }
         case AUDIENCE_ITEMS_RANDOM: {
             sprintf(name, "Random audience items:");
+            break;
+        }
+        case PARTNER_STARTING_RANK: {
+            sprintf(name, "Partner starting rank:");
+            break;
+        }
+        case DANGER_PERIL_BY_PERCENT: {
+            sprintf(name, "Danger/Peril thresholds:");
+            break;
+        }
+        case MAX_BADGE_MOVE_LEVEL: {
+            sprintf(name, "Max badge move level:");
+            break;
+        }
+        case RANK_UP_REQUIREMENT: {
+            sprintf(name, "Stage rank-up after:");
             break;
         }
         default: {
@@ -513,6 +609,69 @@ void RandomizerState::GetOptionStrings(
             }
             break;
         }
+        case PARTNER_STARTING_RANK: {
+            switch (option_value) {
+                case 0: {
+                    sprintf(value, "Normal");
+                    break;
+                }
+                case 1: {
+                    sprintf(value, "Super");
+                    break;
+                }
+                case 2: {
+                    sprintf(value, "Ultra");
+                    break;
+                }
+            }
+            break;
+        }
+        case DANGER_PERIL_BY_PERCENT: {
+            sprintf(value, option_value ? "%%-based" : "Fixed");
+            break;
+        }
+        case MAX_BADGE_MOVE_LEVEL: {
+            switch (option_value) {
+                case MAX_MOVE_LEVEL_1X: {
+                    sprintf(value, "1 per copy");
+                    break;
+                }
+                case MAX_MOVE_LEVEL_2X: {
+                    sprintf(value, "2 per copy");
+                    break;
+                }
+                case MAX_MOVE_LEVEL_RANK: {
+                    sprintf(value, "Rank-based");
+                    break;
+                }
+                case MAX_MOVE_LEVEL_INFINITE: {
+                    sprintf(value, "Always 99");
+                    break;
+                }
+            }
+            break;
+        }
+        case RANK_UP_REQUIREMENT: {
+            switch (option_value) {
+                case RANK_UP_NORMAL: {
+                    sprintf(value, "Lvl. 10/20/30");
+                    break;
+                }
+                case RANK_UP_EARLIER: {
+                    sprintf(value, "Lvl. 8/15/25");
+                    break;
+                }
+                case RANK_UP_BY_FLOOR: {
+                    sprintf(value, "Floor 30/60/90");
+                    break;
+                }
+                case RANK_UP_ALWAYS_MAX: {
+                    sprintf(value, "Always max");
+                    break;
+                }
+            }
+            break;
+        }
         case INVALID_OPTION: {
             value[0] = '\0';
             break;
@@ -650,10 +809,10 @@ int32_t RandomizerState::GetPlayStat(PlayStats stat) const {
 }
 
 const char* RandomizerState::GetEncodedOptions() const {
-    static char enc_options[11];
-    enc_options[10] = '\0';
+    static char enc_options[16];
     
-    uint64_t options = static_cast<uint32_t>(options_);
+    uint64_t options = options_v1_40_;
+    options = (options << 32) + static_cast<uint32_t>(options_);
     // Turn off purely-cosmetic / non-user-selectable options.
     options &= ~START_WITH_FX;
     options &= ~YOSHI_COLOR_SELECT;
@@ -663,7 +822,11 @@ const char* RandomizerState::GetEncodedOptions() const {
     options += atk_multiplier_;
     
     // Convert to a base-64 scheme using A-Z, a-z, 0-9, !, ?.
-    for (int32_t i = 9; i >= 0; --i) {
+    // Add eleventh character only if any bits 60+ are set, for encoding
+    // backward compatibility.
+    int32_t optional_digits = 0;
+    if (options >> 60) optional_digits = 1;
+    for (int32_t i = 9 + optional_digits; i >= 0; --i) {
         const int32_t sextet = options & 63;
         char next;
         if (sextet < 26) {
@@ -680,6 +843,7 @@ const char* RandomizerState::GetEncodedOptions() const {
         enc_options[i] = next;
         options >>= 6;
     }
+    enc_options[10 + optional_digits] = '\0';
     
     return enc_options;
 }

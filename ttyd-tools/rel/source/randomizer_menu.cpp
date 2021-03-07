@@ -23,9 +23,9 @@ const char kStartRoomName[] = "tik_06";
 // Menu constants.
 const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
-const int32_t kMenuWidth            = 360;
+const int32_t kMenuWidth            = 378;
 const int32_t kMenuPadding          = 15;
-const int32_t kNumOptionPages       = 6;
+const int32_t kNumOptionPages       = 7;
 const int32_t kOptionsPerPage       = 5;
 const int32_t kFadeoutStartTime     = 600;
 const int32_t kFadeoutEndTime       = 600 + 15;
@@ -100,6 +100,11 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         case 602: return RandomizerState::DAMAGE_RANGE;
         case 603: return RandomizerState::AUDIENCE_ITEMS_RANDOM;
         case 604: return RandomizerState::INVALID_OPTION;
+        
+        case 701: return RandomizerState::PARTNER_STARTING_RANK;
+        case 702: return RandomizerState::DANGER_PERIL_BY_PERCENT;
+        case 703: return RandomizerState::MAX_BADGE_MOVE_LEVEL;
+        case 704: return RandomizerState::RANK_UP_REQUIREMENT;
         
         default:  return RandomizerState::CHANGE_PAGE;
     }
@@ -302,8 +307,10 @@ void RandomizerMenu::Draw() {
             name_buf, "Change Page (Bonus %" PRId32 ")", menu_page_ - 4);
     }
     DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
+    
     // Print a warning over selections that change seeding.
-    if (menu_page_ == 1 && menu_selection_ != kOptionsPerPage) {
+    if ((menu_page_ == 1 && menu_selection_ != kOptionsPerPage) ||
+        (menu_page_ == 7 && menu_selection_ == 1)) {
         sprintf(name_buf, "*Affects seeding");
         DrawText(
             name_buf, kValueX, kRowY + 1, 0xffu, true, 

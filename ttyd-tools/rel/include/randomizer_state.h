@@ -48,6 +48,20 @@ struct RandomizerState {
         DAMAGE_RANGE_25         = 0x10000000,   // +/-25%, in increments of 5%
         DAMAGE_RANGE_50         = 0x20000000,   // +/-50%, in increments of 10%
         
+        // Options added from v1.40 onward (can't fit in original flag field).
+        PARTNER_STARTING_RANK   = -14010,
+        DANGER_PERIL_BY_PERCENT = -14020,
+        MAX_BADGE_MOVE_LEVEL    = -14030,
+        MAX_MOVE_LEVEL_1X       = -14031,
+        MAX_MOVE_LEVEL_2X       = -14032,
+        MAX_MOVE_LEVEL_RANK     = -14033,
+        MAX_MOVE_LEVEL_INFINITE = -14034,
+        RANK_UP_REQUIREMENT     = -14040,
+        RANK_UP_NORMAL          = -14041,
+        RANK_UP_EARLIER         = -14042,
+        RANK_UP_BY_FLOOR        = -14043,
+        RANK_UP_ALWAYS_MAX      = -14044,
+        
         // Options that aren't controlled by flags (used by menu state).
         CHANGE_PAGE             = -100,
         HP_MODIFIER             = -101,     // Multiplier for enemy HP
@@ -81,7 +95,9 @@ struct RandomizerState {
     uint32_t    saved_rng_state_;
     uint8_t     load_from_save_;
     uint8_t     disable_partner_badges_in_shop_;
-    uint8_t     unused_[6];
+    // Reserved / used for options introduced in v1.40.
+    uint8_t     unused_[5];
+    uint8_t     options_v1_40_;
     
     // Options that can be set by the player at the start of a file.
     int16_t     hp_multiplier_;
