@@ -188,8 +188,8 @@ EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
 // the respective Star Power.
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 
-// Fully heals the selected party member.
-EVT_DECLARE_USER_FUNC(FullyHealPartyMember, 1)
+// Initializes + fully heals the selected party member.
+EVT_DECLARE_USER_FUNC(InitializePartyMember, 1)
 
 // Sets the HP of Shell Shield when it first spawns based on how well the
 // Action Command was performed.

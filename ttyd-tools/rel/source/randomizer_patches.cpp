@@ -350,7 +350,7 @@ DO(0)
         USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
         WAIT_MSEC(500)
         USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, LW(1))
-        USER_FUNC(FullyHealPartyMember, LW(1))
+        USER_FUNC(InitializePartyMember, LW(1))
         // TODO: Reposition partner by box? At origin is fine...
         USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, LW(1), 0, 0, 0)
         RUN_EVT_ID(PartnerFanfareEvt, LW(11))
@@ -3387,13 +3387,19 @@ void ApplySettingBasedPatches() {
 }
 
 EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
+    // Initialize number of upgrades per partner.
+    const int32_t starting_rank = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::PARTNER_STARTING_RANK);
+    for (int32_t i = 0; i < 7; ++i) {
+        g_Randomizer->state_.partner_upgrades_[i] = starting_rank;
+    }
     if (g_Randomizer->state_.GetOptionValue(
         RandomizerState::START_WITH_PARTNERS)) {
-        // Enable and fully heal all partners.
+        // Enable and initialize all partners.
         for (int32_t i = 1; i <= 7; ++i) {
             evt->evtArguments[0] = i;
             ttyd::evt_pouch::evt_pouch_party_join(evt, isFirstCall);
-            FullyHealPartyMember(evt, isFirstCall);
+            InitializePartyMember(evt, isFirstCall);
         }
         // Put Goombella on the field.
         evt->evtArguments[0] = 0;
@@ -3695,15 +3701,21 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
     return 2;
 }
 
-EVT_DEFINE_USER_FUNC(FullyHealPartyMember) {
-    int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
-    int16_t starting_hp = ttyd::mario_pouch::_party_max_hp_table[idx * 4];
+EVT_DEFINE_USER_FUNC(InitializePartyMember) {
+    const int32_t starting_rank = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::PARTNER_STARTING_RANK);
+    const int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
+    const int16_t starting_hp =
+        ttyd::mario_pouch::_party_max_hp_table[idx * 4 + starting_rank];
     const int32_t hp_plus_p_cnt =
         ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
     auto& party_data = ttyd::mario_pouch::pouchGetPtr()->party_data[idx];
     party_data.base_max_hp = starting_hp;
     party_data.max_hp = starting_hp + hp_plus_p_cnt * 5;
     party_data.current_hp = starting_hp + hp_plus_p_cnt * 5;
+    party_data.hp_level = starting_rank;
+    party_data.attack_level = starting_rank;
+    party_data.tech_level = starting_rank;
     return 2;
 }
 
