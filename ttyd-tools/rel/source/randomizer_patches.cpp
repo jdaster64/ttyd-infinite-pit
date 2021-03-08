@@ -106,6 +106,15 @@ extern "C" {
     // crash_handler_patches.s
     void StartCrashHandlerScale();
     void BranchBackCrashHandlerScale();
+    // danger_threshold_patches.s
+    void StartSetDangerThreshold();
+    void BranchBackSetDangerThreshold();
+    void StartSetPerilThreshold();
+    void BranchBackSetPerilThreshold();
+    void StartCheckMarioPinchDisp();
+    void BranchBackCheckMarioPinchDisp();
+    void StartCheckPartnerPinchDisp();
+    void BranchBackCheckPartnerPinchDisp();
     // eff_updown_disp_patches.s
     void StartDispUpdownNumberIcons();
     void BranchBackDispUpdownNumberIcons();
@@ -201,6 +210,17 @@ extern "C" {
     }
     bool checkStarPowersEnabled() {
         return mod::pit_randomizer::g_Randomizer->state_.StarPowerEnabled();
+    }
+    ttyd::battle_database_common::BattleUnitKind* setPinchThreshold(
+        ttyd::battle_database_common::BattleUnitKind* kind,
+        int32_t max_hp, int32_t base_max_hp, bool peril) {
+        // Ignore HP Plus badges for enemies.
+        if (kind->unit_type <= 
+            ttyd::battle_database_common::BattleUnitType::BONETAIL) {
+            max_hp = base_max_hp;
+        }
+        mod::pit_randomizer::SetPinchThreshold(kind, max_hp, peril);
+        return kind;
     }
     int32_t getDangerStrength(int32_t num_badges) {
         bool weaker_rush_badges =
@@ -1543,7 +1563,6 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
     unit->bonus_coin = coinlvl & 1;
     
     // Additional global changes for enemies in this mod.
-    unit->danger_hp = 5;
     unit->itemsteal_param = 20;
     
     // Set sentinel bit so enemy's stats aren't changed again until next floor.
@@ -1649,6 +1668,30 @@ int32_t AlterFpDamageCalculation(
     // Change FP damage value back, and return calculated FP loss.
     weapon->fp_damage_function_params[0] = base_atk;
     return damage;
+}
+
+void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::DANGER_PERIL_BY_PERCENT)) {
+        // Danger = 1/3 of max, Peril = 1/10 of max (rounded normally).
+        int32_t threshold = peril ? (max_hp + 5) / 10 : (max_hp + 1) / 3;
+        // Clamp to range [1, 99] to ensure the pinch range exists,
+        // but doesn't exceed the range of a signed byte.
+        if (threshold < 1) threshold = 1;
+        if (threshold > 99) threshold = 99;
+        if (peril) {
+            kind->peril_hp = threshold;
+        } else {
+            kind->danger_hp = threshold;
+        }
+    } else {
+        // Otherwise, set Danger / Peril to 5 and 1 (including enemies).
+        if (peril) {
+            kind->peril_hp = 1;
+        } else {
+            kind->danger_hp = 5;
+        }
+    }
 }
 
 bool CheckEvasionBadges(BattleWorkUnit* unit) {
@@ -2955,6 +2998,49 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kCharlietonPitListLengthHookAddr),
         &kLoadCharlietonPitListLengthOpcode, sizeof(uint32_t));
+        
+    // Override the default Danger / Peril threshold checks for all actors.
+    const int32_t kSetDangerThresholdHookAddr   = 0x80126e84;
+    const int32_t kSetPerilThresholdHookAddr    = 0x80126e20;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSetDangerThresholdHookAddr),
+        reinterpret_cast<void*>(StartSetDangerThreshold));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSetDangerThreshold),
+        reinterpret_cast<void*>(kSetDangerThresholdHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSetPerilThresholdHookAddr),
+        reinterpret_cast<void*>(StartSetPerilThreshold));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSetPerilThreshold),
+        reinterpret_cast<void*>(kSetPerilThresholdHookAddr + 0x4));
+
+    // Fix visual indicators of Mario Danger / Peril.
+    const int32_t kCheckMarioPinchDispHookAddr  = 0x80118074;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kCheckMarioPinchDispHookAddr),
+        reinterpret_cast<void*>(StartCheckMarioPinchDisp));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckMarioPinchDisp),
+        reinterpret_cast<void*>(kCheckMarioPinchDispHookAddr + 0x4));
+    const int32_t kCheckMarioPinchDispPostHookAddr = 0x8011807c;
+    const uint32_t kCheckPartyPinchDispOps[] =
+        { 0x7c032000, 0x4181005c };  // cmpw r3, r4; bgt- 0x5c
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckMarioPinchDispPostHookAddr),
+        &kCheckPartyPinchDispOps, 2 * sizeof(uint32_t));
+    // Fix visual indicators of partners' Danger / Peril.
+    const int32_t kCheckPartnerPinchDispHookAddr = 0x80117e90;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kCheckPartnerPinchDispHookAddr),
+        reinterpret_cast<void*>(StartCheckPartnerPinchDisp));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckPartnerPinchDisp),
+        reinterpret_cast<void*>(kCheckPartnerPinchDispHookAddr + 0x4));
+    const int32_t kCheckPartnerPinchDispPostHookAddr = 0x8011807c;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckPartnerPinchDispPostHookAddr),
+        &kCheckPartyPinchDispOps, 2 * sizeof(uint32_t));
         
     // Add code that weakens Power / Mega Rush badges if the option is set.
     const int32_t kPowerRushHookAddr    = 0x800fd93c;

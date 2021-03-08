@@ -84,6 +84,10 @@ int32_t AlterFpDamageCalculation(
     ttyd::battle_unit::BattleWorkUnitPart* target_part,
     ttyd::battle_database_common::BattleWeapon* weapon,
     uint32_t* unk0, uint32_t unk1);
+    
+// Overrides the default Danger / Peril thresholds for a battle unit.
+void SetPinchThreshold(ttyd::battle_database_common::BattleUnitKind* kind, 
+    int32_t max_hp, bool peril);
 
 // Replaces the vanilla logic for evasion badges; returns true if Lucky.
 bool CheckEvasionBadges(ttyd::battle_unit::BattleWorkUnit* unit);

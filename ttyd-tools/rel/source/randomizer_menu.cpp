@@ -23,7 +23,7 @@ const char kStartRoomName[] = "tik_06";
 // Menu constants.
 const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
-const int32_t kMenuWidth            = 378;
+const int32_t kMenuWidth            = 380;
 const int32_t kMenuPadding          = 15;
 const int32_t kNumOptionPages       = 7;
 const int32_t kOptionsPerPage       = 5;
