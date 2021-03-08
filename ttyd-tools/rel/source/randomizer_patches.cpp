@@ -27,6 +27,7 @@
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
 #include <ttyd/battle_seq.h>
+#include <ttyd/battle_seq_end.h>
 #include <ttyd/battle_stage_object.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
@@ -293,6 +294,7 @@ int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g_btlevtcmd_WeaponAftereffect_trampoline)(EvtEntry*, bool) = nullptr;
 uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
 void (*g_pouchReviseMarioParam_trampoline)() = nullptr;
+const char* (*g_BattleGetRankNameLabel_trampoline)(int32_t) = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -628,6 +630,31 @@ const int32_t HammerBrosHpCheck[] = {
 // Returns one of 0, 5, 10, ..., 25 at random (to be added to the base 5).
 int32_t GetBonusCakeRestoration() {
     return ttyd::system::irand(6) * 5;
+}
+
+// Returns the max level of a move badge based on the number of copies equipped.
+int32_t MaxLevelForMoveBadges(int32_t badge_count) {
+    int32_t max_level = badge_count;
+    switch (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::MAX_BADGE_MOVE_LEVEL)) {
+        case RandomizerState::MAX_MOVE_LEVEL_1X: {
+            break;
+        }
+        case RandomizerState::MAX_MOVE_LEVEL_2X: {
+            max_level *= 2;
+            break;
+        }
+        case RandomizerState::MAX_MOVE_LEVEL_RANK: {
+            if (!badge_count) return 0;
+            return ttyd::mario_pouch::pouchGetPtr()->rank + 1;
+        }
+        case RandomizerState::MAX_MOVE_LEVEL_INFINITE: {
+            if (!badge_count) return 0;
+            return 99;
+        }
+    }
+    if (max_level > 99) max_level = 99;
+    return max_level;
 }
 
 }
@@ -1061,21 +1088,25 @@ void CopyChildBattleInfo(bool to_child) {
 void OnEnterExitBattle(bool is_start) {
     if (is_start) {
         int8_t badge_count;
+        int32_t max_level;
         for (int32_t i = 0; i < 14; ++i) {
             badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
                 ItemType::POWER_JUMP + i);
-            g_MaxMoveBadgeCounts[i] = badge_count;
-            g_CurMoveBadgeCounts[i] = badge_count;
+            max_level = MaxLevelForMoveBadges(badge_count);
+            g_MaxMoveBadgeCounts[i] = max_level;
+            g_CurMoveBadgeCounts[i] = max_level < 99 ? max_level : 1;
         }
         for (int32_t i = 0; i < 2; ++i) {
             badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
                 ItemType::CHARGE + i);
-            g_MaxMoveBadgeCounts[14 + i] = badge_count;
-            g_CurMoveBadgeCounts[14 + i] = badge_count;
+            max_level = MaxLevelForMoveBadges(badge_count);
+            g_MaxMoveBadgeCounts[14 + i] = max_level;
+            g_CurMoveBadgeCounts[14 + i] = max_level < 99 ? max_level : 1;
             badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
                 ItemType::SUPER_CHARGE + i);
-            g_MaxMoveBadgeCounts[16 + i] = badge_count;
-            g_CurMoveBadgeCounts[16 + i] = badge_count;
+            max_level = MaxLevelForMoveBadges(badge_count);
+            g_MaxMoveBadgeCounts[16 + i] = max_level;
+            g_CurMoveBadgeCounts[16 + i] = max_level < 99 ? max_level : 1;
         }
         g_InBattle = true;
     } else {
@@ -3263,9 +3294,63 @@ void ApplyMiscPatches() {
             
             return 2;
         });
+        
+    // Fix rank string shown in the menu.
+    g_BattleGetRankNameLabel_trampoline = patch::hookFunction(
+        ttyd::battle_seq_end::BattleGetRankNameLabel,
+        [](int32_t level) {
+            int32_t rank = ttyd::mario_pouch::pouchGetPtr()->rank;
+            if (rank < 0 || rank > 3) rank = 0;
+            return ttyd::battle_seq_end::_rank_up_data[rank].mario_menu_msg;
+        });
 }
 
 void ApplySettingBasedPatches() {
+    // Change stage rank-up levels (set to 100 to force no rank-up on level-up).
+    auto* rankup_data = ttyd::battle_seq_end::_rank_up_data;
+    switch (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::RANK_UP_REQUIREMENT)) {
+        case RandomizerState::RANK_UP_NORMAL: {
+            rankup_data[1].level = 10;
+            rankup_data[2].level = 20;
+            rankup_data[3].level = 30;
+            break;
+        }
+        case RandomizerState::RANK_UP_EARLIER: {
+            rankup_data[1].level = 8;
+            rankup_data[2].level = 15;
+            rankup_data[3].level = 25;
+            break;
+        }
+        default: {  // Non-level based.
+            rankup_data[1].level = 100;
+            rankup_data[2].level = 100;
+            rankup_data[3].level = 100;
+            break;
+        }
+    }
+    
+    // Increase some move badge BP costs if playing with larger max move levels.
+    if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::MAX_BADGE_MOVE_LEVEL) !=
+            RandomizerState::MAX_MOVE_LEVEL_1X) {
+        itemDataTable[ItemType::POWER_JUMP].bp_cost = 2;
+        itemDataTable[ItemType::POWER_SMASH].bp_cost = 2;
+        itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 3;
+        itemDataTable[ItemType::QUAKE_HAMMER].bp_cost = 3;
+        itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 3;
+        itemDataTable[ItemType::CHARGE].bp_cost = 2;
+        itemDataTable[ItemType::CHARGE_P].bp_cost = 2;
+    } else {
+        itemDataTable[ItemType::POWER_JUMP].bp_cost = 1;
+        itemDataTable[ItemType::POWER_SMASH].bp_cost = 1;
+        itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 1;
+        itemDataTable[ItemType::QUAKE_HAMMER].bp_cost = 2;
+        itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 2;
+        itemDataTable[ItemType::CHARGE].bp_cost = 1;
+        itemDataTable[ItemType::CHARGE_P].bp_cost = 1;
+    }
+    
     // Increase badge BP cost and shop prices if HP/FP Drains heal per hit.
     if (g_Randomizer->state_.GetOptionValue(
         RandomizerState::HP_FP_DRAIN_PER_HIT)) {
@@ -3333,10 +3418,20 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     }
     if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)) {
         auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
-        pouch.rank = 3;
         pouch.level = 99;
         pouch.unallocated_bp += 90;
         pouch.total_bp += 90;
+        if (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::RANK_UP_REQUIREMENT) != 
+                RandomizerState::RANK_UP_BY_FLOOR) {
+            // Start at Superstar rank, unless rank-ups are by floor number.
+            pouch.rank = 3;
+        }
+    }
+    if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::RANK_UP_REQUIREMENT) == 
+            RandomizerState::RANK_UP_ALWAYS_MAX) {
+        ttyd::mario_pouch::pouchGetPtr()->rank = 3;
     }
     ApplySettingBasedPatches();
     // Save the timestamp you entered the Pit.
@@ -3548,6 +3643,21 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         gsw_floor += ((actual_floor / 10) % 10 == 9) ? 90 : 80;
     }
     ttyd::swdrv::swByteSet(1321, gsw_floor);
+    // Increase stage rank if entering floor 31/61/91, depending on settings.
+    switch (actual_floor) {
+        case 30:
+        case 60:
+        case 90: {
+            if (g_Randomizer->state_.GetOptionValue(
+                    RandomizerState::RANK_UP_REQUIREMENT) == 
+                    RandomizerState::RANK_UP_BY_FLOOR) {
+                ttyd::mario_pouch::pouchGetPtr()->rank++;
+            }
+            break;
+        }
+        default:
+            break;
+    }
     return 2;
 }
 

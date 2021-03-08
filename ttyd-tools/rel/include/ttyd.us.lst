@@ -1526,6 +1526,14 @@
 80209b5c:evt_win_coin_on
 8020a2c4:evt_win_other_select
 
+// battle_seq_end.o
+// .text
+// 80212740:_get_rank_up_msg
+802166a4:BattleGetRankNameLabel
+// .data
+803afc10:_rank_up_data
+
+
 // evt_yuugijou.o
 80229bcc:yuugijou_init
 
