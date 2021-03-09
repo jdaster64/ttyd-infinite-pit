@@ -83,7 +83,7 @@ struct RandomizerState {
 
     // Save file revision; makes it possible to add fields while maintaining
     // backwards compatibility, and detect when a vanilla file is loaded.
-    // Current version = 2, compatible versions = 1 ~ 2.
+    // Current version = 3, compatible versions = 1 ~ 3.
     uint8_t     version_;
     
     // Game state.

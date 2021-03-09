@@ -75,16 +75,25 @@ bool LoadFromPreviousVersion(RandomizerState* state) {
     }
     
     // Version is compatible; load, making any adjustments necessary.
-    if (version == 2) {
+    if (version == 3) {
         patch::writePatch(state, saved_state, sizeof(RandomizerState));
+    } else if (version == 2) {
+        patch::writePatch(state, saved_state, sizeof(RandomizerState));
+        state->options_v1_40_ = 0;
+        for (int32_t i = 0; i < 5; ++i) state->unused_[i] = 0;
     } else if (version == 1) {
+        // Note: loading from version 1 will break seeding, but since it was
+        // never publically distributed, it's useful for me to keep around.
         patch::writePatch(state, saved_state, sizeof(RandomizerState));
         state->hp_multiplier_ = 100;
         state->atk_multiplier_ = 100;
         state->options_ = 2;
+        state->options_v1_40_ = 0;
+        for (int32_t i = 0; i < 5; ++i) state->unused_[i] = 0;
+        for (int32_t i = 0; i < 20; ++i) state->play_stats_[i] = 0;
     }
     
-    state->version_ = 2;
+    state->version_ = 3;
     InitPartyMaxHpTable(state->partner_upgrades_);
     return true;
 }
@@ -94,7 +103,7 @@ bool LoadFromPreviousVersion(RandomizerState* state) {
 bool RandomizerState::Load(bool new_save) {
     if (!new_save) return LoadFromPreviousVersion(this);
     
-    version_ = 2;
+    version_ = 3;
     floor_ = 0;
     reward_flags_ = 0x00000000;
     load_from_save_ = false;
@@ -106,6 +115,10 @@ bool RandomizerState::Load(bool new_save) {
     hp_multiplier_ = 100;
     atk_multiplier_ = 100;
     options_ = 2;
+    options_v1_40_ = 0;
+    
+    // Fill with 0's for future-proofing.
+    for (int32_t i = 0; i < 5; ++i) unused_[i] = 0;
     
     // Seed the rng based on the filename.
     // If the filename is a few variants of "random" or a single 'star',
