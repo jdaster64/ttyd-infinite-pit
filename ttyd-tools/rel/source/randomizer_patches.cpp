@@ -3037,7 +3037,7 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackCheckPartnerPinchDisp),
         reinterpret_cast<void*>(kCheckPartnerPinchDispHookAddr + 0x4));
-    const int32_t kCheckPartnerPinchDispPostHookAddr = 0x8011807c;
+    const int32_t kCheckPartnerPinchDispPostHookAddr = 0x80117e98;
     mod::patch::writePatch(
         reinterpret_cast<void*>(kCheckPartnerPinchDispPostHookAddr),
         &kCheckPartyPinchDispOps, 2 * sizeof(uint32_t));
