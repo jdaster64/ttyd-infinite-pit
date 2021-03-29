@@ -3,6 +3,7 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "randomizer.h"
+#include "randomizer_patches.h"
 #include "randomizer_state.h"
 
 #include <ttyd/battle.h>
@@ -907,7 +908,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
     { "Take at least %" PRId32 " total damage!", TOTAL_DAMAGE_MORE, 1, 5 },
     { "Take damage at least %" PRId32 " times!", HITS_MORE, 3, 5 },
     { "Win with Mario at %" PRId32 " or more HP!", MARIO_FINAL_HP_MORE, 1, -1 },
-    { "Win with Mario at 5 HP or less!", MARIO_FINAL_HP_LESS, 6, -1 },
+    { "Win with Mario in Danger or worse!", MARIO_FINAL_HP_LESS, 6, -1 },
     { "Win with Mario in Peril!", MARIO_FINAL_HP_LESS, 2, -1 },
     { "Don't use any items!", ITEMS_LESS, 1, -1, 30 },
     { "Don't ever swap partners!", SWAP_PARTNERS_LESS, 1, -1 },
@@ -1019,6 +1020,12 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
         case TOTAL_DAMAGE_MORE:
         case FP_MORE:
             param *= state.floor_ < 50 ? 2 : 3;
+            break;
+        case MARIO_FINAL_HP_LESS:
+            // Override Danger / Peril thresholds with correct value,
+            // based on whether the "%-based" setting is enabled.
+            param = 1 + GetPinchThresholdForMaxHp(
+                ttyd::mario_pouch::pouchGetMaxHP(), /* peril? */ param == 2);
             break;
         case MARIO_FINAL_HP_MORE:
             // Make it based on percentage of max HP.

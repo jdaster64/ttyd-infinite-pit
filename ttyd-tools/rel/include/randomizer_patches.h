@@ -85,6 +85,8 @@ int32_t AlterFpDamageCalculation(
     ttyd::battle_database_common::BattleWeapon* weapon,
     uint32_t* unk0, uint32_t unk1);
     
+// Gets the Danger / Peril threshold to use based on a max HP value.
+int32_t GetPinchThresholdForMaxHp(int32_t max_hp, bool peril);
 // Overrides the default Danger / Peril thresholds for a battle unit.
 void SetPinchThreshold(ttyd::battle_database_common::BattleUnitKind* kind, 
     int32_t max_hp, bool peril);

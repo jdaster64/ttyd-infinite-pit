@@ -1670,7 +1670,7 @@ int32_t AlterFpDamageCalculation(
     return damage;
 }
 
-void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
+int32_t GetPinchThresholdForMaxHp(int32_t max_hp, bool peril) {
     if (g_Randomizer->state_.GetOptionValue(
         RandomizerState::DANGER_PERIL_BY_PERCENT)) {
         // Danger = 1/3 of max, Peril = 1/10 of max (rounded normally).
@@ -1679,18 +1679,18 @@ void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
         // but doesn't exceed the range of a signed byte.
         if (threshold < 1) threshold = 1;
         if (threshold > 99) threshold = 99;
-        if (peril) {
-            kind->peril_hp = threshold;
-        } else {
-            kind->danger_hp = threshold;
-        }
+        return threshold;
+    }
+    // If not using %-based, return a fixed 1 / 5 HP (including for enemies).
+    return peril ? 1 : 5;
+}
+
+void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
+    int32_t threshold = GetPinchThresholdForMaxHp(max_hp, peril);
+    if (peril) {
+        kind->peril_hp = threshold;
     } else {
-        // Otherwise, set Danger / Peril to 5 and 1 (including enemies).
-        if (peril) {
-            kind->peril_hp = 1;
-        } else {
-            kind->danger_hp = 5;
-        }
+        kind->danger_hp = threshold;
     }
 }
 
