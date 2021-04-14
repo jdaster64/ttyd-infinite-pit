@@ -3,6 +3,7 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "randomizer.h"
+#include "randomizer_patches.h"
 #include "randomizer_state.h"
 
 #include <ttyd/battle.h>
@@ -146,7 +147,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::BOB_OMB, 283, 10, 7, 2, 2, 0, 5, 9, kHpTables[1], kFpTables[0] },
     { BattleUnitType::BULKY_BOB_OMB, 304, 12, 4, 2, 2, 0, 5, 9, kHpTables[1], kFpTables[0] },
     { BattleUnitType::BOB_ULK, 305, 15, 5, 2, 4, 0, 7, 9, kHpTables[3], kFpTables[0] },
-    { BattleUnitType::DULL_BONES, 39, 8, 5, 1, 1, 1, 2, 4, kHpTables[0], kFpTables[0] },
+    { BattleUnitType::DULL_BONES, 39, 7, 5, 1, 1, 1, 2, 4, kHpTables[0], kFpTables[0] },
     { BattleUnitType::RED_BONES, 36, 10, 7, 2, 3, 0, 5, 4, kHpTables[0], kFpTables[0] },
     { BattleUnitType::DRY_BONES, 196, 12, 7, 3, 5, 0, 7, 4, kHpTables[0], kFpTables[2] },
     { BattleUnitType::DARK_BONES, 197, 20, 7, 3, 4, 1, 10, 4, kHpTables[1], kFpTables[2] },
@@ -234,6 +235,14 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { BattleUnitType::MINI_YUX, -1, 1, 0, 0, 0, 0, 0, 1, kHpTables[0], kFpTables[0] },
     { BattleUnitType::MINI_Z_YUX, -1, 2, 0, 0, 0, 0, 0, 1, kHpTables[0], kFpTables[0] },
     { BattleUnitType::MINI_X_YUX, -1, 1, 0, 0, 0, 0, 0, 1, kHpTables[0], kFpTables[0] },
+    // Copied stats for slight variants of enemies.
+    { BattleUnitType::RED_MAGIKOOPA_CLONE, 318, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::WHITE_MAGIKOOPA_CLONE, 319, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::GREEN_MAGIKOOPA_CLONE, 320, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::MAGIKOOPA_CLONE, 321, 15, 7, 0, 4, 0, 7, 3, kHpTables[0], kFpTables[3] },
+    { BattleUnitType::DARK_WIZZERD_CLONE, 296, 12, 8, 4, 5, 0, 8, -1, kHpTables[2], kFpTables[2] },
+    { BattleUnitType::ELITE_WIZZERD_CLONE, 297, 14, 8, 5, 7, 1, 10, -1, kHpTables[3], kFpTables[3] },
+    { BattleUnitType::GOOMBA_GLITZVILLE, 214, 10, 6, 0, 1, 0, 2, 10, kHpTables[0], kFpTables[0] },
     { /* invalid enemy */ },
 };
 
@@ -305,7 +314,7 @@ const EnemyModuleInfo kEnemyModuleInfo[] = {
     { BattleUnitType::CRAZEE_DAYZEE, ModuleId::GRA, 0x9090, 9, 38 },
     { BattleUnitType::GOOMBA, ModuleId::TIK, 0x27030, 1, 43 },
     { BattleUnitType::PARAGOOMBA, ModuleId::TIK, 0x27080, 2, 45 },
-    { BattleUnitType::SPIKY_GOOMBA, ModuleId::TIK, 0x270b0, 1, 44 },
+    { BattleUnitType::SPIKY_GOOMBA, ModuleId::TIK, 0x270d0, 1, 44 },
     { BattleUnitType::KOOPA_TROOPA, ModuleId::TIK, 0x26d60, 3, 52 },
     { BattleUnitType::HAMMER_BRO, ModuleId::TIK, 0x27120, 32, 20 },
     { BattleUnitType::MAGIKOOPA, ModuleId::TIK, 0x267d0, 31, 69 },
@@ -666,7 +675,7 @@ void BuildBattle(
         }
         
         // Position the enemies in standard spacing.
-        float offset = i - g_NumEnemies * 0.5f;
+        float offset = i - (g_NumEnemies - 1) * 0.5f;
         custom_unit.position.x = kEnemyPartyCenterX + offset * kEnemyPartySepX;
         custom_unit.position.z = offset * kEnemyPartySepZ;
         
@@ -708,6 +717,10 @@ void BuildBattle(
         weights.min_weight = g_CustomAudienceWeights[i];
         weights.max_weight = g_CustomAudienceWeights[i];
     }
+    // If Atomic Boo floor, change background music to miniboss theme.
+    if (floor % 100 == 48) {
+        battle_setup->music_name = "BGM_CHUBOSS_BATTLE1";
+    }
 }
 
 // Stat weights as percentages for certain Pit floors (00s, 10s, 20s, ... 90s).
@@ -722,34 +735,39 @@ bool GetEnemyStats(
     if (!ei) return false;
     
     int32_t floor_group = g_Randomizer->state_.floor_ / 10;
+    
+    int32_t hp_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::POST_100_HP_SCALING) ? 10 : 5;
+    int32_t atk_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::POST_100_ATK_SCALING) ? 10 : 5;
+        
     int32_t base_hp_pct = 
         floor_group > 9 ?
-            100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
-    int32_t base_atkdef_pct = 
+            100 + (floor_group - 9) * hp_scale : kStatPercents[floor_group];
+    int32_t base_atk_pct = 
+        floor_group > 9 ?
+            100 + (floor_group - 9) * atk_scale : kStatPercents[floor_group];
+    int32_t base_def_pct = 
         floor_group > 9 ?
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
             
     if (out_hp) {
-        int32_t hp = (ei->hp_scale * base_hp_pct + 50);
-        hp = hp * g_Randomizer->state_.hp_multiplier_ / 100;
-        hp /= 100;
-        hp = hp < 1 ? 1 : hp;
-        *out_hp = hp > 9999 ? 9999 : hp;
+        int32_t hp = Min(ei->hp_scale * base_hp_pct, 1000000);
+        hp *= g_Randomizer->state_.hp_multiplier_;
+        *out_hp = Clamp((hp + 5000) / 10000, 1, 9999);
     }
     if (out_atk) {
-        int32_t atk = (ei->atk_scale * base_atkdef_pct + 50);
+        int32_t atk = Min(ei->atk_scale * base_atk_pct, 1000000);
         atk += (base_attack_power - ei->atk_base) * 100;
-        atk = atk * g_Randomizer->state_.atk_multiplier_ / 100;
-        atk /= 100;
-        atk = atk < 1 ? 1 : atk;
-        *out_atk = atk > 99 ? 99 : atk;
+        atk *= g_Randomizer->state_.atk_multiplier_;
+        *out_atk = Clamp((atk + 5000) / 10000, 1, 99);
     }
     if (out_def) {
         if (ei->def_scale == 0) {
             *out_def = 0;
         } else {
             // Enemies with def_scale > 0 should always have at least 1 DEF.
-            int32_t def = (ei->def_scale * base_atkdef_pct + 50) / 100;
+            int32_t def = (ei->def_scale * base_def_pct + 50) / 100;
             def = def < 1 ? 1 : def;
             *out_def = def > 99 ? 99 : def;
         }
@@ -761,10 +779,12 @@ bool GetEnemyStats(
             // Enemies like Mini-Yuxes should never grant EXP.
             *out_level = 0;
         } else {
-            // Enemies' level will always be the same amount higher than Mario,
+            // Enemies' level will always be the same relative to than Mario,
             // typically giving 3 ~ 10 EXP depending on strength and group size.
+            // (The EXP gained will reduce slightly after floor 100.)
             if (ei->level_offset <= 10) {
-                int32_t level_offset = ei->level_offset + 5;
+                int32_t level_offset = 
+                    ei->level_offset + (g_Randomizer->state_.floor_ < 100 ? 5 : 2);
                 *out_level =
                     ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
             } else {
@@ -888,7 +908,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
     { "Take at least %" PRId32 " total damage!", TOTAL_DAMAGE_MORE, 1, 5 },
     { "Take damage at least %" PRId32 " times!", HITS_MORE, 3, 5 },
     { "Win with Mario at %" PRId32 " or more HP!", MARIO_FINAL_HP_MORE, 1, -1 },
-    { "Win with Mario at 5 HP or less!", MARIO_FINAL_HP_LESS, 6, -1 },
+    { "Win with Mario in Danger or worse!", MARIO_FINAL_HP_LESS, 6, -1 },
     { "Win with Mario in Peril!", MARIO_FINAL_HP_LESS, 2, -1 },
     { "Don't use any items!", ITEMS_LESS, 1, -1, 30 },
     { "Don't ever swap partners!", SWAP_PARTNERS_LESS, 1, -1 },
@@ -896,7 +916,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
     { "Appeal to the crowd at least %" PRId32 " times!", APPEAL_MORE, 3, 5 },
     { "Don't use any FP!", FP_LESS, 1, -1 },
     { "Don't use more than %" PRId32 " FP!", FP_LESS, 4, 11 },
-    { "Use at least %" PRId32 " FP!", FP_MORE, 1, 4 },
+    { "Use at least %" PRId32 " FP!", FP_MORE, 1, 5 },
     { "Mario must only Appeal and Defend!", MARIO_INACTIVE_TURNS, 255, -1 },
     { "Your partner must only Appeal and Defend!", PARTNER_INACTIVE_TURNS, 255, -1 },
     { "Appeal/Defend only for %" PRId32 " turns!", INACTIVE_TURNS, 2, 5 },
@@ -910,14 +930,23 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    // Set conditions on about 1 in 4 battles randomly (and not on Bonetail).
     RandomizerState& state = g_Randomizer->state_;
-    if (state.floor_ % 10 == 9 || state.Rand(4)) return;
+    // No conditions on Bonetail fights (or reward floors).
+    if (state.floor_ % 10 == 9) return;
+    
+    // If using held items + bonus conditions, only pick one every ~4 floors.
+    const int32_t reward_mode =
+        state.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
+    if ((reward_mode == 0 || reward_mode == RandomizerState::ALL_HELD_ITEMS) && 
+        state.Rand(4)) return;
+        
+    const int32_t shine_rate =
+        reward_mode == RandomizerState::NO_HELD_ITEMS ? 8 : 30;
     
     // Use the unused "random_item_weight" field to store the item reward.
     int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
     *item_reward = PickRandomItem(
-        /* seeded = */ true, 10, 10, 40, state.floor_ < 30 ? 0 : 30);
+        /* seeded = */ true, 10, 10, 40, state.floor_ < 30 ? 0 : shine_rate);
     // If the "none" case was picked, make it a Shine Sprite.
     if (*item_reward <= 0) *item_reward = ItemType::GOLD_BAR_X3;
     
@@ -972,7 +1001,17 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     
     // Finalize and assign selected condition's parameters.
     int32_t param = conditions[idx].param_min;
-    if (conditions[idx].param_max > 0) {
+    if (conditions[idx].type == FP_MORE && state.floor_ < 30) {
+        // v1.2: Special case; "Use FP" shouldn't appear too early in the Pit.
+        // Replace it with something random that doesn't have any parameters.
+        switch (state.Rand(4)) {
+            case 0: idx = 0;    break;  // No jump
+            case 1: idx = 2;    break;  // No hammer
+            case 2: idx = 6;    break;  // No damage w/Mario
+            case 3: idx = 18;   break;  // No spending FP
+        }
+        param = conditions[idx].param_min;
+    } else if (conditions[idx].param_max > 0) {
         param += state.Rand(conditions[idx].param_max - 
                             conditions[idx].param_min + 1);
     }
@@ -980,7 +1019,13 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
         case TOTAL_DAMAGE_LESS:
         case TOTAL_DAMAGE_MORE:
         case FP_MORE:
-            param *= state.floor_ < 50 ? 2 : 5;
+            param *= state.floor_ < 50 ? 2 : 3;
+            break;
+        case MARIO_FINAL_HP_LESS:
+            // Override Danger / Peril thresholds with correct value,
+            // based on whether the "%-based" setting is enabled.
+            param = 1 + GetPinchThresholdForMaxHp(
+                ttyd::mario_pouch::pouchGetMaxHP(), /* peril? */ param == 2);
             break;
         case MARIO_FINAL_HP_MORE:
             // Make it based on percentage of max HP.
@@ -1011,6 +1056,13 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     npc_info->ruleParameter0 = param;
     npc_info->ruleParameter1 = param;
     
+    // If the held item drop is contingent on the condition, override the item
+    // with a random one of the held items.
+    if (reward_mode == RandomizerState::CONDITION_DROPS_HELD) {
+        int32_t enemy_index = npc_info->pConfiguration->held_item_weight;
+        *item_reward = npc_info->wHeldItems[enemy_index];
+    }
+    
     // Assign the condition text.
     if (conditions[idx].param_max > 0 || 
         conditions[idx].type == MARIO_FINAL_HP_MORE) {
@@ -1028,7 +1080,14 @@ void GetBattleConditionString(char* out_buf) {
         fbat_info->wBattleInfo->pConfiguration->random_item_weight;
     const char* item_name = ttyd::msgdrv::msgSearch(
         ttyd::item_data::itemDataTable[item_reward].name);
-    sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);
+    
+    // If held item drop is contingent on condition, don't say which will drop.
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
+        == RandomizerState::CONDITION_DROPS_HELD) {
+        sprintf(out_buf, "Reward challenge:\n%s", g_ConditionTextBuf);
+    } else {
+        sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);
+    }
 }
 
 int32_t PickRandomItem(
@@ -1184,7 +1243,8 @@ int16_t PickChestReward() {
         // be obtained; the total weight should be 10x unobtained count, split
         // among all the ones that can be afforded.
         int32_t sp_weight = 0;
-        switch (8 - CountSetBits(GetBitMask(5, 12) & state.reward_flags_)) {
+        const int32_t number_star_powers = state.StarPowersObtained();
+        switch (8 - number_star_powers) {
             case 8: sp_weight = 80 / 1; break;
             case 7: sp_weight = 70 / 2; break;
             case 6: sp_weight = 60 / 2; break;
@@ -1230,18 +1290,18 @@ int16_t PickChestReward() {
                     break;
                 case ItemType::DIAMOND_STAR:
                 case ItemType::EMERALD_STAR:
-                    if (pouch.max_sp < 100) weights[i] = 0;
+                    if (number_star_powers < 1) weights[i] = 0;
                     break;
                 case ItemType::GOLD_STAR:
-                    if (pouch.max_sp < 200) weights[i] = 0;
+                    if (number_star_powers < 2) weights[i] = 0;
                     break;
                 case ItemType::RUBY_STAR:
                 case ItemType::SAPPHIRE_STAR:
                 case ItemType::GARNET_STAR:
-                    if (pouch.max_sp < 300) weights[i] = 0;
+                    if (number_star_powers < 3) weights[i] = 0;
                     break;
                 case ItemType::CRYSTAL_STAR:
-                    if (pouch.max_sp < 500) weights[i] = 0;
+                    if (number_star_powers < 5) weights[i] = 0;
                     break;
                 case -1:
                 case -2:
@@ -1280,6 +1340,24 @@ int16_t PickChestReward() {
         // Pick a random pool badge.
         reward = PickRandomItem(/* seeded = */ true, 0, 0, 1, 0);
     }
+    
+    // If partners were unlocked from beginning and a partner was selected,
+    // replace the reward with an extra Shine Sprite.
+    if (reward < 0 && g_Randomizer->state_.GetOptionValue(
+        RandomizerState::START_WITH_PARTNERS)) {
+        reward = ItemType::GOLD_BAR_X3;
+    }
+    
+    // If reward was Clock Out or Power Lift, swap them if the option is set.
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::SWAP_CO_PL_SP_COST)) {
+        if (reward == ItemType::EMERALD_STAR) {
+            reward = ItemType::GOLD_STAR;
+        } else if (reward == ItemType::GOLD_STAR) {
+            reward = ItemType::EMERALD_STAR;
+        }
+    }
+    
     return reward;
 }
 

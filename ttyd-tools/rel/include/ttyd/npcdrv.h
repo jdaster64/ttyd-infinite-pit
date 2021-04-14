@@ -277,7 +277,7 @@ static_assert(sizeof(FbatAttackAnnounceInfo) == 0x20);
 struct FbatData
 {
 	int16_t mode;
-	uint8_t field_2;
+	uint8_t state;
 
 	uint8_t gap_3[0x1];
 

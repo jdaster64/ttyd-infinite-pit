@@ -19,10 +19,16 @@
 #include <ttyd/dispdrv.h>
 #include <ttyd/event.h>
 #include <ttyd/evtmgr.h>
+#include <ttyd/item_data.h>
+#include <ttyd/mario_pouch.h>
 #include <ttyd/msgdrv.h>
+#include <ttyd/npcdrv.h>
 #include <ttyd/seqdrv.h>
+#include <ttyd/seq_battle.h>
 #include <ttyd/seq_title.h>
+#include <ttyd/sound.h>
 #include <ttyd/statuswindow.h>
+#include <ttyd/swdrv.h>
 #include <ttyd/system.h>
 
 #include <cstdint>
@@ -40,13 +46,18 @@ using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::dispdrv::CameraId;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::npcdrv::FbatBattleInformation;
+using ::ttyd::npcdrv::NpcEntry;
 using ::ttyd::seqdrv::SeqIndex;
+
+namespace ItemType = ::ttyd::item_data::ItemType;
 
 // Trampoline hooks for patching in custom logic to existing TTYD C functions.
 void (*g_stg0_00_init_trampoline)(void) = nullptr;
 void (*g_cardCopy2Main_trampoline)(int32_t) = nullptr;
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
+void (*g_seq_battleInit_trampoline)(void) = nullptr;
+void (*g_fbatBattleMode_trampoline)(void) = nullptr;
 void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
 void (*g__rule_disp_trampoline)(void) = nullptr;
 void (*g_BattleInformationSetDropMaterial_trampoline)(FbatBattleInformation*) = nullptr;
@@ -59,7 +70,6 @@ void (*g_statusWinDisp_trampoline)(void) = nullptr;
 void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
 
 bool g_CueGameOver = false;
-bool g_DrawDebug = false;
 
 void DrawOptionsMenu() {
     g_Randomizer->menu_.Draw();
@@ -67,35 +77,25 @@ void DrawOptionsMenu() {
 
 void DrawTitleScreenInfo() {
     const char* kTitleInfo = 
-        "PM:TTYD Infinite Pit v1.00 r22 by jdaster64\n"
+        "PM:TTYD Infinite Pit v1.41 r46 by jdaster64\n"
         "https://github.com/jdaster64/ttyd-infinite-pit\n"
         "Guide / Other mods: https://goo.gl/vjJjVd";
     DrawCenteredTextWindow(
         kTitleInfo, 0, -50, 0xFFu, true, 0xFFFFFFFFu, 0.7f, 0x000000E5u, 15, 10);
 }
 
-// Handles printing stuff to the screen for debugging purposes; no longer used.
-void DrawDebuggingFunctions() {
-    uint32_t& enemyTypeToTest = g_Randomizer->state_.debug_[0];
-    
-    // D-Pad Up or Down to change the type of enemy to test.
-    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_UP) {
-        ++enemyTypeToTest;
-    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_RIGHT) {
-        enemyTypeToTest += 10;
-    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_DOWN) {
-        --enemyTypeToTest;
-    } else if (ttyd::system::keyGetButtonTrg(0) & ButtonId::DPAD_LEFT) {
-        enemyTypeToTest -= 10;
-    }
-    if (enemyTypeToTest > 101) enemyTypeToTest = 101;
-    if (enemyTypeToTest < 1) enemyTypeToTest = 1;
-    
-    // Print the current enemy type to the screen at all times.
-    char buf[16];
-    sprintf(buf, "%d", enemyTypeToTest);
-    DrawCenteredTextWindow(
-        buf, -200, -150, 0xFFu, true, 0xFFFFFFFFu, 0.75f, 0x000000E5u, 15, 10);
+uint32_t secretCode_RtaTimer        = 034345566;
+uint32_t secretCode_BonusOptions1   = 012651265;
+uint32_t secretCode_BonusOptions2   = 043652131;
+uint32_t secretCode_BonusOptions3   = 031313141;
+uint32_t secretCode_UnlockFxBadges  = 026122146;
+
+bool g_DrawRtaTimer = false;
+void DrawRtaTimer() {
+    // Print the current RTA timer and its position to the screen at all times.
+    char buf[32];
+    sprintf(buf, "%s", g_Randomizer->state_.GetCurrentTimeString());
+    DrawText(buf, -260, -195, 0xFF, true, ~0U, 0.75f, /* center-left */ 3);
 }
 
 }
@@ -111,6 +111,7 @@ void Randomizer::Init() {
         ttyd::event::stg0_00_init, []() {
             // Replaces existing logic, includes loading the randomizer state.
             OnFileLoad(/* new_file = */ true);
+            ApplySettingBasedPatches();
         });
         
     g_cardCopy2Main_trampoline = patch::hookFunction(
@@ -121,6 +122,7 @@ void Randomizer::Init() {
             if (!g_Randomizer->state_.Load(/* new_save = */ false)) {
                 g_CueGameOver = true;
             }
+            ApplySettingBasedPatches();
         });
     
     g_OSLink_trampoline = patch::hookFunction(
@@ -130,6 +132,21 @@ void Randomizer::Init() {
                 OnModuleLoaded(new_module);
             }
             return result;
+        });
+
+    g_seq_battleInit_trampoline = patch::hookFunction(
+        ttyd::seq_battle::seq_battleInit, []() {
+            // Copy information from parent npc before battle, if applicable.
+            CopyChildBattleInfo(/* to_child = */ true);
+            g_seq_battleInit_trampoline();
+        });
+
+    g_fbatBattleMode_trampoline = patch::hookFunction(
+        ttyd::npcdrv::fbatBattleMode, []() {
+            bool post_battle_state = ttyd::npcdrv::fbatGetPointer()->state == 4;
+            g_fbatBattleMode_trampoline();
+            // Copy information back to parent npc after battle, if applicable.
+            if (post_battle_state) CopyChildBattleInfo(/* to_child = */ false);
         });
     
     g_seqSetSeq_trampoline = patch::hookFunction(
@@ -225,6 +242,7 @@ void Randomizer::Init() {
     ApplyEnemyStatChangePatches();
     ApplyWeaponLevelSelectionPatches();
     ApplyItemAndAttackPatches();
+    ApplyPlayerStatTrackingPatches();
     ApplyMiscPatches();
     
     // Initialize the menu.
@@ -233,6 +251,51 @@ void Randomizer::Init() {
 
 void Randomizer::Update() {
     menu_.Update();
+    
+    // Process cheat codes.
+    static uint32_t code_history = 0;
+    int32_t code = 0;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::A) code = 1;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::B) code = 2;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::L) code = 3;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::R) code = 4;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::X) code = 5;
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::Y) code = 6;
+    if (code) code_history = (code_history << 3) | code;
+    if ((code_history & 0xFFFFFF) == secretCode_RtaTimer) {
+        code_history = 0;
+        g_DrawRtaTimer = true;
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_BonusOptions1) {
+        code_history = 0;
+        menu_.SetMenuPageVisibility(5, true);
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_BonusOptions2) {
+        code_history = 0;
+        menu_.SetMenuPageVisibility(6, true);
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_BonusOptions3) {
+        code_history = 0;
+        menu_.SetMenuPageVisibility(7, true);
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_UnlockFxBadges) {
+        code_history = 0;
+        // Check Journal for whether the FX badges were already unlocked.
+        bool has_fx_badges = ttyd::swdrv::swGet(
+            ItemType::ATTACK_FX_R - ItemType::POWER_JUMP + 0x80);
+        if (!has_fx_badges && ttyd::mario_pouch::pouchGetHaveBadgeCnt() < 196) {
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_P);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_G);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_B);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_Y);
+            ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
+            ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+        }
+    }
 }
 
 void Randomizer::Draw() {
@@ -250,9 +313,9 @@ void Randomizer::Draw() {
     // Draw options menu.
     RegisterDrawCallback(DrawOptionsMenu, CameraId::k2d);
     
-    // Draw debugging overlay, if enabled.
-    if (InMainGameModes() && g_DrawDebug) {
-        RegisterDrawCallback(DrawDebuggingFunctions, CameraId::k2d);
+    // Draw RTA timer overlay, if enabled.
+    if (InMainGameModes() && g_DrawRtaTimer) {
+        RegisterDrawCallback(DrawRtaTimer, CameraId::kDebug3d);
     }
 }
 

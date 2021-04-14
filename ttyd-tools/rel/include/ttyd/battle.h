@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gc/types.h>
+
 #include <cstdint>
 
 namespace ttyd::battle_database_common {
@@ -14,6 +16,15 @@ struct FbatBattleInformation;
 }
 
 namespace ttyd::battle {
+
+struct BattleWorkAlliance {
+    int16_t     identifier;  // 2 for player, 1 for enemy, 0 for neutral
+    int8_t      attack_direction;
+    int8_t      pad_03;
+    uint32_t    loss_condition_met;    
+};
+
+static_assert(sizeof(BattleWorkAlliance) == 0x8);
 
 struct BattleWorkTarget {
     int16_t     unit_idx;
@@ -135,11 +146,82 @@ struct BattleWorkCommand {
 
 static_assert(sizeof(BattleWorkCommand) == 0x574);
 
+struct BattleWorkActRecord {
+    uint8_t mario_times_jump_moves_used;
+    uint8_t mario_times_hammer_moves_used;
+    uint8_t mario_times_attacking_special_moves_used;
+    uint8_t mario_times_non_attacking_special_moves_used;
+    uint8_t mario_damage_taken;
+    uint8_t partner_damage_taken;
+    uint8_t mario_damaging_hits_taken;
+    uint8_t partner_damaging_hits_taken;
+    uint8_t max_power_bounce_combo;
+    uint8_t mario_num_times_attack_items_used;
+    uint8_t mario_num_times_non_attack_items_used;
+    uint8_t partner_num_times_attack_items_used;
+    uint8_t partner_num_times_non_attack_items_used;
+    uint8_t mario_times_changed_partner;
+    uint8_t partner_times_changed_partner;
+    uint8_t mario_times_attacked_audience;
+    uint8_t partner_times_attacked_audience;
+    uint8_t mario_times_appealed;
+    uint8_t partner_times_appealed;
+    uint8_t mario_fp_spent;
+    uint8_t mario_times_move_used;
+    uint8_t partner_fp_spent;
+    uint8_t partner_times_move_used;
+    uint8_t mario_times_charge_used;
+    uint8_t partner_times_charge_used;
+    uint8_t mario_times_super_charge_used;
+    uint8_t partner_times_super_charge_used;
+    uint8_t mario_times_ran_away;
+    uint8_t partner_times_ran_away;
+    uint8_t partner_times_attacking_moves_used;
+    uint8_t partner_times_non_attacking_moves_used;
+    uint8_t turns_spent;
+    uint8_t num_successful_ac;      // counts to 200 instead of 100
+    uint8_t num_unsuccessful_ac;    // counts to 200 instead of 100
+    uint8_t pad_22[2];
+};
+
+static_assert(sizeof(BattleWorkActRecord) == 0x24);
+
+struct BattleWorkStageHazards {
+    uint32_t    unk_000;
+    gc::vec3    unk_004;  // rotation?
+    gc::vec3    unk_010;  // temp. rotation?
+    uint8_t     stage_effects_allowed;
+    uint8_t     pad_01d[3];
+    uint32_t    bg_a1_or_b_falling_evt_id;
+    uint32_t    bg_a1_evt_id;
+    uint32_t    bg_a2_evt_id;
+    
+    uint32_t    bg_b_scrolling_or_falling_evt_id;
+    uint32_t    bg_b_rotating_evt_id;
+    void*       nozzle_data;
+    void*       fall_object_data;
+    ttyd::battle_database_common::BattleWeapon* stage_jet_weapon_params[2];
+    ttyd::battle_database_common::BattleWeapon  stage_jet_temp_weapon_params[2];
+    int8_t      stage_jet_face_directions[3];
+    int8_t      stage_jet_changing_face_directions[3];
+    int8_t      current_stage_jet_type;
+    int8_t      pad_1cb;
+    uint32_t    stage_jet_change_event_id[3];
+    uint32_t    stage_jet_fire_event_id;
+    int32_t     fog_turn_count;
+    int32_t     fog_active;
+    uint32_t    wall_close_event_id;
+    uint32_t    ceiling_fall_event_id;
+    uint32_t    object_fall_event_id;
+};
+
+static_assert(sizeof(BattleWorkStageHazards) == 0x1f0);
+
 struct BattleWork {
     int16_t         turn_count;
     int16_t         pad_00002;
     int32_t         battle_seq_0;
-    int8_t          alliance_information[0x8 * 3];
+    BattleWorkAlliance alliance_information[3];
     battle_unit::BattleWorkUnit* battle_units[64];
     int32_t         move_priority_queue[64];
     int32_t         phase_evt_queue[64][2];
@@ -178,10 +260,10 @@ struct BattleWork {
     int8_t          unk_163f8[4];
     
     int8_t          stage_work[0xb3c];
-    int8_t          act_record_work[0x24];
+    BattleWorkActRecord act_record_work;
     int8_t          after_reaction_queue[0x8 * 64];
     int8_t          stage_object_work[0x7c * 32];
-    int8_t          stage_hazard_work[0x1f0];
+    BattleWorkStageHazards stage_hazard_work;
     int8_t          icon_work[0x9c * 16];
     int8_t          unk_18c8c[0x114];
     int8_t          status_change_msg_work[0x258];

@@ -472,6 +472,7 @@
 
 // evt_mobj.o
 // .text
+80067878:evt_mobj_signboard
 8006b948:evt_mobj_wait_animation_end
 8006c03c:evt_mobj_get_position
 // .data
@@ -497,6 +498,13 @@
 8006fb3c:marioStInit
 // .data
 80415fd0:g_MarioSt
+
+// seq_battle.o
+800736ec:battle_exit
+800738ac:battle_init
+80073b24:seq_battleMain
+80073f00:seq_battleExit
+80073f20:seq_battleInit
 
 // fontmgr.o
 // unused:JUTFont_Draw
@@ -545,8 +553,39 @@
 80077c08:fontmgrInit
 
 // evt_bero.o
+// .text
+8007a50c:evt_bero_get_info
 8007a9c0:evt_bero_exec_wait
 8007aa34:evt_bero_exec_onoff
+// .data
+80416060:default_entevt
+80416074:default_outevt
+8030cd78:bero_null
+8030cdb4:evt_bero_nonride_check
+8030ce48:bero_open_door_play_se
+8030d138:bero_close_door_play_se
+8030d428:bero_play_enter_anime
+8030d674:bero_play_out_anime
+8030d888:bero_case_init_check
+8030da14:bero_case_exec_none
+8030dac8:bero_case_exec_road
+8030dbf4:bero_case_exec_door
+8030dd58:bero_case_exec_pipe_sub
+8030e28c:bero_case_exec_pipe
+8030e554:bero_case_exec_gate
+8030e608:bero_case_entry
+8030e798:bero_case_entry_sub
+8030e8b4:bero_case_switch_on
+8030e900:bero_case_switch_off
+80416088:evt_bero_info_run_none
+8030e97c:evt_bero_info_run_road
+8030ea20:evt_bero_info_run_door
+8030eadc:evt_bero_info_run_pipe_sub00
+8030eba8:evt_bero_info_run_pipe
+8041609c:evt_bero_info_run_gate
+8030ec7c:evt_bero_info_run
+8030f060:evt_bero_initial_pos
+8030f2d8:evt_bero_mario_enter
 
 // windowdrv.o
 // 8007AD30:getWakuTexObj
@@ -638,6 +677,7 @@
 // mario_pouch.o
 // .text
 800d2e28:pouchSetPartyColor
+800d2e44:pouchGetPartyColor
 800d328c:pouchEquipBadgeID
 800d3300:pouchEquipCheckBadge
 800d35a8:pouchReviseMarioParam
@@ -655,7 +695,9 @@
 800d3d24:pouchGetMaxHP
 800d3d30:pouchGetHP
 800d3dd4:pouchSetCoin
+800d3e18:pouchAddCoin
 800d50cc:pouchGetItem
+800d5738:pouchGetHaveBadgeCnt
 800d59c8:pouchInit
 800d5eb0:pouchGetPtr
 // .data
@@ -944,7 +986,7 @@
 800fd680:BattleCalculateFpDamage
 800fd790:BattleCalculateDamage
 // 800fde2c:BattleCheckPikkyoro
-// 800fdfd4:BattleDamageDirect
+800fdfd4:BattleDamageDirect
 
 // battle_event_cmd.o
 801054e8:btlevtcmd_WeaponAftereffect
@@ -954,8 +996,15 @@
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
 8010b490:btlevtcmd_GetSelectNextEnemy
+8010b540:btlevtcmd_GetSelectEnemy
+8010ddac:btlevtcmd_CheckToken
+8010ef44:btlevtcmd_CheckSpace
 8010ff74:btlevtcmd_SetHp
 80113304:btlevtcmd_KillUnit
+
+// battle_event_default.o
+801138d8:_get_flower_suitoru_point
+80113950:_get_heart_suitoru_point
 
 // battle_information.o
 801141bc:BattleInformationSetDropMaterial
@@ -966,9 +1015,6 @@
 80114588:BattleInformationSetFirstAttack
 80114590:BattleInformationSetParty
 80114598:BattleInformationSetMode
-
-// battle_seq.o
-8011c350:_rule_disp
 
 // battle_mario.o
 // .text
@@ -1065,6 +1111,10 @@
 80115b30:DrawOperationWin
 80115dac:DrawWeaponWin
 
+// battle_seq.o
+8011aa34:BattleCheckConcluded
+8011c350:_rule_disp
+
 // battle_monosiri.o
 8012ed2c:battleSetUnitMonosiriFlag
 8012ee3c:battleCheckUnitMonosiriFlag
@@ -1081,6 +1131,7 @@
 801277ac:BtlUnit_OffUnitFlag
 801277bc:BtlUnit_OnUnitFlag
 801277cc:BtlUnit_CheckUnitFlag
+80127814:BtlUnit_CheckStatus
 80128fe0:BtlUnit_Entry
 
 // statuswindow.o
@@ -1095,6 +1146,9 @@
 
 // mario_party.o
 801410e8:marioGetParty
+
+// battle_stage_object.o
+80148374:_nozzle_type_init
 
 // evt_snd.o
 80152450:evt_snd_bgmoff_f
@@ -1424,6 +1478,8 @@
 // battle_actrecord.o
 8018ef8c:BtlActRec_JudgeRuleKeep
 8018f77c:BtlActRec_JudgeTurnRuleKeep
+8018f96c:BtlActRec_AddPoint
+8018f990:BtlActRec_AddCount
 
 // eff_updown.o
 // .text
@@ -1469,6 +1525,14 @@
 80209aac:evt_win_coin_off
 80209b5c:evt_win_coin_on
 8020a2c4:evt_win_other_select
+
+// battle_seq_end.o
+// .text
+// 80212740:_get_rank_up_msg
+802166a4:BattleGetRankNameLabel
+// .data
+803afc10:_rank_up_data
+
 
 // evt_yuugijou.o
 80229bcc:yuugijou_init
@@ -1606,6 +1670,7 @@
 8029dd30:PSMTXCopy
 8029dd64:PSMTXConcat
 8029e230:PSMTXTrans
+8029e2b0:PSMTXScale
 
 // os.a OSLink.c
 8029A340:OSNotifyLink

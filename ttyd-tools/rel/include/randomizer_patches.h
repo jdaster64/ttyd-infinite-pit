@@ -23,6 +23,10 @@ int32_t LoadMap();
 // Code that runs immediately before unloading a map.
 void OnMapUnloaded();
 
+// Copies NPC battle information to / from children of a parent NPC
+// (e.g. Piranha Plants, projectiles) when starting or ending a battle.
+void CopyChildBattleInfo(bool to_child);
+
 // Code to run at start / end of battle.
 void OnEnterExitBattle(bool is_start);
 // If the badge is one that can have its power level selected, returns the
@@ -38,6 +42,9 @@ int32_t GetSelectedLevelWeaponCost(
 // if is_strategies_menu = false.
 void CheckForSelectingWeaponLevel(bool is_strategies_menu);
 
+// Spends FP for switching partners, if the option is enabled.
+void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit);
+
 // Correctly displays multi-digit Charge / ATK / DEF-change number icons.
 void DisplayUpDownNumberIcons(
     int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
@@ -46,7 +53,9 @@ void DisplayUpDownNumberIcons(
 // Stores pointers to WinPartyData entries in the correct order based
 // on the currently active partner and partners currently obtained.
 void GetPartyMemberMenuOrder(ttyd::win_party::WinPartyData** out_party_data);
-
+// If the player attempts to use the currently selected item in the pause
+// menu on an invalid target, prevents it and returns true.
+bool CheckForUnusableItemInMenu();
 // Ranks up and fully heals the selected party member when using a Shine Sprite,
 // or restores random HP/FP if using a Strawberry Cake.
 void UseSpecialItemsInMenu(ttyd::win_party::WinPartyData** party_data);
@@ -75,6 +84,17 @@ int32_t AlterFpDamageCalculation(
     ttyd::battle_unit::BattleWorkUnitPart* target_part,
     ttyd::battle_database_common::BattleWeapon* weapon,
     uint32_t* unk0, uint32_t unk1);
+    
+// Gets the Danger / Peril threshold to use based on a max HP value.
+int32_t GetPinchThresholdForMaxHp(int32_t max_hp, bool peril);
+// Overrides the default Danger / Peril thresholds for a battle unit.
+void SetPinchThreshold(ttyd::battle_database_common::BattleUnitKind* kind, 
+    int32_t max_hp, bool peril);
+
+// Replaces the vanilla logic for evasion badges; returns true if Lucky.
+bool CheckEvasionBadges(ttyd::battle_unit::BattleWorkUnit* unit);
+// Replaces the vanilla logic for HP or FP Drain restoration.
+int32_t GetDrainRestoration(ttyd::evtmgr::EvtEntry* evt, bool hp_drain);
 
 // Replaces the logic for getting HP, FP, and item drops after a battle.
 void GetDropMaterials(ttyd::npcdrv::FbatBattleInformation* fbat_info);
@@ -87,9 +107,15 @@ bool GetEnemyConsumeItem(ttyd::evtmgr::EvtEntry* evt);
 // Checks for enemies to use additional types of items.
 void* EnemyUseAdditionalItemsCheck(ttyd::battle_unit::BattleWorkUnit* unit);
 
+// Sums attack target weights for attacks that target randomly,
+// ensuring that individual target weights are always > 0.
+int32_t SumWeaponTargetRandomWeights(int32_t* weights);
 // Changes the order that certain attacks select their targets in
 // (selecting the user last, if the user is included).
 void ReorderWeaponTargets();
+
+// Checks if all player characters are defeated (excluding enemies).
+bool CheckIfPlayerDefeated();
 
 // Displays the Star Power in 0.01 units numerically below the status window.
 void DisplayStarPowerNumber();
@@ -97,6 +123,14 @@ void DisplayStarPowerNumber();
 // Display the orbs representing the Star Power (replaces the vanilla logic
 // since it wasn't built around receiving Star Powers out of order).
 void DisplayStarPowerOrbs(double x, double y, int32_t star_power);
+
+// Choose a random item for the audience to throw, if the option is enabled;
+// otherwise, returns the originally selected item.
+int32_t GetRandomAudienceItem(int32_t item_type);
+
+// Correctly returns whether there is space for an audience-thrown item
+// regardless of its type (using item / badge inventory, or none for cans, etc.)
+uint32_t FixAudienceItemSpaceCheck(uint32_t empty_item_slots, uint32_t item_type);
 
 // Replaces Pit Charlieton's stock with items from the random pool.
 void ReplaceCharlietonStock();
@@ -114,8 +148,17 @@ void ApplyWeaponLevelSelectionPatches();
 // Apply patches to item, badge, and weapon data.
 void ApplyItemAndAttackPatches();
 
+// Apply miscellaneous small patches that track player stats and do nothing else.
+void ApplyPlayerStatTrackingPatches();
+
 // Apply miscellaneous small patches that do not require function hooks.
 void ApplyMiscPatches();
+
+// Apply balance changes that are based on the current file's settings.
+void ApplySettingBasedPatches();
+
+// Initializes all selected options on initially entering the Pit.
+EVT_DECLARE_USER_FUNC(InitOptionsOnPitEntry, 5)
 
 // Fetches information required for dynamically spawning an enemy NPC,
 // such as the model name, battle id, and initial position.
@@ -140,6 +183,9 @@ EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
 // Increments the actual current Pit floor, and the corresponding GSW value.
 EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
 
+// Increments the randomly selected Yoshi color & marks it as manually changed.
+EVT_DECLARE_USER_FUNC(IncrementYoshiColor, 0)
+
 // Gets a unique id for an item to spawn when buying items from Charlieton
 // with a maxed inventory.
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
@@ -148,8 +194,8 @@ EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
 // the respective Star Power.
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 
-// Fully heals the selected party member.
-EVT_DECLARE_USER_FUNC(FullyHealPartyMember, 1)
+// Initializes + fully heals the selected party member.
+EVT_DECLARE_USER_FUNC(InitializePartyMember, 1)
 
 // Sets the HP of Shell Shield when it first spawns based on how well the
 // Action Command was performed.
@@ -159,6 +205,14 @@ EVT_DECLARE_USER_FUNC(ShellShieldSetInitialHp, 2)
 // Confuse to the enemy permanently swapping its alliance.
 // (Also runs the replaced code from btlevtcmd_AudienceDeclareACResult).
 EVT_DECLARE_USER_FUNC(InfatuateChangeAlliance, 2)
+
+// Replaces the logic for Wizzerds / Magikoopas checking if they can clone,
+// making sure to account for both possible alliances.
+EVT_DECLARE_USER_FUNC(CheckNumEnemiesRemaining, 1)
+
+// Replaces the logic for Bandits checking if they are confused, so they don't
+// steal your items from enemies(!) when Infatuated.
+EVT_DECLARE_USER_FUNC(CheckConfusedOrInfatuated, 3)
 
 // Returns the percentage of max HP a battle unit currently has.
 EVT_DECLARE_USER_FUNC(GetPercentOfMaxHP, 2)

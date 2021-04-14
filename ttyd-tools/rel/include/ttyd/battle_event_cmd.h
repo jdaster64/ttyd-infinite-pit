@@ -158,7 +158,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_ConsumeItem, 1)
 EVT_DECLARE_USER_FUNC(btlevtcmd_GetConsumeItem, 1)
 // btlevtcmd_GetFirstAttackTarget
 EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectNextEnemy, 2)
-// btlevtcmd_GetSelectEnemy
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectEnemy, 2)
 // btlevtcmd_ChoiceSamplingEnemy
 // btlevtcmd_SamplingEnemy
 // btlevtcmd_PartsFaceDirectionSub
@@ -187,7 +187,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectNextEnemy, 2)
 // btlevtcmd_ChangeKind
 // btlevtcmd_CheckCommandUnit
 // btlevtcmd_SetRegistStatus
-// btlevtcmd_CheckToken
+EVT_DECLARE_USER_FUNC(btlevtcmd_CheckToken, 3)
 // btlevtcmd_OffToken
 // btlevtcmd_OnToken
 // btlevtcmd_SetPartsBlur
@@ -215,7 +215,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectNextEnemy, 2)
 // btlevtcmd_GetProtectId
 // btlevtcmd_GetFriendBelong
 // btlevtcmd_GetEnemyBelong
-// btlevtcmd_CheckSpace
+EVT_DECLARE_USER_FUNC(btlevtcmd_CheckSpace, 8)
 // btlevtcmd_CheckDamagePattern
 // btlevtcmd_RunHitEventDirect
 // btlevtcmd_StartAvoid

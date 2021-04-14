@@ -57,7 +57,7 @@ extern "C" {
 // mobj_save_blk
 // evt_mobj_recovery_blk
 // mobj_recovery_blk
-// evt_mobj_signboard
+EVT_DECLARE_USER_FUNC(evt_mobj_signboard, 6)
 // mobj_signboard
 // evt_mobj_itembox
 // mobj_itembox

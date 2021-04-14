@@ -19,7 +19,7 @@ void PSMTXConcat(mtx34* a, mtx34* b, mtx34* out);
 // PSMTXRotAxisRad
 void PSMTXTrans(mtx34* out, double x, double y, double z);
 // PSMTXTransApply
-// PSMTXScale
+void PSMTXScale(mtx34* out, double x, double y, double z);
 // PSMTXScaleApply
 // C_MTXLookAt
 // C_MTXLightFrustum

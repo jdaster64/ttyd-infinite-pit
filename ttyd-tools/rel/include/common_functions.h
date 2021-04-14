@@ -8,12 +8,15 @@
 
 namespace mod {
 
+extern const uint32_t kTik06PitBeroEntryOffset;
 extern const uint32_t kTik06RightBeroEntryOffset;
 extern const uint32_t kPitBattleSetupTblOffset;
 extern const uint32_t kPitEnemy100Offset;
 extern const uint32_t kPitTreasureTableOffset;
 extern const uint32_t kPitRewardFloorReturnBeroEntryOffset;
+extern const uint32_t kPitBossFloorEntryBeroEntryOffset;
 extern const uint32_t kPitBossFloorReturnBeroEntryOffset;
+extern const uint32_t kPitBossFloorSetupEvtOffset;
 extern const uint32_t kPitMoverLastSpawnFloorOffset;
 extern const uint32_t kPitCharlietonSpawnChanceOffset;
 extern const uint32_t kPitCharlietonTalkEvtOffset;
@@ -24,6 +27,7 @@ extern const uint32_t kPitFloorIncrementEvtOffset;
 extern const uint32_t kPitEnemySetupEvtOffset;
 extern const uint32_t kPitOpenPipeEvtOffset;
 extern const uint32_t kPitBonetailFirstEvtOffset;
+extern const uint32_t kPitReturnSignEvtOffset;
 extern const uint32_t kPitChainChompSetHomePosFuncOffset;
 extern const uint32_t kPitSetupNpcExtraParametersFuncOffset;
 extern const uint32_t kPitSetKillFlagFuncOffset;
@@ -32,6 +36,8 @@ extern const uint32_t kPitSetKillFlagFuncOffset;
 bool CheckSeq(ttyd::seqdrv::SeqIndex sequence);
 // Returns true if in normal gameplay (not in title, game over, etc. sequence)
 bool InMainGameModes();
+// Returns the name of the current area.
+const char* GetCurrentArea();
 // Returns the name of the current map.
 const char* GetCurrentMap();
 // Returns the name of the map about to be loaded.
@@ -46,11 +52,13 @@ const char* ModuleNameFromId(ModuleId::e module_id);
     (static_cast<int32_t>( \
         ((0x40 + static_cast<int32_t>(module_id)) << 24) + offset))
 
-// Replaces REL_PTR function addresses for USER_FUNC and RUN_EVT-variants with
-// their actual addresses, and vice versa, with the following caveats:
-// - Only replaces the addresses of evt code or user_funcs, not any params.
-// - Naively assumes that any address after `module_ptr` is part of the module.
-// - Supports module_ids < 0x40 only.
+// "Links" evt code to a single module, replacing temporary addresses in ops'
+// arguments with the corresponding addresses in the module, or vice versa.
+// When linking:
+// - Assumes all op args in range [0x4000'0000, 0x8000'0000) should be linked.
+// When unlinking:
+// - Assumes all op args in range [module_ptr, POINTER_BASE) should be unlinked.
+// Both functions only support module ids < 0x40.
 void LinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt);
 void UnlinkCustomEvt(ModuleId::e module_id, void* module_ptr, int32_t* evt);
 
@@ -59,5 +67,25 @@ int32_t CountSetBits(uint32_t x);
 // Gets a 32-bit bit mask from [start_bit, end_bit].
 // Assumes 0 <= start_bit <= end_bit <= 31.
 uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit);
+
+// Converts a positive integer under a billion to a string with 1000-separators.
+// Returns the number of characters printed to the string.
+int32_t IntegerToFmtString(
+    int32_t val, char* out_buf, int32_t max_val = 999'999'999);
+// Converts a duration expressed in OSTicks (40.5M / sec) to HH:MM:SS.ss format.
+// Returns the number of characters printed to the string.
+int32_t DurationTicksToFmtString(int64_t val, char* out_buf);
+
+// Template functions for min / max / clamping a value to a range.
+template <class T> inline T Min(const T& lhs, const T& rhs) {
+    return lhs < rhs ? lhs : rhs;
+}
+template <class T> inline T Max(const T& lhs, const T& rhs) {
+    return lhs > rhs ? lhs : rhs;
+}
+template <class T> inline T Clamp(const T& value, const T& min_value,
+                                  const T& max_value) {
+    return Max(Min(value, max_value), min_value);
+}
 
 }

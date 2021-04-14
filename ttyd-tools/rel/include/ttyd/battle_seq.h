@@ -2,13 +2,17 @@
 
 #include <cstdint>
 
+namespace ttyd::battle {
+struct BattleWork;
+}
+
 namespace ttyd::battle_seq {
 
 extern "C" {
 
 // _set_haikei_entry_scale
 // _mapobj_data_touch_scale
-// BattleCheckConcluded
+uint32_t BattleCheckConcluded(ttyd::battle::BattleWork* battleWork);
 // BattleWaitAllActiveEvtEnd_NoBgSetEndWait
 // BattleWaitAllActiveEvtEnd
 // battleMakePhaseEvtTable

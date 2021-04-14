@@ -17,13 +17,18 @@
 #include <ttyd/gx/GXTransform.h>
 #include <ttyd/battle.h>
 #include <ttyd/battle_ac.h>
+#include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_damage.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_enemy_item.h>
 #include <ttyd/battle_event_cmd.h>
+#include <ttyd/battle_event_default.h>
 #include <ttyd/battle_item_data.h>
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
+#include <ttyd/battle_seq.h>
+#include <ttyd/battle_seq_end.h>
+#include <ttyd/battle_stage_object.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
@@ -85,37 +90,160 @@ extern "C" {
     void CharlietonPitPriceListPatchEnd();
     void CharlietonPitPriceItemPatchStart();
     void CharlietonPitPriceItemPatchEnd();
+    // action_menu_patches.s
+    void StartSpendFpOnSwitchPartner();
+    void BranchBackSpendFpOnSwitchPartner();
+    // audience_item_patches.s
+    void StartAudienceItem();
+    void BranchBackAudienceItem();
+    void StartAudienceItemSpaceFix();
+    void BranchBackAudienceItemSpaceFix();
+    // battle_end_patches.s
+    void StartGivePlayerInvuln();
+    void BranchBackGivePlayerInvuln();
+    void StartBtlSeqEndJudgeRule();
+    void BranchBackBtlSeqEndJudgeRule();
+    // crash_handler_patches.s
+    void StartCrashHandlerScale();
+    void BranchBackCrashHandlerScale();
+    // danger_threshold_patches.s
+    void StartSetDangerThreshold();
+    void BranchBackSetDangerThreshold();
+    void StartSetPerilThreshold();
+    void BranchBackSetPerilThreshold();
+    void StartCheckMarioPinchDisp();
+    void BranchBackCheckMarioPinchDisp();
+    void StartCheckPartnerPinchDisp();
+    void BranchBackCheckPartnerPinchDisp();
     // eff_updown_disp_patches.s
     void StartDispUpdownNumberIcons();
     void BranchBackDispUpdownNumberIcons();
+    // enemy_sampling_patches.s
+    void StartSampleRandomTarget();
+    void BranchBackSampleRandomTarget();
+    // evasion_badge_patches.s
+    void StartCheckBadgeEvasion();
+    void ConditionalBranchCheckBadgeEvasion();
+    void BranchBackCheckBadgeEvasion();
     // map_change_patches.s
     void StartMapLoad();
     void BranchBackMapLoad();
     void StartOnMapUnload();
     void BranchBackOnMapUnload();
+    // pouch_alloc_patches.s
+    void StartCheckPouchAlloc();
+    void BranchBackCheckPouchAlloc();
+    // rush_badge_patches.s
+    void StartGetDangerStrength();
+    void BranchBackGetDangerStrength();
+    void StartGetPerilStrength();
+    void BranchBackGetPerilStrength();
+    // star_power_patches.s
+    void StartEnableAppealCheck();
+    void BranchBackEnableAppealCheck();
+    void StartAddAudienceCheck();
+    void BranchBackAddAudienceCheck();
+    void StartDisplayAudienceCheck();
+    void BranchBackDisplayAudienceCheck();
+    void StartSaveAudienceCountCheck();
+    void BranchBackSaveAudienceCountCheck();
+    void StartSetInitialAudienceCheck();
+    void BranchBackSetInitialAudienceCheck();
+    void StartObjectFallOnAudienceCheck();
+    void BranchBackObjectFallOnAudienceCheck();
+    void StartAddPuniToAudienceCheck();
+    void BranchBackAddPuniToAudienceCheck();
+    void StartEnableIncrementingBingoCheck();
+    void BranchBackEnableIncrementingBingoCheck();
+    // status_window_patches.s
+    void StartPreventDpadShortcutsOutsidePit();
+    void ConditionalBranchPreventDpadShortcutsOutsidePit();
+    void BranchBackPreventDpadShortcutsOutsidePit();
     // win_item_patches.s
     void StartFixItemWinPartyDispOrder();
     void BranchBackFixItemWinPartyDispOrder();
     void StartFixItemWinPartySelectOrder();
     void BranchBackFixItemWinPartySelectOrder();
+    void StartCheckForUnusableItemInMenu();
+    void ConditionalBranchCheckForUnusableItemInMenu();
+    void BranchBackCheckForUnusableItemInMenu();
     void StartUseSpecialItems();
     void BranchBackUseSpecialItems();
+    
+    void* getOrAllocPouch(uint32_t heap, uint32_t size) {
+        auto* pouch = ttyd::mario_pouch::pouchGetPtr();
+        if (pouch) return pouch;
+        return ttyd::memory::__memAlloc(heap, size);
+    }
     
     int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
     void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
     
+    void scaleCrashHandlerText(gc::mtx34* mtx) {
+        // Sufficiently small to fit on one screen.
+        gc::mtx::PSMTXScale(mtx, 0.6, 0.72, 1.0);
+    }
+    
     void getPartyMemberMenuOrder(ttyd::win_party::WinPartyData** party_data) {
         mod::pit_randomizer::GetPartyMemberMenuOrder(party_data);
+    }
+    bool checkForUnusableItemInMenu() {
+        return mod::pit_randomizer::CheckForUnusableItemInMenu();
     }
     void useSpecialItems(ttyd::win_party::WinPartyData** party_data) {
         mod::pit_randomizer::UseSpecialItemsInMenu(party_data);
     }
-    
+    void spendFpOnSwitchPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
+        mod::pit_randomizer::SpendFpOnSwitchingPartner(unit);
+    }
+    int32_t sumWeaponTargetRandomWeights(int32_t* weights) {
+        return mod::pit_randomizer::SumWeaponTargetRandomWeights(weights);
+    }
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
         uint32_t unk0) {
         mod::pit_randomizer::DisplayUpDownNumberIcons(
             number, tex_obj, icon_mtx, view_mtx, unk0);
+    }
+    bool checkOutsidePit() {
+        return strcmp("jon", mod::GetCurrentArea()) != 0;
+    }
+    bool checkStarPowersEnabled() {
+        return mod::pit_randomizer::g_Randomizer->state_.StarPowerEnabled();
+    }
+    ttyd::battle_database_common::BattleUnitKind* setPinchThreshold(
+        ttyd::battle_database_common::BattleUnitKind* kind,
+        int32_t max_hp, int32_t base_max_hp, bool peril) {
+        // Ignore HP Plus badges for enemies.
+        if (kind->unit_type <= 
+            ttyd::battle_database_common::BattleUnitType::BONETAIL) {
+            max_hp = base_max_hp;
+        }
+        mod::pit_randomizer::SetPinchThreshold(kind, max_hp, peril);
+        return kind;
+    }
+    int32_t getDangerStrength(int32_t num_badges) {
+        bool weaker_rush_badges =
+            mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
+                mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
+        return num_badges * (weaker_rush_badges ? 1 : 2);
+    }
+    int32_t getPerilStrength(int32_t num_badges) {
+        bool weaker_rush_badges =
+            mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
+                mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
+        return num_badges * (weaker_rush_badges ? 2 : 5);
+    }
+    bool checkBadgeEvasion(ttyd::battle_unit::BattleWorkUnit* unit) {
+        return mod::pit_randomizer::CheckEvasionBadges(unit);
+    }
+    int32_t getAudienceItem(int32_t item_type) {
+        return mod::pit_randomizer::GetRandomAudienceItem(item_type);
+    }
+    uint32_t audienceFixItemSpaceCheck(
+        uint32_t empty_item_slots, uint32_t item_type) {
+        return mod::pit_randomizer::FixAudienceItemSpaceCheck(
+            empty_item_slots, item_type);
     }
 }
 
@@ -124,6 +252,7 @@ namespace mod::pit_randomizer {
 namespace {
 
 using ::gc::OSLink::OSModuleInfo;
+using ::ttyd::battle::BattleWork;
 using ::ttyd::battle::BattleWorkCommandCursor;
 using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
@@ -172,7 +301,20 @@ void (*g__getSickStatusParam_trampoline)(
     BattleWorkUnit*, BattleWeapon*, int32_t, int8_t*, int8_t*) = nullptr;
 int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool) = nullptr;
 int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool) = nullptr;
-int32_t (*g_btlevtcmd_GetSelectNextEnemy_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g__get_flower_suitoru_point_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g__get_heart_suitoru_point_trampoline)(EvtEntry*, bool) = nullptr;
+void (*g_BattleDamageDirect_trampoline)(
+    int32_t, BattleWorkUnit*, BattleWorkUnitPart*, int32_t, int32_t,
+    uint32_t, uint32_t, uint32_t) = nullptr;
+uint32_t (*g_pouchGetItem_trampoline)(int32_t) = nullptr;
+int32_t (*g_pouchAddCoin_trampoline)(int16_t) = nullptr;
+void (*g_BtlActRec_AddCount_trampoline)(uint8_t*) = nullptr;
+int32_t (*g_btlevtcmd_GetSelectEnemy_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_WeaponAftereffect_trampoline)(EvtEntry*, bool) = nullptr;
+uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
+void (*g_pouchReviseMarioParam_trampoline)() = nullptr;
+const char* (*g_BattleGetRankNameLabel_trampoline)(int32_t) = nullptr;
 
 // Global variables and constants.
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
@@ -228,7 +370,7 @@ DO(0)
         USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
         WAIT_MSEC(500)
         USER_FUNC(ttyd::evt_pouch::evt_pouch_party_join, LW(1))
-        USER_FUNC(FullyHealPartyMember, LW(1))
+        USER_FUNC(InitializePartyMember, LW(1))
         // TODO: Reposition partner by box? At origin is fine...
         USER_FUNC(ttyd::evt_mario::evt_mario_set_party_pos, 0, LW(1), 0, 0, 0)
         RUN_EVT_ID(PartnerFanfareEvt, LW(11))
@@ -255,12 +397,13 @@ DO(0)
         USER_FUNC(
             ttyd::evt_mobj::evt_mobj_get_position,
             PTR("box"), LW(10), LW(11), LW(12))
+        USER_FUNC(GetUniqueItemName, LW(14))
         USER_FUNC(
             ttyd::evt_item::evt_item_entry,
-            PTR("item"), LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
+            LW(14), LW(1), LW(10), LW(11), LW(12), 17, -1, 0)
         WAIT_MSEC(300)  // If the second+ reward
         USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
-        USER_FUNC(ttyd::evt_item::evt_item_get_item, PTR("item"))
+        USER_FUNC(ttyd::evt_item::evt_item_get_item, LW(14))
         // If the item was a Crystal Star / Magical Map, unlock its Star Power.
         // TODO: The pause menu does not properly display SP moves out of order.
         USER_FUNC(AddItemStarPower, LW(1))
@@ -273,6 +416,23 @@ EVT_END()
 // Wrapper for modified chest-opening event.
 EVT_BEGIN(ChestOpenEvtHook)
 RUN_CHILD_EVT(ChestOpenEvt)
+RETURN()
+EVT_END()
+
+// Event that sets up the boss floor (adds a signboard by the chest).
+EVT_BEGIN(BossSetupEvt)
+SET(LW(0), REL_PTR(ModuleId::JON, kPitBossFloorEntryBeroEntryOffset))
+USER_FUNC(ttyd::evt_bero::evt_bero_get_info)
+RUN_CHILD_EVT(ttyd::evt_bero::evt_bero_info_run)
+USER_FUNC(
+    ttyd::evt_mobj::evt_mobj_signboard, PTR("board"), 190, 0, 200,
+    REL_PTR(ModuleId::JON, kPitReturnSignEvtOffset), LSWF(0))
+RETURN()
+EVT_END()
+
+// Wrapper for modified boss floor setup event.
+EVT_BEGIN(BossSetupEvtHook)
+RUN_CHILD_EVT(BossSetupEvt)
 RETURN()
 EVT_END()
 
@@ -332,6 +492,19 @@ EVT_END()
 // Wrapper for modified floor-incrementing event.
 EVT_BEGIN(FloorIncrementEvtHook)
 RUN_CHILD_EVT(FloorIncrementEvt)
+RETURN()
+EVT_END()
+
+// Runs when taking the pipe to enter the Pit.
+EVT_BEGIN(PitStartPipeEvt)
+// Parameters are dummy values, and get overwritten during execution.
+USER_FUNC(InitOptionsOnPitEntry, 0, 0, 0, 0, 0)
+RETURN()
+EVT_END()
+
+// Runs when taking the right loading zone in the pre-Pit room.
+EVT_BEGIN(PrePitRoomLoopEvt)
+USER_FUNC(IncrementYoshiColor)
 RETURN()
 EVT_END()
 
@@ -440,12 +613,21 @@ RUN_CHILD_EVT(static_cast<int32_t>(0x803652b8U))
 RETURN()
 EVT_END()
 
-// Patch over the end of subsetevt_blow_dead event to disable getting
-// coins and EXP from Gale Force.
+// Patch to disable the coins / EXP from Gale Force (replace with no-ops).
 EVT_BEGIN(GaleForceKillPatch)
-USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_KillUnit, -2, 0)
-RETURN()
-EVT_END()
+DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
+DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
+EVT_PATCH_END()
+static_assert(sizeof(GaleForceKillPatch) == 0x38);
+// Addresses to patch for troublesome individual enemies (mostly cloning ones).
+constexpr const uint32_t kDarkWizzerdGaleForcePatchOffset       = 0x544e4;
+constexpr const uint32_t kEliteWizzerdGaleForcePatchOffset      = 0x5de0c;
+constexpr const uint32_t kPiderGaleForcePatchOffset             = 0x760e4;
+constexpr const uint32_t kArantulaGaleForcePatchOffset          = 0x79ec4;
+constexpr const uint32_t kMagikoopaGaleForcePatchOffset         = 0x34a68;
+constexpr const uint32_t kGreenMagikoopaGaleForcePatchOffset    = 0x51430;
+constexpr const uint32_t kRedMagikoopaGaleForcePatchOffset      = 0x54d58;
+constexpr const uint32_t kWhiteMagikoopaGaleForcePatchOffset    = 0x58680;
 
 // Run at end of Dodgy Fog evt for Flurrie to also apply the status to herself.
 EVT_BEGIN(DodgyFogFlurrieEvt)
@@ -470,11 +652,35 @@ int32_t GetBonusCakeRestoration() {
     return ttyd::system::irand(6) * 5;
 }
 
+// Returns the max level of a move badge based on the number of copies equipped.
+int32_t MaxLevelForMoveBadges(int32_t badge_count) {
+    int32_t max_level = badge_count;
+    switch (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::MAX_BADGE_MOVE_LEVEL)) {
+        case RandomizerState::MAX_MOVE_LEVEL_1X: {
+            break;
+        }
+        case RandomizerState::MAX_MOVE_LEVEL_2X: {
+            max_level *= 2;
+            break;
+        }
+        case RandomizerState::MAX_MOVE_LEVEL_RANK: {
+            if (!badge_count) return 0;
+            return ttyd::mario_pouch::pouchGetPtr()->rank + 1;
+        }
+        case RandomizerState::MAX_MOVE_LEVEL_INFINITE: {
+            if (!badge_count) return 0;
+            return 99;
+        }
+    }
+    if (max_level > 99) max_level = 99;
+    return max_level;
+}
+
 }
 
 void OnFileLoad(bool new_file) {
     if (new_file) {
-        // TODO: Make this not re-allocate the pouch if an alloc already exists.
         ttyd::mario_pouch::pouchInit();
         PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
         // Initialize other systems / data.
@@ -522,6 +728,12 @@ void OnFileLoad(bool new_file) {
         ttyd::mario_pouch::pouchEquipBadgeID(ItemType::FP_PLUS);
         ttyd::mario_pouch::pouchGetItem(ItemType::HP_PLUS);
         ttyd::mario_pouch::pouchEquipBadgeID(ItemType::HP_PLUS);
+        // Give a starter set of items, by default.
+        ttyd::mario_pouch::pouchGetItem(ItemType::THUNDER_BOLT);
+        ttyd::mario_pouch::pouchGetItem(ItemType::FIRE_FLOWER);
+        ttyd::mario_pouch::pouchGetItem(ItemType::HONEY_SYRUP);
+        ttyd::mario_pouch::pouchGetItem(ItemType::MUSHROOM);
+        
         pouch.current_hp = 15;
         pouch.current_fp = 10;
         pouch.total_bp = 9;
@@ -543,6 +755,14 @@ void OnModuleLoaded(OSModuleInfo* module) {
         mod::patch::writePatch(
             reinterpret_cast<void*>(module_ptr + kPitEvtOpenBoxOffset),
             ChestOpenEvtHook, sizeof(ChestOpenEvtHook));
+            
+        // Patch over boss floor setup script to spawn a sign in the boss room.
+        LinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(module_ptr),
+            const_cast<int32_t*>(BossSetupEvt));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kPitBossFloorSetupEvtOffset),
+            BossSetupEvtHook, sizeof(BossSetupEvtHook));
             
         // Disable reward floors' return pipe and display a message if entered.
         BeroEntry* return_bero = reinterpret_cast<BeroEntry*>(
@@ -616,19 +836,77 @@ void OnModuleLoaded(OSModuleInfo* module) {
             ReplaceCharlietonStock();
         }
         
+        // Patch Gale Force coins / EXP out for Wizzerds & Piders.
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_ptr + kDarkWizzerdGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_ptr + kEliteWizzerdGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kPiderGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + kArantulaGaleForcePatchOffset),
+            GaleForceKillPatch, sizeof(GaleForceKillPatch));
+        // Patch over cloning Wizzerds' num enemies check.
+        uint32_t kCheckNumEnemiesRemainingFuncAddr =
+            reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x535a4),
+            &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x5cecc),
+            &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+        // Patch over Bandit, Badge Bandit confusion check for whether to steal.
+        uint32_t kCheckConfusedOrInfatuatedAddr =
+            reinterpret_cast<uint32_t>(CheckConfusedOrInfatuated);
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x2ffa8),
+            &kCheckConfusedOrInfatuatedAddr, sizeof(uint32_t));
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(module_ptr + 0x73e40),
+            &kCheckConfusedOrInfatuatedAddr, sizeof(uint32_t));
+        // Fix Dark Koopatrol's normal attack if there are no valid targets.
+        *reinterpret_cast<uint32_t*>(module_ptr + 0x51790) = 98;
+        
         g_PitModulePtr = module_ptr;
     } else {
         if (module_id == ModuleId::TIK) {
+            // Run custom event code when entering the Pit pipe.
+            BeroEntry* tik_06_pipe_bero = reinterpret_cast<BeroEntry*>(
+                module_ptr + kTik06PitBeroEntryOffset);
+            tik_06_pipe_bero->out_evt_code = reinterpret_cast<void*>(
+                const_cast<int32_t*>(PitStartPipeEvt));
+            
             // Make tik_06 (pre-Pit room)'s right exit loop back to itself.
             BeroEntry* tik_06_e_bero = reinterpret_cast<BeroEntry*>(
                 module_ptr + kTik06RightBeroEntryOffset);
             tik_06_e_bero->target_map = "tik_06";
             tik_06_e_bero->target_bero = tik_06_e_bero->name;
+            tik_06_e_bero->out_evt_code = reinterpret_cast<void*>(
+                const_cast<int32_t*>(PrePitRoomLoopEvt));
             
             // Patch over Hammer Bros. HP check.
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x323a4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            // Patch Gale Force coins / EXP out for Magikoopa.
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
+            // Patch over Magikoopa's num enemies check.
+            uint32_t kCheckNumEnemiesRemainingFuncAddr =
+                reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x34efc),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            // Fix Koopatrol's normal attack if there are no valid targets.
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x3a4a8) = 98;
+
         } else if (module_id == ModuleId::TOU2) {
             // Patch over Hammer, Boomerang, and Fire Bros.' HP checks.
             mod::patch::writePatch(
@@ -640,6 +918,37 @@ void OnModuleLoaded(OSModuleInfo* module) {
             mod::patch::writePatch(
                 reinterpret_cast<void*>(module_ptr + 0x31aa4),
                 HammerBrosHpCheck, sizeof(HammerBrosHpCheck));
+            // Patch Gale Force coins / EXP out for Magikoopas.
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kGreenMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kRedMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_ptr + kWhiteMagikoopaGaleForcePatchOffset),
+                GaleForceKillPatch, sizeof(GaleForceKillPatch));
+            // Patch over Magikoopas' num enemies check.
+            uint32_t kCheckNumEnemiesRemainingFuncAddr =
+                reinterpret_cast<uint32_t>(CheckNumEnemiesRemaining);
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x518c4),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x551ec),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x58b14),
+                &kCheckNumEnemiesRemainingFuncAddr, sizeof(uint32_t));
+            // Patch over Big Bandit confusion check for whether to steal items.
+            uint32_t kCheckConfusedOrInfatuatedAddr =
+                reinterpret_cast<uint32_t>(CheckConfusedOrInfatuated);
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(module_ptr + 0x65220),
+                &kCheckConfusedOrInfatuatedAddr, sizeof(uint32_t));
         } else if (module_id == ModuleId::AJI) {
             // Make all varieties of Yux able to be hit by grounded attacks,
             // that way any partner is able to attack them.
@@ -652,6 +961,12 @@ void OnModuleLoaded(OSModuleInfo* module) {
             z_yux->attribute_flags  &= ~0x600000;
             x_yux->attribute_flags  &= ~0x600000;
             yux->attribute_flags    &= ~0x600000;
+            
+            // Fix X-Naut & Elite X-Nauts' attacks if there are no valid targets.
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x4787c) = 98;
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x47d14) = 98;
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x4c4cc) = 98;
+            *reinterpret_cast<uint32_t*>(module_ptr + 0x4c964) = 98;
         }
     }
     
@@ -757,6 +1072,9 @@ void OnMapUnloaded() {
     if (g_PitModulePtr) {
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
+            const_cast<int32_t*>(BossSetupEvt));
+        UnlinkCustomEvt(
+            ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
             const_cast<int32_t*>(EnemyNpcSetupEvt));
         UnlinkCustomEvt(
             ModuleId::JON, reinterpret_cast<void*>(g_PitModulePtr),
@@ -770,24 +1088,45 @@ void OnMapUnloaded() {
     // Normal unloading logic follows...
 }
 
+void CopyChildBattleInfo(bool to_child) {
+    auto* npc = ttyd::npcdrv::fbatGetPointer()->pBattleNpc;
+    // Only copy if the NPC is valid and has a parent.
+    if (npc && npc->master) {
+        NpcEntry *dest, *src;
+        if (to_child) {
+            dest = npc;
+            src = npc->master;
+        } else {
+            src = npc;
+            dest = npc->master;
+        }
+        mod::patch::writePatch(
+            &dest->battleInfo, &src->battleInfo, sizeof(NpcBattleInfo));
+    }
+}
+
 void OnEnterExitBattle(bool is_start) {
     if (is_start) {
         int8_t badge_count;
+        int32_t max_level;
         for (int32_t i = 0; i < 14; ++i) {
             badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
                 ItemType::POWER_JUMP + i);
-            g_MaxMoveBadgeCounts[i] = badge_count;
-            g_CurMoveBadgeCounts[i] = badge_count;
+            max_level = MaxLevelForMoveBadges(badge_count);
+            g_MaxMoveBadgeCounts[i] = max_level;
+            g_CurMoveBadgeCounts[i] = max_level < 99 ? max_level : 1;
         }
         for (int32_t i = 0; i < 2; ++i) {
             badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
                 ItemType::CHARGE + i);
-            g_MaxMoveBadgeCounts[14 + i] = badge_count;
-            g_CurMoveBadgeCounts[14 + i] = badge_count;
+            max_level = MaxLevelForMoveBadges(badge_count);
+            g_MaxMoveBadgeCounts[14 + i] = max_level;
+            g_CurMoveBadgeCounts[14 + i] = max_level < 99 ? max_level : 1;
             badge_count = ttyd::mario_pouch::pouchEquipCheckBadge(
                 ItemType::SUPER_CHARGE + i);
-            g_MaxMoveBadgeCounts[16 + i] = badge_count;
-            g_CurMoveBadgeCounts[16 + i] = badge_count;
+            max_level = MaxLevelForMoveBadges(badge_count);
+            g_MaxMoveBadgeCounts[16 + i] = max_level;
+            g_CurMoveBadgeCounts[16 + i] = max_level < 99 ? max_level : 1;
         }
         g_InBattle = true;
     } else {
@@ -878,6 +1217,20 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                 strats[i].cost <= ttyd::battle_unit::BtlUnit_GetFp(unit);
             strats[i].unk_08 = !strats[i].enabled;  // 1 if disabled: "no FP" msg
         }
+        
+        // Handle switch partner cost, if enabled.
+        int32_t switch_fp_cost = g_Randomizer->state_.GetOptionValue(
+            RandomizerState::SWITCH_PARTY_COST_FP);
+        if (strats[0].type == 0 && switch_fp_cost) {
+            // Reduce switch partner cost by Flower Savers.
+            switch_fp_cost -= unit->badges_equipped.flower_saver;
+            if (switch_fp_cost < 1) switch_fp_cost = 1;
+            
+            strats[0].cost = switch_fp_cost;
+            strats[0].enabled =
+                ttyd::battle_unit::BtlUnit_GetFp(unit) >= switch_fp_cost;
+            strats[0].unk_08 = !strats[0].enabled;  // 1 if disabled: "no FP" msg
+        }
     } else {
         auto* weapons = reinterpret_cast<BattleWorkCommandWeapon*>(win_data[2]);
         if (!weapons) return;
@@ -906,6 +1259,22 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                 kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
             weapons[i].name = g_MoveBadgeTextBuffers[idx];
         }
+    }
+}
+
+void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
+    int32_t switch_fp_cost = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::SWITCH_PARTY_COST_FP);
+    if (switch_fp_cost > 0) {
+        switch_fp_cost -= unit->badges_equipped.flower_saver;
+        if (switch_fp_cost < 1) switch_fp_cost = 1;
+        
+        // Spend FP (and track total FP spent in BattleActRec).
+        int32_t fp = ttyd::battle_unit::BtlUnit_GetFp(unit);
+        ttyd::battle_unit::BtlUnit_SetFp(unit, fp - switch_fp_cost);
+        ttyd::battle_actrecord::BtlActRec_AddPoint(
+            &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent,
+            switch_fp_cost);
     }
 }
 
@@ -983,6 +1352,41 @@ void GetPartyMemberMenuOrder(WinPartyData** out_party_data) {
     }
 }
 
+bool CheckForUnusableItemInMenu() {
+    void* winPtr = ttyd::win_main::winGetPtr();
+    const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
+    
+    // If not a Shine Sprite, item is not unusable; can return.
+    if (item != ItemType::GOLD_BAR_X3) return false;
+    
+    // If the player isn't actively making a selection, can return safely.
+    uint32_t& buttons = reinterpret_cast<uint32_t*>(winPtr)[0x4 / 4];
+    if (!(buttons & ButtonId::A) || (buttons & ButtonId::B)) return false;
+    
+    WinPartyData* party_data[7];
+    GetPartyMemberMenuOrder(party_data);
+    int32_t& party_member_target = reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
+    
+    // Mario is selected.
+    if (party_member_target == 0) {
+        if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::SHINE_SPRITES_MARIO)) {
+            // Can use Shine Sprites only when Mario has SP.
+            if (ttyd::mario_pouch::pouchGetMaxAP() > 0) return false;
+        } else {
+            // Shine Sprites will be used on partners instead.
+            return false;
+        }
+    } else {
+        // Shine Sprites can always be used on partners.
+        return false;
+    }
+    
+    // The item cannot be used; play a sound effect and return true.
+    ttyd::sound::SoundEfxPlayEx(0x266, 0, 0x64, 0x40);
+    return true;
+}
+
 void UseSpecialItemsInMenu(WinPartyData** party_data) {
     void* winPtr = ttyd::win_main::winGetPtr();
     const int32_t item = reinterpret_cast<int32_t*>(winPtr)[0x2d4 / 4];
@@ -991,7 +1395,9 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
     if (item == ItemType::CAKE || item == ItemType::GOLD_BAR_X3) {
         int32_t& party_member_target = 
             reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
-        if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3) {
+        if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3 &&
+            !g_Randomizer->state_.GetOptionValue(
+                RandomizerState::SHINE_SPRITES_MARIO)) {
             // If Mario is selected for using a Shine Sprite, change the
             // target to the active party member instead.
             party_member_target = 1;
@@ -1019,56 +1425,102 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 ttyd::mario_pouch::pouchGetFP() +
                 GetBonusCakeRestoration());
         } else if (item == ItemType::GOLD_BAR_X3) {
-            ttyd::mario_pouch::PouchPartyData* pouch_data =
-                ttyd::mario_pouch::pouchGetPtr()->party_data + selected_party_id;
-            int16_t* hp_table = 
-                ttyd::mario_pouch::_party_max_hp_table + selected_party_id * 4;
-                
-            // Rank the selected party member up and fully heal them.
-            if (pouch_data->hp_level < 2) {
-                ++pouch_data->hp_level;
-                ++pouch_data->attack_level;
-                ++pouch_data->tech_level;
+            if (selected_party_id == 0) {
+                // Mario selected; add +0.5 max SP (up to +7.0) and restore SP.
+                PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+                if (pouch.max_sp - g_Randomizer->state_.StarPowersObtained() 
+                    * 100 < 700) {
+                    pouch.max_sp += 50;
+                }
+                pouch.current_sp = pouch.max_sp;
             } else {
-                // Increase the Ultra Rank's max HP by 5.
-                if (hp_table[2] < 200) hp_table[2] += 5;
+                ttyd::mario_pouch::PouchPartyData* pouch_data =
+                    ttyd::mario_pouch::pouchGetPtr()->party_data +
+                    selected_party_id;
+                int16_t* hp_table = 
+                    ttyd::mario_pouch::_party_max_hp_table +
+                    selected_party_id * 4;
+                    
+                // Rank the selected party member up and fully heal them.
+                if (pouch_data->hp_level < 2) {
+                    ++pouch_data->hp_level;
+                    ++pouch_data->attack_level;
+                    ++pouch_data->tech_level;
+                } else {
+                    // Increase the Ultra Rank's max HP by 5.
+                    if (hp_table[2] < 200) hp_table[2] += 5;
+                }
+                pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
+                pouch_data->current_hp = hp_table[pouch_data->hp_level];
+                pouch_data->max_hp = hp_table[pouch_data->hp_level];
+                // Include HP Plus P in current / max stats.
+                const int32_t hp_plus_p_cnt =
+                    ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
+                pouch_data->current_hp += 5 * hp_plus_p_cnt;
+                pouch_data->max_hp += 5 * hp_plus_p_cnt;
+                
+                // Save the partner upgrade count to the randomizer state.
+                ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
             }
-            pouch_data->base_max_hp = hp_table[pouch_data->hp_level];
-            pouch_data->current_hp = hp_table[pouch_data->hp_level];
-            pouch_data->max_hp = hp_table[pouch_data->hp_level];
-            // Include HP Plus P in current / max stats.
-            const int32_t hp_plus_p_cnt =
-                ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
-            pouch_data->current_hp += 5 * hp_plus_p_cnt;
-            pouch_data->max_hp += 5 * hp_plus_p_cnt;
-            // Save the partner upgrade count to the randomizer state.
-            ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
             
-            // Also, increment the number of actual Shine Sprites, so it shows
-            // the total used in the Mario menu.
-            ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
+            // Increment the number of actual Shine Sprites, so it shows
+            // the total count used in the Mario menu.
+            if (ttyd::mario_pouch::pouchGetPtr()->shine_sprites < 999) {
+                ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
+            }
         }
     }
+    
+    // Track items used in the menu...
+    g_Randomizer->state_.IncrementPlayStat(RandomizerState::ITEMS_USED);
+    
     // Run normal logic to add HP, FP, and SP afterwards...
 }
 
 void CheckBattleCondition() {
     auto* fbat_info = ttyd::battle::g_BattleWork->fbat_info;
-    const int32_t item_reward =
-        fbat_info->wBattleInfo->pConfiguration->random_item_weight;
+    NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
+
+    // Track the number of turns spent / number of run aways at fight's end.
+    g_Randomizer->state_.IncrementPlayStat(
+        RandomizerState::TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
+    if (fbat_info->wResult != 1) {
+        g_Randomizer->state_.IncrementPlayStat(RandomizerState::TIMES_RAN_AWAY);
+    }
+    
     // Did not win the fight (e.g. ran away).
     if (fbat_info->wResult != 1) return;
+    
+    // Did not win the fight (an enemy still has a stolen item).
+    for (int32_t i = 0; i < 8; ++i) {
+        if (npc_info->wStolenItems[i] != 0) return;
+    }
+    
     // If condition is a success and rule is not 0, add a bonus item.
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
-        NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
-        for (int32_t i = 0; i < 8; ++i) {
-            // Only return a bonus item if the enemies were all defeated.
-            if (npc_info->wStolenItems[i] != 0) return;
-        }
+        const int32_t item_reward = npc_info->pConfiguration->random_item_weight;
         for (int32_t i = 0; i < 8; ++i) {
             if (npc_info->wBackItemIds[i] == 0) {
                 npc_info->wBackItemIds[i] = item_reward;
                 break;
+            }
+        }
+    }
+    
+    // If battle reward mode is ALL_HELD_ITEMS, award items other than the
+    // natural drop ones until there are no "recovered items" slots left.
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
+        == RandomizerState::ALL_HELD_ITEMS) {
+        for (int32_t i = 0; i < 8; ++i) {
+            const int32_t held_item = npc_info->wHeldItems[i];
+            // If there is a held item, and this isn't the natural drop...
+            if (held_item && i != npc_info->pConfiguration->held_item_weight) {
+                for (int32_t j = 0; j < 8; ++j) {
+                    if (npc_info->wBackItemIds[j] == 0) {
+                        npc_info->wBackItemIds[j] = held_item;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -1092,7 +1544,11 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
         unit->unit_type, &hp, nullptr, nullptr, &level, &coinlvl)) return;
     unit->max_hp = hp;
     
-    if (level >= 0) {
+    if (ttyd::mario_pouch::pouchGetPtr()->level >= 99) {
+        // Assign enemies a high level so you can't Gale Force them to oblivion.
+        unit->level = 99;
+        unit->bonus_exp = 0;
+    } else if (level >= 0) {
         unit->level = level;
         unit->bonus_exp = 0;
     } else {
@@ -1107,7 +1563,6 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
     unit->bonus_coin = coinlvl & 1;
     
     // Additional global changes for enemies in this mod.
-    unit->danger_hp = 5;
     unit->itemsteal_param = 20;
     
     // Set sentinel bit so enemy's stats aren't changed again until next floor.
@@ -1154,6 +1609,21 @@ int32_t AlterDamageCalculation(
     if (damage > 0 && target->current_kind == BattleUnitType::SHELL_SHIELD) {
         damage = 1;
     }
+    
+    // Increment HP/FP Drain counter if this was intended to be a damaging move.
+    if (weapon->damage_function) ++attacker->total_damage_dealt_this_attack;
+    
+    // Randomize damage dealt, if option enabled.
+    const int32_t damage_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::DAMAGE_RANGE);
+    if (damage_scale != 0) {
+        // Generate a number from -25 to 25 in increments of 5.
+        int32_t scale = (ttyd::system::irand(11) - 5) * 5;
+        // Scale by 1x or 2x based on the setting.
+        scale *= (damage_scale / RandomizerState::DAMAGE_RANGE_25);
+        // Round damage modifier away from 0, based on the sign of the scale.
+        damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
+    }
         
     // Change ATK and DEF back, and return calculated damage.
     weapon->damage_function_params[0] = base_atk;
@@ -1182,9 +1652,107 @@ int32_t AlterFpDamageCalculation(
     // Run vanilla damage calculation.
     int32_t damage = g_BattleCalculateFpDamage_trampoline(
         attacker, target, target_part, weapon, unk0, unk1);
+    
+    // Randomize damage dealt, if option enabled.
+    const int32_t damage_scale = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::DAMAGE_RANGE);
+    if (damage_scale != 0) {
+        // Generate a number from -25 to 25 in increments of 5.
+        int32_t scale = (ttyd::system::irand(11) - 5) * 5;
+        // Scale by 1x or 2x based on the setting.
+        scale *= (damage_scale / RandomizerState::DAMAGE_RANGE_25);
+        // Round damage modifier away from 0, based on the sign of the scale.
+        damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
+    }
+        
     // Change FP damage value back, and return calculated FP loss.
     weapon->fp_damage_function_params[0] = base_atk;
     return damage;
+}
+
+int32_t GetPinchThresholdForMaxHp(int32_t max_hp, bool peril) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::DANGER_PERIL_BY_PERCENT)) {
+        // Danger = 1/3 of max, Peril = 1/10 of max (rounded normally).
+        int32_t threshold = peril ? (max_hp + 5) / 10 : (max_hp + 1) / 3;
+        // Clamp to range [1, 99] to ensure the pinch range exists,
+        // but doesn't exceed the range of a signed byte.
+        if (threshold < 1) threshold = 1;
+        if (threshold > 99) threshold = 99;
+        return threshold;
+    }
+    // If not using %-based, return a fixed 1 / 5 HP (including for enemies).
+    return peril ? 1 : 5;
+}
+
+void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
+    int32_t threshold = GetPinchThresholdForMaxHp(max_hp, peril);
+    if (peril) {
+        kind->peril_hp = threshold;
+    } else {
+        kind->danger_hp = threshold;
+    }
+}
+
+bool CheckEvasionBadges(BattleWorkUnit* unit) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::CAP_BADGE_EVASION)) {
+        float hit_chance = 100.f;
+        for (int32_t i = 0; i < unit->badges_equipped.pretty_lucky; ++i) {
+            hit_chance *= 0.90f;
+        }
+        for (int32_t i = 0; i < unit->badges_equipped.lucky_day; ++i) {
+            hit_chance *= 0.75f;
+        }
+        if (unit->current_hp <= unit->unit_kind_params->danger_hp) {
+            for (int32_t i = 0; i < unit->badges_equipped.close_call; ++i) {
+                hit_chance *= 0.67f;
+            }
+        }
+        if (hit_chance < 20.f) hit_chance = 20.f;
+        return ttyd::system::irand(100) >= hit_chance;
+    } else {
+        for (int32_t i = 0; i < unit->badges_equipped.pretty_lucky; ++i) {
+            if (ttyd::system::irand(100) >= 90) return true;
+        }
+        for (int32_t i = 0; i < unit->badges_equipped.lucky_day; ++i) {
+            if (ttyd::system::irand(100) >= 75) return true;
+        }
+        if (unit->current_hp <= unit->unit_kind_params->danger_hp) {
+            for (int32_t i = 0; i < unit->badges_equipped.close_call; ++i) {
+                if (ttyd::system::irand(100) >= 67) return true;
+            }
+        }
+    }
+    return false;
+}
+
+int32_t GetDrainRestoration(EvtEntry* evt, bool hp_drain) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    
+    int32_t drain = 0;
+    if (unit) {
+        int32_t num_badges = 0;
+        if (hp_drain) {
+            num_badges = unit->badges_equipped.hp_drain;
+        } else {
+            num_badges = unit->badges_equipped.fp_drain;
+        }
+        if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::HP_FP_DRAIN_PER_HIT)) {
+            // 1 point per damaging hit x num badges, max of 5.
+            drain = unit->total_damage_dealt_this_attack * num_badges;
+            if (drain > 5) drain = 5;
+        } else {
+            // 1 per badge if any damaging hits were dealt.
+            drain = !!unit->total_damage_dealt_this_attack * num_badges;
+        }
+    }
+    evtSetValue(evt, evt->evtArguments[1], drain);
+    return 2;
 }
 
 void GetDropMaterials(FbatBattleInformation* fbat_info) {
@@ -1228,9 +1796,14 @@ void GetDropMaterials(FbatBattleInformation* fbat_info) {
         }
     }
     
-    // Get item drop, based on the pre-set enemy held item index.
-    battle_info->wItemDropped = 
-        battle_info->wHeldItems[party_setup->held_item_weight];
+    // If using default battle reward mode, select the item drop based on
+    // the previously determined enemy held item index.
+    const int32_t reward_mode =
+        g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
+    if (reward_mode == 0 || reward_mode == RandomizerState::ALL_HELD_ITEMS) {
+        battle_info->wItemDropped = 
+            battle_info->wHeldItems[party_setup->held_item_weight];
+    }
 }
 
 // Global variable for the last type of item consumed;
@@ -1293,6 +1866,16 @@ void* EnemyUseAdditionalItemsCheck(BattleWorkUnit* unit) {
     }
 }
 
+int32_t SumWeaponTargetRandomWeights(int32_t* weights) {
+    int32_t sum = 0;
+    auto& twork = ttyd::battle::g_BattleWork->weapon_targets_work;
+    for (int32_t i = 0; i < twork.num_targets; ++i) {
+        if (weights[i] <= 0) weights[i] = 1;
+        sum += weights[i];
+    }
+    return sum;
+}
+
 void ReorderWeaponTargets() {
     auto& twork = ttyd::battle::g_BattleWork->weapon_targets_work;
     
@@ -1317,9 +1900,36 @@ void ReorderWeaponTargets() {
     }
 }
 
+bool CheckIfPlayerDefeated() {
+    for (int32_t ai = 0; ai < 3; ++ai) {
+        auto* battleWork = ttyd::battle::g_BattleWork;
+        auto* alliances = battleWork->alliance_information;
+        if (alliances[ai].identifier == 2) {
+            int32_t idx = 0;
+            for (; idx < 64; ++idx) {
+                BattleWorkUnit* unit = battleWork->battle_units[idx];
+                // For all non-player allied actors that aren't enemies...
+                // (e.g. just Mario and partner)
+                if (unit && unit->alliance == 0 &&
+                    unit->true_kind > BattleUnitType::BONETAIL &&
+                    (unit->attribute_flags & 0x40000)) {
+                    // Break early if any are alive.
+                    if (!ttyd::battle_unit::BtlUnit_CheckStatus(unit, 27) &&
+                        !(unit->attribute_flags & 0x10000000)) break;
+                }
+            }
+            if (idx == 64) {  // Didn't break early (i.e. none are alive)
+                alliances[ai].loss_condition_met = true;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void DisplayStarPowerNumber() {
-    // Don't display SP if Mario hasn't gotten any Star Powers yet.
-    if (ttyd::mario_pouch::pouchGetMaxAP() < 100) return;
+    // Don't display SP if no Star Powers have been unlocked yet.
+    if (ttyd::mario_pouch::pouchGetMaxAP() <= 0) return;
     
     // Don't try to display SP if the status bar is not on-screen.
     float menu_height = *reinterpret_cast<float*>(
@@ -1337,6 +1947,7 @@ void DisplayStarPowerNumber() {
 
 void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
     int32_t max_star_power = ttyd::mario_pouch::pouchGetMaxAP();
+    if (max_star_power > 800) max_star_power = 800;
     if (star_power > max_star_power) star_power = max_star_power;
     if (star_power < 0) star_power = 0;
     
@@ -1353,7 +1964,8 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
         ttyd::icondrv::iconDispGx(
             1.f, &pos, 0x10, ttyd::statuswindow::gauge_wakka[part_frame]);
     }
-    for (int32_t i = 0; i < max_star_power / 100; ++i) {
+    // Draw grey orbs up to the max amount of SP / 100 (rounded up, max of 8).
+    for (int32_t i = 0; i < (max_star_power + 99) / 100; ++i) {
         gc::vec3 pos = {
             static_cast<float>(x + 32.f * i), 
             static_cast<float>(y + 12.f),
@@ -1361,6 +1973,41 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
         uint16_t icon = i < full_orbs ?
             ttyd::statuswindow::gauge_back[i] : 0x1c7;
         ttyd::icondrv::iconDispGx(1.f, &pos, 0x10, icon);
+    }
+}
+
+int32_t GetRandomAudienceItem(int32_t item_type) {
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::AUDIENCE_ITEMS_RANDOM)) {
+        item_type = PickRandomItem(/* seeded = */ false, 20, 10, 5, 15);
+        if (item_type <= 0) {
+            // Pick a coin, heart, flower, or random bad item if "none" selected.
+            switch (ttyd::system::irand(10)) {
+                case 0:  return ItemType::AUDIENCE_CAN;
+                case 1:  return ItemType::AUDIENCE_ROCK;
+                case 2:  return ItemType::AUDIENCE_BONE;
+                case 3:  return ItemType::AUDIENCE_HAMMER;
+                case 4:  
+                case 5:  return ItemType::HEART_PICKUP;
+                case 6:
+                case 7:  return ItemType::FLOWER_PICKUP;
+                default: return ItemType::COIN;
+            }
+        }
+    }
+    return item_type;
+}
+
+uint32_t FixAudienceItemSpaceCheck(uint32_t empty_item_slots, uint32_t item_type) {
+    if (item_type >= ItemType::POWER_JUMP) {
+        // Return 1 if there are any spaces left for badges.
+        return ttyd::mario_pouch::pouchGetHaveBadgeCnt() < 200 ? 1 : 0; 
+    } else if (item_type < ItemType::AUDIENCE_CAN) {
+        // The number of empty item slots was already checked.
+        return empty_item_slots;
+    } else {
+        // Item is a "harmful item" (can, etc.); skip the space check.
+        return 1;
     }
 }
 
@@ -1488,9 +2135,9 @@ void ApplyWeaponLevelSelectionPatches() {
                     int8_t badges = g_CurMoveBadgeCounts[17 - is_mario];
                     *strength = badges + 1;
                 }
-                // If unit is an enemy and status is Charge, change its power
-                // in the same way as ATK / FP damage.
-                if (status_type == 16 && 
+                // If unit is an enemy and status is Charge (and not an item),
+                // change its power in the same way as ATK / FP damage.
+                if (status_type == 16 && !weapon->item_id &&
                     unit->current_kind <= BattleUnitType::BONETAIL) {
                     int32_t altered_charge;
                     GetEnemyStats(
@@ -1526,6 +2173,10 @@ void ApplyWeaponLevelSelectionPatches() {
             // Successful Superguard, subtract FP.
             if (defense_result == 5) {
                 ttyd::battle_unit::BtlUnit_SetFp(unit, fp - 1);
+                // Count towards FP-spending conditions. (Use Mario's FP 
+                // spent always, since no conditions care who spends it).
+                ttyd::battle_actrecord::BtlActRec_AddCount(
+                    &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent);
             }
             if (restore_superguard_frames) {
                 memcpy(ttyd::battle_ac::superguard_frames, superguard_frames, 7);
@@ -1575,8 +2226,14 @@ void ApplyItemAndAttackPatches() {
             // For all items that restore HP or FP, assign the "cooked item"
             // weapon struct if they don't already have a weapon assigned.
             if (!item.weapon_params && (item.hp_restored || item.fp_restored)) {
-                item.weapon_params = 
+                item.weapon_params =
                     &ttyd::battle_item_data::ItemWeaponData_CookingItem;
+            } else if (item.weapon_params && item.hp_restored) {
+                // For HP restoration items with weapon structs, give them
+                // Mushroom-like target weighting (heal the least healthy).
+                item.weapon_params->target_weighting_flags =
+                    ttyd::battle_item_data::ItemWeaponData_Kinoko.
+                        target_weighting_flags;
             }
             // Fix sorting order.
             if (item.type_sort_order > 0x31) {
@@ -1833,17 +2490,6 @@ void ApplyItemAndAttackPatches() {
         reinterpret_cast<void*>(kHappyFlowerReductionAtMaxHookAddr),
         &kHappyReductionAtMaxOpcode, sizeof(int32_t));
         
-    // HP and FP Drain restoration is no longer capped by damage dealt.
-    const int32_t kLoadFpDrainDamageDealtAddr = 0x8011391c;
-    const int32_t kLoadHpDrainDamageDealtAddr = 0x80113994;
-    const uint32_t kSkipDrainCapByDamageDealtOpcode = 0x48000010;  // b 0x10
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kLoadFpDrainDamageDealtAddr),
-        &kSkipDrainCapByDamageDealtOpcode, sizeof(uint32_t));
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(kLoadHpDrainDamageDealtAddr),
-        &kSkipDrainCapByDamageDealtOpcode, sizeof(uint32_t));
-        
     // Pity Flower (P) guarantees 1 FP recovery on each damaging hit.
     const int32_t kPityFlowerChanceHookAddr = 0x800fe500;
     const int32_t kLoadPityFlowerChanceOpcode = 0x2c030064;  // cmpwi r3, 100
@@ -1919,6 +2565,12 @@ void ApplyItemAndAttackPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGaleForceKillHookAddr),
         GaleForceKillPatch, sizeof(GaleForceKillPatch));
+    // Remove the (Mario - enemy level) adjustment to Gale Force's chance.
+    const int32_t kGaleForceLevelFactorHookAddr = 0x800fc0a8;
+    const uint32_t kGaleForceLevelFactorOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kGaleForceLevelFactorHookAddr),
+        &kGaleForceLevelFactorOpcode, sizeof(uint32_t));
         
     // Have Flurrie also apply Dodgy to herself at the end of Dodgy Fog event.
     const int32_t kDodgyFogEndHookAddr = 0x8037ba04;
@@ -2059,10 +2711,117 @@ void ApplyItemAndAttackPatches() {
         target_property_flags &= ~0x2000;
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
         base_fp_cost = 5;
+
+    // Prevent partner status buff moves from being used on Infatuated enemies.
+    ttyd::unit_party_christine::partyWeapon_ChristineKiss.
+        target_class_flags |= 0x10;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaKiss.
+        target_class_flags |= 0x10;
+    ttyd::unit_party_clauda::partyWeapon_ClaudaKumogakureAttack.
+        target_class_flags |= 0x10;
+    ttyd::unit_party_vivian::partyWeapon_VivianShadowGuard.
+        target_class_flags |= 0x10;
     
     // Sweet Feast and Showstopper both cost 4 SP.
     ttyd::battle_mario::marioWeapon_Genki1.base_sp_cost = 4;
     ttyd::battle_mario::marioWeapon_Suki.base_sp_cost = 4;
+    
+    // Replace HP/FP Drain logic; counts the number of intended damaging hits
+    // and restores 1 HP per badge if there were any (or 1 per hit, to a max
+    // of 5, if the PM64-style option is enabled).
+    g__get_heart_suitoru_point_trampoline = mod::patch::hookFunction(
+        ttyd::battle_event_default::_get_heart_suitoru_point,
+        [](EvtEntry* evt, bool isFirstCall) {
+            return GetDrainRestoration(evt, /* hp_drain = */ true);
+        });
+    g__get_flower_suitoru_point_trampoline = mod::patch::hookFunction(
+        ttyd::battle_event_default::_get_flower_suitoru_point,
+        [](EvtEntry* evt, bool isFirstCall) {
+            return GetDrainRestoration(evt, /* hp_drain = */ false);
+        });
+    // Disable the instruction that normally adds to damage dealt.
+    const int32_t kIncrementTotalDamageOpAddr = 0x800fe058;
+    const uint32_t kIncrementTotalDamageOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kIncrementTotalDamageOpAddr),
+        &kIncrementTotalDamageOpcode, sizeof(uint32_t));
+    
+    // Apply patch to give the player infinite BP if NO_EXP_INFINITE_BP enabled.
+    g_pouchReviseMarioParam_trampoline = mod::patch::hookFunction(
+        ttyd::mario_pouch::pouchReviseMarioParam, [](){
+            g_pouchReviseMarioParam_trampoline();
+            if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)
+                == RandomizerState::NO_EXP_INFINITE_BP &&
+                !strcmp(GetCurrentArea(), "jon")) {
+                ttyd::mario_pouch::pouchGetPtr()->unallocated_bp = 99;
+            }
+        });
+}
+
+void ApplyPlayerStatTrackingPatches() {    
+    g_BattleDamageDirect_trampoline = mod::patch::hookFunction(
+        ttyd::battle_damage::BattleDamageDirect, [](
+            int32_t unit_idx, BattleWorkUnit* target, BattleWorkUnitPart* part,
+            int32_t damage, int32_t fp_damage, uint32_t unk0, 
+            uint32_t damage_pattern, uint32_t unk1) {
+            // Track damage taken, if target is player/enemy and damage > 0.
+            if (target->current_kind == BattleUnitType::MARIO ||
+                target->current_kind >= BattleUnitType::GOOMBELLA) {
+                if (damage < 0) damage = 0;
+                if (damage > 99) damage = 99;
+                g_Randomizer->state_.IncrementPlayStat(
+                    RandomizerState::PLAYER_DAMAGE, damage);
+            } else if (target->current_kind <= BattleUnitType::BONETAIL) {
+                if (damage < 0) damage = 0;
+                if (damage > 99) damage = 99;
+                g_Randomizer->state_.IncrementPlayStat(
+                    RandomizerState::ENEMY_DAMAGE, damage);
+            }
+            // Run normal damage logic.
+            g_BattleDamageDirect_trampoline(
+                unit_idx, target, part, damage, fp_damage, 
+                unk0, damage_pattern, unk1);
+        });
+
+    g_pouchGetItem_trampoline = mod::patch::hookFunction(
+        ttyd::mario_pouch::pouchGetItem, [](int32_t item_type) {
+            // Track coins gained.
+            if (item_type == ItemType::COIN) {
+                g_Randomizer->state_.IncrementPlayStat(
+                    RandomizerState::COINS_EARNED);
+            }
+            // Run coin increment logic.
+            return g_pouchGetItem_trampoline(item_type);
+        });
+
+    g_pouchAddCoin_trampoline = mod::patch::hookFunction(
+        ttyd::mario_pouch::pouchAddCoin, [](int16_t coins) {
+            // Track coins gained / lost; if a reward floor, assume lost
+            // coins were spent on badges / items from Charlieton.
+            if (coins < 0 && g_Randomizer->state_.floor_ % 10 == 9) {
+                g_Randomizer->state_.IncrementPlayStat(
+                    RandomizerState::COINS_SPENT, -coins);
+            } else {
+                g_Randomizer->state_.IncrementPlayStat(
+                    RandomizerState::COINS_EARNED, coins);
+            }
+            // Run coin increment logic.
+            return g_pouchAddCoin_trampoline(coins);
+        });
+
+    g_BtlActRec_AddCount_trampoline = mod::patch::hookFunction(
+        ttyd::battle_actrecord::BtlActRec_AddCount, [](uint8_t* counter) {
+            auto& actRecordWork = ttyd::battle::g_BattleWork->act_record_work;
+            // Track every time an item is used by the player in-battle.
+            if (counter == &actRecordWork.mario_num_times_attack_items_used ||
+                counter == &actRecordWork.mario_num_times_non_attack_items_used ||
+                counter == &actRecordWork.partner_num_times_attack_items_used ||
+                counter == &actRecordWork.partner_num_times_non_attack_items_used) {
+                g_Randomizer->state_.IncrementPlayStat(RandomizerState::ITEMS_USED);
+            }
+            // Run act record counting logic.
+            g_BtlActRec_AddCount_trampoline(counter); 
+        });
 }
 
 void ApplyMiscPatches() {
@@ -2076,6 +2835,42 @@ void ApplyMiscPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(kGswfInitHookAddr2),
         &kSkipGswfInitOpcode, sizeof(kSkipGswfInitOpcode));
+        
+    // Add code that subtracts FP for switching partners (if option enabled).
+    const int32_t kSwitchPartnerConfirmBeginHookAddress = 0x801204c8;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSwitchPartnerConfirmBeginHookAddress),
+        reinterpret_cast<void*>(StartSpendFpOnSwitchPartner));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSpendFpOnSwitchPartner),
+        reinterpret_cast<void*>(kSwitchPartnerConfirmBeginHookAddress + 4));
+        
+    // Make defeating a group of enemies still holding stolen items always make
+    // you have temporary intangibility, even if you recovered some of them, to
+    // prevent projectiles from first-striking you again if you recover items.
+    const int32_t kEndBattleRecoverItemBeginHookAddress = 0x8004706c;
+    const int32_t kEndBattleRecoverItemEndHookAddress = 0x800470c8;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEndBattleRecoverItemBeginHookAddress),
+        reinterpret_cast<void*>(StartGivePlayerInvuln));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackGivePlayerInvuln),
+        reinterpret_cast<void*>(kEndBattleRecoverItemEndHookAddress));
+        
+    // Check for battle conditions at the start of processing the battle end,
+    // not the end; this way level-up heals don't factor into "final HP".
+    const int32_t kBattleEndSequenceHookAddress = 0x80215348;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kBattleEndSequenceHookAddress),
+        reinterpret_cast<void*>(StartBtlSeqEndJudgeRule));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackBtlSeqEndJudgeRule),
+        reinterpret_cast<void*>(kBattleEndSequenceHookAddress + 4));
+    const int32_t kBattleEndSequenceCheckConditionAddress = 0x80216678;
+    const uint32_t kBattleEndSequenceCheckConditionOpcode = 0x60000000;  // nop
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kBattleEndSequenceCheckConditionAddress),
+        &kBattleEndSequenceCheckConditionOpcode, sizeof(uint32_t));
     
     // Apply patch to effUpdownDisp code to display the correct number
     // when Charging / +ATK/DEF-ing by more than 9 points.
@@ -2087,6 +2882,21 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackDispUpdownNumberIcons),
         reinterpret_cast<void*>(kEffUpdownDispEndHookAddress));
+        
+    // Apply patches to statusWinDisp to prevent D-Pad shortcuts from appearing
+    // if the player is outside the Pit (so it doesn't interfere with the
+    // Infinite Pit options menu).
+    const int32_t kStatusWinDpadIconsDispBeginHookAddress = 0x8013d140;
+    const int32_t kStatusWinDpadIconsDispEndHookAddress = 0x8013d404;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kStatusWinDpadIconsDispBeginHookAddress),
+        reinterpret_cast<void*>(StartPreventDpadShortcutsOutsidePit));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackPreventDpadShortcutsOutsidePit),
+        reinterpret_cast<void*>(kStatusWinDpadIconsDispBeginHookAddress + 4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(ConditionalBranchPreventDpadShortcutsOutsidePit),
+        reinterpret_cast<void*>(kStatusWinDpadIconsDispEndHookAddress));
     
     // Apply patches to seq_mapChangeMain code to run additional logic when
     // loading or unloading a map.
@@ -2125,6 +2935,20 @@ void ApplyMiscPatches() {
     mod::patch::writeBranch(
         reinterpret_cast<void*>(BranchBackFixItemWinPartySelectOrder),
         reinterpret_cast<void*>(kWinItemSelectPartyTableEndHookAddress));
+        
+    // Apply patch to item menu code to check for invalid item targets
+    // (e.g. using Shine Sprites on fully-upgraded partners or Mario).
+    const int32_t kWinItemCheckPlayerInputBeginHookAddress = 0x8016cd74;
+    const int32_t kWinItemCheckPlayerInputEndHookAddress = 0x8016d1a4;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kWinItemCheckPlayerInputBeginHookAddress),
+        reinterpret_cast<void*>(StartCheckForUnusableItemInMenu));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckForUnusableItemInMenu),
+        reinterpret_cast<void*>(kWinItemCheckPlayerInputBeginHookAddress + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(ConditionalBranchCheckForUnusableItemInMenu),
+        reinterpret_cast<void*>(kWinItemCheckPlayerInputEndHookAddress));
         
     // Apply patch to item menu code to properly use Shine Sprite items.
     const int32_t kWinItemCheckBackgroundHookAddress = 0x8016cfd0;
@@ -2175,6 +2999,162 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kCharlietonPitListLengthHookAddr),
         &kLoadCharlietonPitListLengthOpcode, sizeof(uint32_t));
         
+    // Override the default Danger / Peril threshold checks for all actors.
+    const int32_t kSetDangerThresholdHookAddr   = 0x80126e84;
+    const int32_t kSetPerilThresholdHookAddr    = 0x80126e20;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSetDangerThresholdHookAddr),
+        reinterpret_cast<void*>(StartSetDangerThreshold));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSetDangerThreshold),
+        reinterpret_cast<void*>(kSetDangerThresholdHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSetPerilThresholdHookAddr),
+        reinterpret_cast<void*>(StartSetPerilThreshold));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSetPerilThreshold),
+        reinterpret_cast<void*>(kSetPerilThresholdHookAddr + 0x4));
+
+    // Fix visual indicators of Mario Danger / Peril.
+    const int32_t kCheckMarioPinchDispHookAddr  = 0x80118074;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kCheckMarioPinchDispHookAddr),
+        reinterpret_cast<void*>(StartCheckMarioPinchDisp));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckMarioPinchDisp),
+        reinterpret_cast<void*>(kCheckMarioPinchDispHookAddr + 0x4));
+    const int32_t kCheckMarioPinchDispPostHookAddr = 0x8011807c;
+    const uint32_t kCheckPartyPinchDispOps[] =
+        { 0x7c032000, 0x4181005c };  // cmpw r3, r4; bgt- 0x5c
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckMarioPinchDispPostHookAddr),
+        &kCheckPartyPinchDispOps, 2 * sizeof(uint32_t));
+    // Fix visual indicators of partners' Danger / Peril.
+    const int32_t kCheckPartnerPinchDispHookAddr = 0x80117e90;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kCheckPartnerPinchDispHookAddr),
+        reinterpret_cast<void*>(StartCheckPartnerPinchDisp));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckPartnerPinchDisp),
+        reinterpret_cast<void*>(kCheckPartnerPinchDispHookAddr + 0x4));
+    const int32_t kCheckPartnerPinchDispPostHookAddr = 0x80117e98;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckPartnerPinchDispPostHookAddr),
+        &kCheckPartyPinchDispOps, 2 * sizeof(uint32_t));
+        
+    // Add code that weakens Power / Mega Rush badges if the option is set.
+    const int32_t kPowerRushHookAddr    = 0x800fd93c;
+    const int32_t kMegaRushHookAddr     = 0x800fd91c;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kPowerRushHookAddr),
+        reinterpret_cast<void*>(StartGetDangerStrength));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackGetDangerStrength),
+        reinterpret_cast<void*>(kPowerRushHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kMegaRushHookAddr),
+        reinterpret_cast<void*>(StartGetPerilStrength));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackGetPerilStrength),
+        reinterpret_cast<void*>(kMegaRushHookAddr + 0x4));
+        
+    // Add code that puts a cap on the evasion from badges if the option is set.
+    const int32_t kPreCheckEvasionBeginHookAddress   = 0x800fbbec;
+    const int32_t kPreCheckEvasionEndHookAddress     = 0x800fbca0;
+    const int32_t kPreCheckEvasionReturnLuckyAddress = 0x800fbc8c;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kPreCheckEvasionBeginHookAddress),
+        reinterpret_cast<void*>(StartCheckBadgeEvasion));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckBadgeEvasion),
+        reinterpret_cast<void*>(kPreCheckEvasionEndHookAddress));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(ConditionalBranchCheckBadgeEvasion),
+        reinterpret_cast<void*>(kPreCheckEvasionReturnLuckyAddress));
+        
+    // Enable Star Power features always, if the randomizer option is set.
+    const int32_t kEnableAppealHookAddr         = 0x801239e4;
+    const int32_t kAddAudienceHookAddr          = 0x801a1734;
+    const int32_t kDisplayAudienceHookAddr      = 0x801a6cb0;
+    const int32_t kSaveAudienceCountHookAddr    = 0x801a6b68;
+    const int32_t kSetInitialAudienceHookAddr   = 0x801a61ac;
+    const int32_t kObjectFallOnAudienceHookAddr = 0x801469e4;
+    const int32_t kAddPuniToAudienceHookAddr    = 0x801a15c8;
+    const int32_t kEnableBingoSlotsHookAddr     = 0x802034b4;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEnableAppealHookAddr),
+        reinterpret_cast<void*>(StartEnableAppealCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackEnableAppealCheck),
+        reinterpret_cast<void*>(kEnableAppealHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kAddAudienceHookAddr),
+        reinterpret_cast<void*>(StartAddAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAddAudienceCheck),
+        reinterpret_cast<void*>(kAddAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kDisplayAudienceHookAddr),
+        reinterpret_cast<void*>(StartDisplayAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackDisplayAudienceCheck),
+        reinterpret_cast<void*>(kDisplayAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSaveAudienceCountHookAddr),
+        reinterpret_cast<void*>(StartSaveAudienceCountCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSaveAudienceCountCheck),
+        reinterpret_cast<void*>(kSaveAudienceCountHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kSetInitialAudienceHookAddr),
+        reinterpret_cast<void*>(StartSetInitialAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSetInitialAudienceCheck),
+        reinterpret_cast<void*>(kSetInitialAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kObjectFallOnAudienceHookAddr),
+        reinterpret_cast<void*>(StartObjectFallOnAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackObjectFallOnAudienceCheck),
+        reinterpret_cast<void*>(kObjectFallOnAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kAddPuniToAudienceHookAddr),
+        reinterpret_cast<void*>(StartAddPuniToAudienceCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAddPuniToAudienceCheck),
+        reinterpret_cast<void*>(kAddPuniToAudienceHookAddr + 0x4));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEnableBingoSlotsHookAddr),
+        reinterpret_cast<void*>(StartEnableIncrementingBingoCheck));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackEnableIncrementingBingoCheck),
+        reinterpret_cast<void*>(kEnableBingoSlotsHookAddr + 0x4));
+        
+    // Enable random audience items.
+    const int32_t kRandomAudienceItemHookAddress = 0x801a5c70;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kRandomAudienceItemHookAddress),
+        reinterpret_cast<void*>(StartAudienceItem));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAudienceItem),
+        reinterpret_cast<void*>(kRandomAudienceItemHookAddress + 4));
+    // Make sure the right inventory is checked for getting items from audience.
+    // Extend the range to check all item types:
+    const int32_t kAudienceCheckItemSpaceUpperBoundOpAddr = 0x801a5418;
+    const uint32_t kAudienceCheckItemSpaceUpperBoundOpcode = 
+        0x2c000153;  // cmpwi r0, 0x153
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kAudienceCheckItemSpaceUpperBoundOpAddr),
+        &kAudienceCheckItemSpaceUpperBoundOpcode, sizeof(uint32_t));
+    // Handle bad items and badges:
+    const int32_t kAudienceCheckItemSpaceHookAddress = 0x801a5424;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kAudienceCheckItemSpaceHookAddress),
+        reinterpret_cast<void*>(StartAudienceItemSpaceFix));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackAudienceItemSpaceFix),
+        reinterpret_cast<void*>(kAudienceCheckItemSpaceHookAddress + 4));
+        
     // Enable the crash handler.
     const int32_t kCrashHandlerEnableOpAddr = 0x80009b2c;
     const uint32_t kEnableHandlerOpcode = 0x3800FFFF;  // li r0, -1
@@ -2182,12 +3162,57 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kCrashHandlerEnableOpAddr),
         &kEnableHandlerOpcode, sizeof(uint32_t));
         
+    // Change the size of the crash handler text.
+    const uint32_t kCrashHandlerFontScaleAddr = 0x80428bc0;
+    const float kCrashHandlerNewFontScale = 0.6f;
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerFontScaleAddr),
+        &kCrashHandlerNewFontScale, sizeof(float));
+
+    // Make the crash handler text loop.
+    const uint32_t kCrashHandlerLoopHookAddr1 = 0x8025e4a4;
+    const uint32_t kCrashHandlerLoopHookAddr2 = 0x8025e4a8;
+    const uint32_t kCrashHandlerLoopOpcode1 = 0x3b400000;   // li r26, 0
+    const uint32_t kCrashHandlerLoopOpcode2 = 0x4bfffdd4;   // b -0x22c
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr1),
+        &kCrashHandlerLoopOpcode1, sizeof(uint32_t));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCrashHandlerLoopHookAddr2),
+        &kCrashHandlerLoopOpcode2, sizeof(uint32_t));
+        
+    // Fix msgWindow off-by-one allocation error.
+    const uint32_t kMsgWindowGetSizeToAllocAddr = 0x800816f4;
+    const uint32_t kMsgWindowGetSizeToAllocOpcode = 0x38830001;  // addi r4,r3,1
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kMsgWindowGetSizeToAllocAddr),
+        &kMsgWindowGetSizeToAllocOpcode, sizeof(uint32_t));
+        
+    // Fix pouch re-allocating when starting a new file.
+    const int32_t kPouchCheckAllocHookAddress = 0x800d59dc;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kPouchCheckAllocHookAddress),
+        reinterpret_cast<void*>(StartCheckPouchAlloc));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackCheckPouchAlloc),
+        reinterpret_cast<void*>(kPouchCheckAllocHookAddress + 4));
+
     // Skip tutorials for boots / hammer upgrades.
     const int32_t kSkipUpgradeCutsceneOpAddr = 0x800abcd8;
     const uint32_t kSkipCutsceneOpcode = 0x48000030;  // b 0x30
     mod::patch::writePatch(
         reinterpret_cast<void*>(kSkipUpgradeCutsceneOpAddr),
         &kSkipCutsceneOpcode, sizeof(uint32_t));
+        
+    // Change frame windows for guarding / Superguarding at different levels
+    // of Simplifiers / Unsimplifiers to be more symmetric.
+    const int8_t kGuardFrames[] =     { 12, 10, 9, 8, 7, 6, 5, 0 };
+    const int8_t kSuperguardFrames[]  = { 5, 4, 4, 3, 2, 2, 1, 0 };
+    mod::patch::writePatch(
+        ttyd::battle_ac::guard_frames, kGuardFrames, sizeof(kGuardFrames));
+    mod::patch::writePatch(
+        ttyd::battle_ac::superguard_frames, kSuperguardFrames, 
+        sizeof(kSuperguardFrames));
         
     // Disable the check for enemies only holding certain types of items.
     const int32_t kSkipEnemyHeldItemCheckOpAddr = 0x80125d54;
@@ -2203,14 +3228,309 @@ void ApplyMiscPatches() {
         reinterpret_cast<void*>(kGetItemWeaponNameOpAddr),
         &kGetItemWeaponNameOpcode, sizeof(uint32_t));
         
+    // Sums weapon targets' random weights, ensuring that each weight is > 0.
+    const int32_t kEnemySamplingRandomWeightBeginHookAddress = 0x800ff528;
+    const int32_t kEnemySamplingRandomWeightEndHookAddress = 0x800ff544;
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(kEnemySamplingRandomWeightBeginHookAddress),
+        reinterpret_cast<void*>(StartSampleRandomTarget));
+    mod::patch::writeBranch(
+        reinterpret_cast<void*>(BranchBackSampleRandomTarget),
+        reinterpret_cast<void*>(kEnemySamplingRandomWeightEndHookAddress));
+        
     // Changes targeting order for certain attacks so the user hits themselves
     // after all other targets.
-    g_btlevtcmd_GetSelectNextEnemy_trampoline = patch::hookFunction(
-        ttyd::battle_event_cmd::btlevtcmd_GetSelectNextEnemy,
+    g_btlevtcmd_GetSelectEnemy_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetSelectEnemy,
         [](EvtEntry* evt, bool isFirstCall) {
             ReorderWeaponTargets();
-            return g_btlevtcmd_GetSelectNextEnemy_trampoline(evt, isFirstCall);
+            return g_btlevtcmd_GetSelectEnemy_trampoline(evt, isFirstCall);
         });
+        
+    // Force friendly enemies to never call for backup, and certain enemies
+    // to stop calling for backup after turn 5.
+    g_btlevtcmd_CheckSpace_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_CheckSpace,
+        [](EvtEntry* evt, bool isFirstCall) {
+            auto* battleWork = ttyd::battle::g_BattleWork;
+            uint32_t idx = reinterpret_cast<uint32_t>(evt->wActorThisPtr);
+            if (idx) {
+                auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, idx);
+                if (unit && unit->alliance == 0) {
+                    // If desired pos is way out of range, multiply it by -1
+                    // (to prevent infinite looping).
+                    int32_t target_pos = evtGetValue(evt, evt->evtArguments[1]);
+                    if (target_pos < -300 || target_pos > 300) {
+                        evtSetValue(evt, evt->evtArguments[1], -target_pos);
+                    }
+                    // Treat the spot as full.
+                    evtSetValue(evt, evt->evtArguments[0], 1);
+                    return 2;
+                } else if (battleWork->turn_count > 5) {
+                    switch (unit->current_kind) {
+                        case BattleUnitType::POKEY:
+                        case BattleUnitType::POISON_POKEY:
+                        case BattleUnitType::DULL_BONES:
+                        case BattleUnitType::RED_BONES:
+                        case BattleUnitType::DRY_BONES:
+                        case BattleUnitType::DARK_BONES:
+                        case BattleUnitType::LAKITU:
+                        case BattleUnitType::DARK_LAKITU:
+                        case BattleUnitType::GREEN_FUZZY:
+                        case BattleUnitType::KOOPATROL:
+                        case BattleUnitType::DARK_KOOPATROL:
+                            // Treat the spot as full.
+                            evtSetValue(evt, evt->evtArguments[0], 1);
+                            return 2;
+                        default:
+                            break;
+                    }
+                }
+            }
+            return g_btlevtcmd_CheckSpace_trampoline(evt, isFirstCall);
+        });
+        
+    // Make btlevtcmd_CheckSpace consider enemies only, regardless of alliance.
+    // lwz r0, 8 (r3); cmpwi r0, 0xab; bgt- 0xd0 (Branch if not an enemy)
+    const int32_t kCheckSpaceAllianceCheckOpAddr = 0x8010efdc;
+    const uint32_t kCheckSpaceAllianceCheckOps[] = {
+        0x80030008, (0x2c000000 | BattleUnitType::BONETAIL), 0x418100d0
+    };
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(kCheckSpaceAllianceCheckOpAddr),
+        kCheckSpaceAllianceCheckOps, sizeof(kCheckSpaceAllianceCheckOps));
+        
+    // Add additional check for player's side losing battle that doesn't
+    // take Infatuated enemies into account.
+    g_BattleCheckConcluded_trampoline = patch::hookFunction(
+        ttyd::battle_seq::BattleCheckConcluded, [](BattleWork* battleWork) {
+            uint32_t result = g_BattleCheckConcluded_trampoline(battleWork);
+            if (!result) result = CheckIfPlayerDefeated();
+            return result;
+        });
+        
+    // Change the chances of weapon-induced stage effects based on options.
+    g_btlevtcmd_WeaponAftereffect_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_WeaponAftereffect,
+        [](EvtEntry* evt, bool isFirstCall) {
+            // Make sure the stage jet type is initialized, if possible.
+            auto* battleWork = ttyd::battle::g_BattleWork;
+            if (ttyd::mario_pouch::pouchGetPtr()->rank > 0) {
+                ttyd::battle_stage_object::_nozzle_type_init();
+            }
+            
+            int8_t stage_hazard_chances[12];
+            // Store the original stage hazard chances.
+            auto& weapon = *reinterpret_cast<BattleWeapon*>(
+                evtGetValue(evt, evt->evtArguments[0]));
+            memcpy(stage_hazard_chances, &weapon.bg_a1_a2_fall_weight, 12);
+            
+            // Get the percentage to scale original chances by.
+            int32_t scale = 100;
+            switch (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::STAGE_HAZARD_OPTIONS)) {
+                case RandomizerState::HAZARD_RATE_HIGH: {
+                    scale = 250;
+                    break;
+                }
+                case RandomizerState::HAZARD_RATE_LOW: {
+                    scale = 50;
+                    break;
+                }
+                case RandomizerState::HAZARD_RATE_OFF: {
+                    scale = 0;
+                    break;
+                }
+                case RandomizerState::HAZARD_RATE_NO_FOG: {
+                    // If stage jets are uninitialized or fog-type jets,
+                    // make them unable to fire.
+                    if (battleWork->stage_hazard_work.current_stage_jet_type
+                        <= 0) {
+                        weapon.nozzle_turn_chance = 0;
+                        weapon.nozzle_fire_chance = 0;
+                    }
+                    break;
+                }
+                default: break;
+            }
+            
+            // Change the parameter values according to the selected scale.
+            weapon.bg_a1_fall_weight = 
+                Min((weapon.bg_a1_fall_weight * scale + 50) / 100, 100);
+            weapon.bg_a2_fall_weight = 
+                Min((weapon.bg_a2_fall_weight * scale + 50) / 100, 100);
+            weapon.bg_b_fall_weight = 
+                Min((weapon.bg_b_fall_weight * scale + 50) / 100, 100);
+            weapon.nozzle_turn_chance = 
+                Min((weapon.nozzle_turn_chance * scale + 50) / 100, 100);
+            weapon.nozzle_fire_chance = 
+                Min((weapon.nozzle_fire_chance * scale + 50) / 100, 100);
+            weapon.ceiling_fall_chance = 
+                Min((weapon.ceiling_fall_chance * scale + 50) / 100, 100);
+            weapon.object_fall_chance = 
+                Min((weapon.object_fall_chance * scale + 50) / 100, 100);
+            weapon.unused_stage_hazard_chance = 
+                Min((weapon.unused_stage_hazard_chance * scale + 50) / 100, 100);
+            
+            // Call the function that induces stage effects.
+            g_btlevtcmd_WeaponAftereffect_trampoline(evt, isFirstCall);
+            
+            // Copy back original values.
+            memcpy(&weapon.bg_a1_a2_fall_weight, stage_hazard_chances, 12);
+            
+            return 2;
+        });
+        
+    // Fix rank string shown in the menu.
+    g_BattleGetRankNameLabel_trampoline = patch::hookFunction(
+        ttyd::battle_seq_end::BattleGetRankNameLabel,
+        [](int32_t level) {
+            int32_t rank = ttyd::mario_pouch::pouchGetPtr()->rank;
+            if (rank < 0 || rank > 3) rank = 0;
+            return ttyd::battle_seq_end::_rank_up_data[rank].mario_menu_msg;
+        });
+}
+
+void ApplySettingBasedPatches() {
+    // Change stage rank-up levels (set to 100 to force no rank-up on level-up).
+    auto* rankup_data = ttyd::battle_seq_end::_rank_up_data;
+    switch (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::RANK_UP_REQUIREMENT)) {
+        case RandomizerState::RANK_UP_NORMAL: {
+            rankup_data[1].level = 10;
+            rankup_data[2].level = 20;
+            rankup_data[3].level = 30;
+            break;
+        }
+        case RandomizerState::RANK_UP_EARLIER: {
+            rankup_data[1].level = 8;
+            rankup_data[2].level = 15;
+            rankup_data[3].level = 25;
+            break;
+        }
+        default: {  // Non-level based.
+            rankup_data[1].level = 100;
+            rankup_data[2].level = 100;
+            rankup_data[3].level = 100;
+            break;
+        }
+    }
+    
+    // Increase some move badge BP costs if playing with larger max move levels.
+    if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::MAX_BADGE_MOVE_LEVEL) !=
+            RandomizerState::MAX_MOVE_LEVEL_1X) {
+        itemDataTable[ItemType::POWER_JUMP].bp_cost = 2;
+        itemDataTable[ItemType::POWER_SMASH].bp_cost = 2;
+        itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 3;
+        itemDataTable[ItemType::QUAKE_HAMMER].bp_cost = 3;
+        itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 3;
+        itemDataTable[ItemType::CHARGE].bp_cost = 2;
+        itemDataTable[ItemType::CHARGE_P].bp_cost = 2;
+    } else {
+        itemDataTable[ItemType::POWER_JUMP].bp_cost = 1;
+        itemDataTable[ItemType::POWER_SMASH].bp_cost = 1;
+        itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 1;
+        itemDataTable[ItemType::QUAKE_HAMMER].bp_cost = 2;
+        itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 2;
+        itemDataTable[ItemType::CHARGE].bp_cost = 1;
+        itemDataTable[ItemType::CHARGE_P].bp_cost = 1;
+    }
+    
+    // Increase badge BP cost and shop prices if HP/FP Drains heal per hit.
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::HP_FP_DRAIN_PER_HIT)) {
+        itemDataTable[ItemType::HP_DRAIN].bp_cost = 3;
+        itemDataTable[ItemType::HP_DRAIN_P].bp_cost = 3;
+        itemDataTable[ItemType::FP_DRAIN].bp_cost = 6;
+        itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 6;
+        
+        itemDataTable[ItemType::HP_DRAIN].buy_price = 150;
+        itemDataTable[ItemType::HP_DRAIN_P].buy_price = 150;
+        itemDataTable[ItemType::FP_DRAIN].buy_price = 150;
+        itemDataTable[ItemType::FP_DRAIN_P].buy_price = 150;
+    } else {
+        itemDataTable[ItemType::HP_DRAIN].bp_cost = 1;
+        itemDataTable[ItemType::HP_DRAIN_P].bp_cost = 1;
+        itemDataTable[ItemType::FP_DRAIN].bp_cost = 1;
+        itemDataTable[ItemType::FP_DRAIN_P].bp_cost = 1;
+        
+        itemDataTable[ItemType::HP_DRAIN].buy_price = 70;
+        itemDataTable[ItemType::HP_DRAIN_P].buy_price = 70;
+        itemDataTable[ItemType::FP_DRAIN].buy_price = 125;
+        itemDataTable[ItemType::FP_DRAIN_P].buy_price = 125;
+    }
+    
+    // Swap SP costs of Clock Out and Power Lift.
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::SWAP_CO_PL_SP_COST)) {
+        ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 3;
+        ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 2;
+    } else {
+        ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 2;
+        ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 3;
+    }
+}
+
+EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
+    // Initialize number of upgrades per partner.
+    const int32_t starting_rank = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::PARTNER_STARTING_RANK);
+    for (int32_t i = 0; i < 7; ++i) {
+        g_Randomizer->state_.partner_upgrades_[i] = starting_rank;
+    }
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::START_WITH_PARTNERS)) {
+        // Enable and initialize all partners.
+        for (int32_t i = 1; i <= 7; ++i) {
+            evt->evtArguments[0] = i;
+            ttyd::evt_pouch::evt_pouch_party_join(evt, isFirstCall);
+            InitializePartyMember(evt, isFirstCall);
+        }
+        // Put Goombella on the field.
+        evt->evtArguments[0] = 0;
+        evt->evtArguments[1] = 1;
+        evt->evtArguments[2] = 0;
+        evt->evtArguments[3] = 0;
+        evt->evtArguments[4] = 0;
+        ttyd::evt_mario::evt_mario_set_party_pos(evt, isFirstCall);
+        // Do NOT disable partners from the reward pool; they will be
+        // replaced with extra Shine Sprites.
+    }
+    if (g_Randomizer->state_.GetOptionValue(
+        RandomizerState::START_WITH_SWEET_TREAT)) {
+        // Give the player Sweet Treat + 1.00 SP.
+        ttyd::mario_pouch::pouchGetItem(ItemType::MAGICAL_MAP);
+        auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        pouch.max_sp += 100;
+        pouch.current_sp = pouch.max_sp;
+        pouch.star_powers_obtained |= 1;
+        // Disable Sweet Treat from the rewards pool.
+        g_Randomizer->state_.reward_flags_ |= (1 << 5);
+    }
+    if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)) {
+        auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        pouch.level = 99;
+        pouch.unallocated_bp += 90;
+        pouch.total_bp += 90;
+        if (g_Randomizer->state_.GetOptionValue(
+                RandomizerState::RANK_UP_REQUIREMENT) != 
+                RandomizerState::RANK_UP_BY_FLOOR) {
+            // Start at Superstar rank, unless rank-ups are by floor number.
+            pouch.rank = 3;
+        }
+    }
+    if (g_Randomizer->state_.GetOptionValue(
+            RandomizerState::RANK_UP_REQUIREMENT) == 
+            RandomizerState::RANK_UP_ALWAYS_MAX) {
+        ttyd::mario_pouch::pouchGetPtr()->rank = 3;
+    }
+    ApplySettingBasedPatches();
+    // Save the timestamp you entered the Pit.
+    g_Randomizer->state_.SaveCurrentTime(/* pit_start = */ true);
+    // All other options are handled immediately on setting them,
+    // or are checked explicitly every time they are relevant.
+    return 2;
 }
 
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
@@ -2302,45 +3622,68 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     
     PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     
-    // Set the enemies' held items.
+    // If on a Bonetail floor and Bonetail is already defeated,
+    // skip the item / condition generation to keep seeding consistent.
+    if (ttyd::swdrv::swGet(0x13dc)) return 2;
+
+    // Set the enemies' held items, if they get any.
+    const int32_t reward_mode =
+        g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
     NpcBattleInfo* battle_info = &npc->battleInfo;
-    for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
-        int32_t item =
-            PickRandomItem(/* seeded = */ true, 40, 20, 40, 0);
-        
-        // Indirectly attacking enemies should not hold defense-increasing
-        // badges if the player cannot damage them at base rank equipment /
-        // without a damaging Star Power.
-        if (pouch.jump_level < 2 && !(pouch.star_powers_obtained & 0x92)) {
-            const BattleUnitSetup& unit_setup = 
-                battle_info->pConfiguration->enemy_data[i];
-            switch (unit_setup.unit_kind_params->unit_type) {
-                case BattleUnitType::DULL_BONES:
-                case BattleUnitType::LAKITU:
-                case BattleUnitType::DARK_LAKITU:
-                case BattleUnitType::MAGIKOOPA:
-                case BattleUnitType::RED_MAGIKOOPA:
-                case BattleUnitType::WHITE_MAGIKOOPA:
-                case BattleUnitType::GREEN_MAGIKOOPA:
-                case BattleUnitType::HAMMER_BRO:
-                case BattleUnitType::BOOMERANG_BRO:
-                case BattleUnitType::FIRE_BRO:
-                    switch (item) {
-                        case ItemType::DEFEND_PLUS:
-                        case ItemType::DEFEND_PLUS_P:
-                        case ItemType::P_DOWN_D_UP:
-                        case ItemType::P_DOWN_D_UP_P:
-                            // Pick a new item, disallowing badges.
-                            item = PickRandomItem(
-                                /* seeded = */ true, 40, 20, 0, 0);
-                    }
-            }
+    if (reward_mode == RandomizerState::NO_HELD_ITEMS) {
+        for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
+            battle_info->wHeldItems[i] = 0;
         }
-        
-        battle_info->wHeldItems[i] = item;
+    } else {
+        // If item drops only come from conditions, spawn Shine Sprites
+        // as held items occasionally after floor 30.
+        int32_t shine_rate = 0;
+        if (g_Randomizer->state_.floor_ >= 30 &&
+            reward_mode == RandomizerState::CONDITION_DROPS_HELD) {
+            shine_rate = 13;
+        }
+            
+        for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
+            int32_t item =
+                PickRandomItem(/* seeded = */ true, 40, 20, 40, shine_rate);
+            
+            // Indirectly attacking enemies should not hold defense-increasing
+            // badges if the player cannot damage them at base rank equipment /
+            // without a damaging Star Power.
+            if (pouch.jump_level < 2 && !(pouch.star_powers_obtained & 0x92)) {
+                const BattleUnitSetup& unit_setup = 
+                    battle_info->pConfiguration->enemy_data[i];
+                switch (unit_setup.unit_kind_params->unit_type) {
+                    case BattleUnitType::DULL_BONES:
+                    case BattleUnitType::LAKITU:
+                    case BattleUnitType::DARK_LAKITU:
+                    case BattleUnitType::MAGIKOOPA:
+                    case BattleUnitType::RED_MAGIKOOPA:
+                    case BattleUnitType::WHITE_MAGIKOOPA:
+                    case BattleUnitType::GREEN_MAGIKOOPA:
+                    case BattleUnitType::HAMMER_BRO:
+                    case BattleUnitType::BOOMERANG_BRO:
+                    case BattleUnitType::FIRE_BRO:
+                        switch (item) {
+                            case ItemType::DEFEND_PLUS:
+                            case ItemType::DEFEND_PLUS_P:
+                            case ItemType::P_DOWN_D_UP:
+                            case ItemType::P_DOWN_D_UP_P:
+                                // Pick a new item, disallowing badges.
+                                item = PickRandomItem(
+                                    /* seeded = */ true, 40, 20, 0, shine_rate);
+                        }
+                }
+            }
+            
+            if (!item) item = ItemType::GOLD_BAR_X3;
+            battle_info->wHeldItems[i] = item;
+        }
     }
+    
     // Occasionally, set a battle condition for an optional bonus reward.
     SetBattleCondition(&npc->battleInfo);
+    
     return 2;
 }
 
@@ -2375,6 +3718,7 @@ EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
 EVT_DEFINE_USER_FUNC(CheckPromptSave) {
     evtSetValue(evt, evt->evtArguments[0], g_PromptSave);
     if (g_PromptSave) {
+        g_Randomizer->state_.SaveCurrentTime();
         g_Randomizer->state_.Save();
         g_PromptSave = false;
     }
@@ -2391,6 +3735,28 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         gsw_floor += ((actual_floor / 10) % 10 == 9) ? 90 : 80;
     }
     ttyd::swdrv::swByteSet(1321, gsw_floor);
+    // Increase stage rank if entering floor 31/61/91, depending on settings.
+    switch (actual_floor) {
+        case 30:
+        case 60:
+        case 90: {
+            if (g_Randomizer->state_.GetOptionValue(
+                    RandomizerState::RANK_UP_REQUIREMENT) == 
+                    RandomizerState::RANK_UP_BY_FLOOR) {
+                ttyd::mario_pouch::pouchGetPtr()->rank++;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(IncrementYoshiColor) {
+    g_Randomizer->state_.options_ |= RandomizerState::YOSHI_COLOR_SELECT;
+    int32_t color = ttyd::mario_pouch::pouchGetPartyColor(4);
+    ttyd::mario_pouch::pouchSetPartyColor(4, (color + 1) % 7);
     return 2;
 }
 
@@ -2421,15 +3787,21 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
     return 2;
 }
 
-EVT_DEFINE_USER_FUNC(FullyHealPartyMember) {
-    int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
-    int16_t starting_hp = ttyd::mario_pouch::_party_max_hp_table[idx * 4];
+EVT_DEFINE_USER_FUNC(InitializePartyMember) {
+    const int32_t starting_rank = g_Randomizer->state_.GetOptionValue(
+        RandomizerState::PARTNER_STARTING_RANK);
+    const int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
+    const int16_t starting_hp =
+        ttyd::mario_pouch::_party_max_hp_table[idx * 4 + starting_rank];
     const int32_t hp_plus_p_cnt =
         ttyd::mario_pouch::pouchEquipCheckBadge(ItemType::HP_PLUS_P);
     auto& party_data = ttyd::mario_pouch::pouchGetPtr()->party_data[idx];
     party_data.base_max_hp = starting_hp;
     party_data.max_hp = starting_hp + hp_plus_p_cnt * 5;
     party_data.current_hp = starting_hp + hp_plus_p_cnt * 5;
+    party_data.hp_level = starting_rank;
+    party_data.attack_level = starting_rank;
+    party_data.tech_level = starting_rank;
     return 2;
 }
 
@@ -2495,6 +3867,32 @@ EVT_DEFINE_USER_FUNC(InfatuateChangeAlliance) {
         evt, isFirstCall);
 }
 
+EVT_DEFINE_USER_FUNC(CheckNumEnemiesRemaining) {
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t num_enemies = 0;
+    for (int32_t i = 0; i < 64; ++i) {
+        BattleWorkUnit* unit = battleWork->battle_units[i];
+        // Count enemies of either alliance that are still alive.
+        if (unit && unit->current_kind <= BattleUnitType::BONETAIL &&
+            unit->alliance <= 1 && !BtlUnit_CheckStatus(unit, 27))
+            ++num_enemies;
+    }
+    evtSetValue(evt, evt->evtArguments[0], num_enemies);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(CheckConfusedOrInfatuated) {
+    // Check if Confused first (assumes token checked is 0x10).
+    ttyd::battle_event_cmd::btlevtcmd_CheckToken(evt, isFirstCall);
+    // Check if Infatuated.
+    auto* battleWork = ttyd::battle::g_BattleWork;
+    int32_t id = evtGetValue(evt, evt->evtArguments[0]);
+    id = ttyd::battle_sub::BattleTransID(evt, id);
+    auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, id);
+    if (unit->alliance == 0) evtSetValue(evt, evt->evtArguments[2], 1);
+    return 2;
+}
+
 EVT_DEFINE_USER_FUNC(GetPercentOfMaxHP) {
     auto* battleWork = ttyd::battle::g_BattleWork;
     int32_t id = evtGetValue(evt, evt->evtArguments[0]);
@@ -2519,8 +3917,10 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
         item = PickRandomItem(/* seeded = */ false, 20, 10, 10, 60);
         if (!item) item = ItemType::COIN;
     }
-    if ((ac_result & 2) == 0 || !ttyd::mario_pouch::pouchGetItem(item)) {
-        // Action command unsuccessful, or inventory cannot hold the item.
+    if ((ac_result & 2) == 0 || item == ItemType::GOLD_BAR_X3 ||
+        !ttyd::mario_pouch::pouchGetItem(item)) {
+        // Action command unsuccessful, item = Shine Sprite (can't be stolen),
+        // or the player's inventory cannot hold the item.
         evtSetValue(evt, evt->evtArguments[1], 0);
     } else {
         // Remove the unit's held item.

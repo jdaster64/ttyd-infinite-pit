@@ -66,7 +66,7 @@ static_assert(sizeof(PouchData) == 0x5d4);
 // pouchGetYoshiName
 // pouchSetYoshiName
 void pouchSetPartyColor(int32_t party_member, int32_t color);  // 4 = Yoshi
-// pouchGetPartyColor
+int32_t pouchGetPartyColor(int32_t party_member);
 // pouchCheckMail
 // pouchOpenMail
 // pouchReceiveMail
@@ -114,7 +114,7 @@ int16_t pouchGetHP();
 // pouchSetSuperCoin
 // pouchGetSuperCoin
 int16_t pouchSetCoin(int16_t coins);
-// pouchAddCoin
+int32_t pouchAddCoin(int16_t coins);
 // pouchGetCoin
 // pouchSortItem
 // comp_kind_r
@@ -129,7 +129,7 @@ uint32_t pouchGetItem(int32_t item_type);
 // pouchGetEmptyKeepItemCnt
 // pouchGetEmptyHaveItemCnt
 // pouchGetEquipBadgeCnt
-// pouchGetHaveBadgeCnt
+int32_t pouchGetHaveBadgeCnt();
 // pouchGetKeepItemCnt
 // pouchGetHaveItemCnt
 // ?pouchEquipBadge
