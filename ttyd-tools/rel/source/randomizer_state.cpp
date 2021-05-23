@@ -2,8 +2,8 @@
 
 #include "common_functions.h"
 #include "common_types.h"
+#include "mod.h"
 #include "patch.h"
-#include "randomizer.h"
 
 #include <gc/OSTime.h>
 #include <ttyd/item_data.h>
@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
     
 // Bitfield for options introduced in v1.40 (implementation details).
 namespace Options_v1_40 {
@@ -66,7 +66,7 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
     }
 }
 
-bool LoadFromPreviousVersion(RandomizerState* state) {
+bool LoadFromPreviousVersion(StateManager* state) {
     void* saved_state = GetSavedStateLocation();
     uint8_t version = *reinterpret_cast<uint8_t*>(saved_state);
     if (version < 1) {
@@ -76,15 +76,15 @@ bool LoadFromPreviousVersion(RandomizerState* state) {
     
     // Version is compatible; load, making any adjustments necessary.
     if (version == 3) {
-        patch::writePatch(state, saved_state, sizeof(RandomizerState));
+        patch::writePatch(state, saved_state, sizeof(StateManager));
     } else if (version == 2) {
-        patch::writePatch(state, saved_state, sizeof(RandomizerState));
+        patch::writePatch(state, saved_state, sizeof(StateManager));
         state->options_v1_40_ = 0;
         for (int32_t i = 0; i < 5; ++i) state->unused_[i] = 0;
     } else if (version == 1) {
         // Note: loading from version 1 will break seeding, but since it was
         // never publically distributed, it's useful for me to keep around.
-        patch::writePatch(state, saved_state, sizeof(RandomizerState));
+        patch::writePatch(state, saved_state, sizeof(StateManager));
         state->hp_multiplier_ = 100;
         state->atk_multiplier_ = 100;
         state->options_ = 2;
@@ -100,7 +100,7 @@ bool LoadFromPreviousVersion(RandomizerState* state) {
 
 }
 
-bool RandomizerState::Load(bool new_save) {
+bool StateManager::Load(bool new_save) {
     if (!new_save) return LoadFromPreviousVersion(this);
     
     version_ = 3;
@@ -126,7 +126,7 @@ bool RandomizerState::Load(bool new_save) {
     const char* filename = GetSavefileName();
     for (const char* ch = filename; *ch; ++ch) {
         // If the filename contains a 'heart' character, start w/FX badges.
-        if (*ch == '\xd0') options_ |= RandomizerState::START_WITH_FX;
+        if (*ch == '\xd0') options_ |= StateManager::START_WITH_FX;
     }
     if (!strcmp(filename, "random") || !strcmp(filename, "Random") ||
         !strcmp(filename, "RANDOM") || !strcmp(filename, "\xde") ||
@@ -156,12 +156,12 @@ bool RandomizerState::Load(bool new_save) {
     return true;
 }
 
-void RandomizerState::Save() {
+void StateManager::Save() {
     void* saved_state = GetSavedStateLocation();
-    patch::writePatch(saved_state, this, sizeof(RandomizerState));
+    patch::writePatch(saved_state, this, sizeof(StateManager));
 }
 
-void RandomizerState::SeedRng(const char* str) {
+void StateManager::SeedRng(const char* str) {
     uint32_t hash = 0;
     for (const char* c = str; *c != 0; ++c) {
         hash = 37 * hash + *c;
@@ -169,12 +169,12 @@ void RandomizerState::SeedRng(const char* str) {
     rng_state_ = hash;
 }
 
-uint32_t RandomizerState::Rand(uint32_t range) {
+uint32_t StateManager::Rand(uint32_t range) {
     rng_state_ = rng_state_ * 0x41c64e6d + 12345;
     return ((rng_state_ >> 16) & 0x7fff) % range;
 }
 
-void RandomizerState::ChangeOption(int32_t option, int32_t change) {
+void StateManager::ChangeOption(int32_t option, int32_t change) {
     PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     
     switch (option) {
@@ -307,7 +307,7 @@ void RandomizerState::ChangeOption(int32_t option, int32_t change) {
     }
 }
 
-int32_t RandomizerState::GetOptionValue(int32_t option) const {
+int32_t StateManager::GetOptionValue(int32_t option) const {
     switch (option) {
         case HP_MODIFIER:
             return hp_multiplier_;
@@ -353,7 +353,7 @@ int32_t RandomizerState::GetOptionValue(int32_t option) const {
     }
 }
 
-void RandomizerState::GetOptionStrings(
+void StateManager::GetOptionStrings(
     int32_t option, char* name, char* value, uint32_t* color) const {
     // Set name.
     switch (option) {
@@ -702,16 +702,16 @@ void RandomizerState::GetOptionStrings(
     }
 }
 
-int32_t RandomizerState::StarPowersObtained() const {
+int32_t StateManager::StarPowersObtained() const {
     return CountSetBits(GetBitMask(5, 12) & reward_flags_);
 }
 
-bool RandomizerState::StarPowerEnabled() const {
+bool StateManager::StarPowerEnabled() const {
     return GetOptionValue(ALWAYS_ENABLE_AUDIENCE) || 
            (CountSetBits(GetBitMask(5, 12) & reward_flags_) > 0);
 }
 
-void RandomizerState::IncrementPlayStat(PlayStats stat, int32_t amount) {
+void StateManager::IncrementPlayStat(PlayStats stat, int32_t amount) {
     int32_t offset, length, max;
     switch (stat) {
         case TURNS_SPENT: {
@@ -770,7 +770,7 @@ void RandomizerState::IncrementPlayStat(PlayStats stat, int32_t amount) {
     }
 }
 
-int32_t RandomizerState::GetPlayStat(PlayStats stat) const {
+int32_t StateManager::GetPlayStat(PlayStats stat) const {
     int32_t offset, length;
     switch (stat) {
         case TURNS_SPENT: {
@@ -821,7 +821,7 @@ int32_t RandomizerState::GetPlayStat(PlayStats stat) const {
     return result;
 }
 
-const char* RandomizerState::GetEncodedOptions() const {
+const char* StateManager::GetEncodedOptions() const {
     static char enc_options[16];
     
     uint64_t options = options_v1_40_;
@@ -861,7 +861,7 @@ const char* RandomizerState::GetEncodedOptions() const {
     return enc_options;
 }
 
-bool RandomizerState::GetPlayStatsString(char* out_buf) const {
+bool StateManager::GetPlayStatsString(char* out_buf) const {
     const auto* mariost = ttyd::mariost::g_MarioSt;
     const uint64_t current_time = gc::OSTime::OSGetTime();
     const int64_t last_save_diff = 
@@ -913,7 +913,7 @@ bool RandomizerState::GetPlayStatsString(char* out_buf) const {
     return true;
 }
 
-void RandomizerState::SaveCurrentTime(bool pit_start) {
+void StateManager::SaveCurrentTime(bool pit_start) {
     uint64_t current_time = gc::OSTime::OSGetTime();
     // Use the otherwise unused Happy Lucky Lottery timestamps for saving
     // the last time you entered the Pit, and the last time you saved the game.
@@ -923,7 +923,7 @@ void RandomizerState::SaveCurrentTime(bool pit_start) {
     ttyd::mariost::g_MarioSt->hllPickLastReceivedTime = current_time;
 }
 
-const char* RandomizerState::GetCurrentTimeString() {
+const char* StateManager::GetCurrentTimeString() {
     static char buf[16];
     const uint64_t current_time = gc::OSTime::OSGetTime();
     const int64_t start_diff = 

@@ -3,7 +3,7 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "common_ui.h"
-#include "randomizer.h"
+#include "mod.h"
 #include "randomizer_state.h"
 
 #include <ttyd/mariost.h>
@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
 namespace {
 
@@ -71,42 +71,42 @@ bool ShouldTickOrAutotick(int32_t time_held) {
 
 int32_t GetMenuState(int32_t page, int32_t selection) {
     switch (100 * page + selection) {
-        case 101: return RandomizerState::NUM_CHEST_REWARDS;
-        case 102: return RandomizerState::BATTLE_REWARD_MODE;
-        case 103: return RandomizerState::START_WITH_PARTNERS;
-        case 104: return RandomizerState::START_WITH_SWEET_TREAT;
+        case 101: return StateManager::NUM_CHEST_REWARDS;
+        case 102: return StateManager::BATTLE_REWARD_MODE;
+        case 103: return StateManager::START_WITH_PARTNERS;
+        case 104: return StateManager::START_WITH_SWEET_TREAT;
         
-        case 201: return RandomizerState::NO_EXP_MODE;
-        case 202: return RandomizerState::START_WITH_NO_ITEMS;
-        case 203: return RandomizerState::SHINE_SPRITES_MARIO;
-        case 204: return RandomizerState::ALWAYS_ENABLE_AUDIENCE;
+        case 201: return StateManager::NO_EXP_MODE;
+        case 202: return StateManager::START_WITH_NO_ITEMS;
+        case 203: return StateManager::SHINE_SPRITES_MARIO;
+        case 204: return StateManager::ALWAYS_ENABLE_AUDIENCE;
         
-        case 301: return RandomizerState::MERLEE;
-        case 302: return RandomizerState::SUPERGUARDS_COST_FP;
-        case 303: return RandomizerState::SWITCH_PARTY_COST_FP;
-        case 304: return RandomizerState::INVALID_OPTION;
+        case 301: return StateManager::MERLEE;
+        case 302: return StateManager::SUPERGUARDS_COST_FP;
+        case 303: return StateManager::SWITCH_PARTY_COST_FP;
+        case 304: return StateManager::INVALID_OPTION;
         
-        case 401: return RandomizerState::HP_MODIFIER;
-        case 402: return RandomizerState::ATK_MODIFIER;
-        case 403: return RandomizerState::POST_100_HP_SCALING;
-        case 404: return RandomizerState::POST_100_ATK_SCALING;
+        case 401: return StateManager::HP_MODIFIER;
+        case 402: return StateManager::ATK_MODIFIER;
+        case 403: return StateManager::POST_100_HP_SCALING;
+        case 404: return StateManager::POST_100_ATK_SCALING;
         
-        case 501: return RandomizerState::WEAKER_RUSH_BADGES;
-        case 502: return RandomizerState::CAP_BADGE_EVASION;
-        case 503: return RandomizerState::HP_FP_DRAIN_PER_HIT;
-        case 504: return RandomizerState::SWAP_CO_PL_SP_COST;
+        case 501: return StateManager::WEAKER_RUSH_BADGES;
+        case 502: return StateManager::CAP_BADGE_EVASION;
+        case 503: return StateManager::HP_FP_DRAIN_PER_HIT;
+        case 504: return StateManager::SWAP_CO_PL_SP_COST;
         
-        case 601: return RandomizerState::STAGE_HAZARD_OPTIONS;
-        case 602: return RandomizerState::DAMAGE_RANGE;
-        case 603: return RandomizerState::AUDIENCE_ITEMS_RANDOM;
-        case 604: return RandomizerState::INVALID_OPTION;
+        case 601: return StateManager::STAGE_HAZARD_OPTIONS;
+        case 602: return StateManager::DAMAGE_RANGE;
+        case 603: return StateManager::AUDIENCE_ITEMS_RANDOM;
+        case 604: return StateManager::INVALID_OPTION;
         
-        case 701: return RandomizerState::PARTNER_STARTING_RANK;
-        case 702: return RandomizerState::DANGER_PERIL_BY_PERCENT;
-        case 703: return RandomizerState::MAX_BADGE_MOVE_LEVEL;
-        case 704: return RandomizerState::RANK_UP_REQUIREMENT;
+        case 701: return StateManager::PARTNER_STARTING_RANK;
+        case 702: return StateManager::DANGER_PERIL_BY_PERCENT;
+        case 703: return StateManager::MAX_BADGE_MOVE_LEVEL;
+        case 704: return StateManager::RANK_UP_REQUIREMENT;
         
-        default:  return RandomizerState::CHANGE_PAGE;
+        default:  return StateManager::CHANGE_PAGE;
     }
 }
 
@@ -134,17 +134,13 @@ void ChangeSelection(int32_t direction) {
         if (menu_selection_ < 1) menu_selection_ += kOptionsPerPage;
         if (menu_selection_ > kOptionsPerPage) menu_selection_ -= kOptionsPerPage;
         if (GetMenuState(menu_page_, menu_selection_)
-            != RandomizerState::INVALID_OPTION) break;
+            != StateManager::INVALID_OPTION) break;
     }
 }
 
 }
 
-RandomizerMenu::RandomizerMenu() {}
-
-void RandomizerMenu::Init() {}
-
-void RandomizerMenu::Update() {
+void MenuManager::Update() {
     // Not in / leaving Pre-Pit room; prevent input and fade menu / text out.
     if (!ShouldControlMenu()) {
         last_command_ = 0;
@@ -194,7 +190,7 @@ void RandomizerMenu::Update() {
     }
         
     menu_state_ = GetMenuState(menu_page_, menu_selection_);
-    RandomizerState& state = g_Randomizer->state_;
+    StateManager& state = g_Mod->state_;
     
     if (time_button_held_ < 0) return;
     switch (last_command_) {
@@ -214,14 +210,14 @@ void RandomizerMenu::Update() {
             if (last_command_ == kMenuLeftCommand) direction = -1;
             
             switch (menu_state_) {
-                case RandomizerState::HP_MODIFIER:
-                case RandomizerState::ATK_MODIFIER: {
+                case StateManager::HP_MODIFIER:
+                case StateManager::ATK_MODIFIER: {
                     if (ShouldTickOrAutotick(time_button_held_)) {
                         state.ChangeOption(menu_state_, direction);
                     }
                     break;
                 }
-                case RandomizerState::CHANGE_PAGE: {
+                case StateManager::CHANGE_PAGE: {
                     if (time_button_held_ == 0) {
                         ChangePage(direction ? direction : 1);
                     }
@@ -239,7 +235,7 @@ void RandomizerMenu::Update() {
     }
 }
 
-void RandomizerMenu::Draw() {
+void MenuManager::Draw() {
     if (!ShouldDisplayMenu()) return;
     
     uint32_t alpha = 0xff;
@@ -282,7 +278,7 @@ void RandomizerMenu::Draw() {
     char value_buf[32];
     uint32_t color, special_color;
     
-    const RandomizerState& state = g_Randomizer->state_;
+    const StateManager& state = g_Mod->state_;
     
     for (int32_t selection = 1; selection < kOptionsPerPage; ++selection) {
         // Get text strings & color for options on the current page.
@@ -318,7 +314,7 @@ void RandomizerMenu::Draw() {
     }
 }
 
-void RandomizerMenu::SetMenuPageVisibility(int32_t page, bool enabled) {
+void MenuManager::SetMenuPageVisibility(int32_t page, bool enabled) {
     if (page < 1 || page > kNumOptionPages) return;
     if (enabled) {
         pages_unlocked_ |= (1 << page);

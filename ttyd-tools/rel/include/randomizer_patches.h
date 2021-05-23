@@ -10,7 +10,7 @@
 
 #include <cstdint>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
     
 // Initializes various game data when loading a new file; analogous to /
 // replaces the behavior of stg0_00_init.
@@ -138,6 +138,9 @@ void ReplaceCharlietonStock();
 // Returns a string to display in place of the usual one for a given key,
 // or nullptr if the default should be printed.
 const char* GetReplacementMessage(const char* msg_key);
+
+// Apply miscellaneous "core" patches (originally in "randomizer" header).
+void ApplyCorePatches();
 
 // Apply patches related to changing enemy stats.
 void ApplyEnemyStatChangePatches();

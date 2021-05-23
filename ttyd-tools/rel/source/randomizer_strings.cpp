@@ -1,6 +1,6 @@
 #include "randomizer_strings.h"
 
-#include "randomizer.h"
+#include "mod.h"
 #include "randomizer_data.h"
 #include "randomizer_state.h"
 
@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
 // Enum representing indices of various strings in kKeyLookups.
 namespace MsgKey {
@@ -147,8 +147,7 @@ const char* GetYoshiTextColor() {
         "00c100", "e50000", "0000e5", "d07000",
         "e080d0", "404040", "90b0c0", "000000",
     };
-    if (!g_Randomizer->state_.GetOptionValue(
-        RandomizerState::YOSHI_COLOR_SELECT)) {
+    if (!g_Mod->state_.GetOptionValue(StateManager::YOSHI_COLOR_SELECT)) {
         return kYoshiColorStrings[7];
     } else {
         return kYoshiColorStrings[ttyd::mario_pouch::pouchGetPartyColor(4)];
@@ -208,11 +207,11 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
             return "<system>\n<p>\nYou haven't claimed your\nreward!\n<k>";
         case MsgKey::MSG_JON_KANBAN_1: {
             sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
-                    g_Randomizer->state_.floor_ + 1);
+                    g_Mod->state_.floor_ + 1);
             return buf;
         }
         case MsgKey::MSG_JON_KANBAN_2: {
-            if (g_Randomizer->state_.GetPlayStatsString(buf)) return buf;
+            if (g_Mod->state_.GetPlayStatsString(buf)) return buf;
             return "<kanban>\n"
                    "Start a new file to see some\n"
                    "of your play stats here!\n<k>";
@@ -222,7 +221,7 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
                 "Currently selected options:\n<col 0000ffff>%s\n</col><k>",
                 GetYoshiTextColor(),
                 ttyd::mariost::g_MarioSt->saveFileName, 
-                g_Randomizer->state_.GetEncodedOptions());
+                g_Mod->state_.GetEncodedOptions());
             return buf;
         }
         case MsgKey::TIK_06_02: {
@@ -381,32 +380,32 @@ const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
                    "partner receives damage.";
         case MsgKey::MSG_KIKEN_DE_POWER:
         case MsgKey::MENU_KIKEN_DE_POWER:
-            if (g_Randomizer->state_.GetOptionValue(
-                RandomizerState::WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionValue(
+                StateManager::WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 2\n"
                        "when Mario is in Peril.";
             }
             return nullptr;
         case MsgKey::MSG_KIKEN_DE_POWER_P:
         case MsgKey::MENU_KIKEN_DE_POWER_P:
-            if (g_Randomizer->state_.GetOptionValue(
-                RandomizerState::WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionValue(
+                StateManager::WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 2\n"
                        "when your partner is in Peril.";
             }
             return nullptr;
         case MsgKey::MSG_PINCH_DE_GANBARU:
         case MsgKey::MENU_PINCH_DE_GANBARU:
-            if (g_Randomizer->state_.GetOptionValue(
-                RandomizerState::WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionValue(
+                StateManager::WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 1\n"
                        "when Mario is in Danger.";
             }
             return nullptr;
         case MsgKey::MSG_PINCH_DE_GANBARU_P:
         case MsgKey::MENU_PINCH_DE_GANBARU_P:
-            if (g_Randomizer->state_.GetOptionValue(
-                RandomizerState::WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionValue(
+                StateManager::WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 1\n"
                        "when your ally is in Danger.";
             }

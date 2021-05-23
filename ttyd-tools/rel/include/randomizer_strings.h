@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
 class RandomizerStrings {
 public:

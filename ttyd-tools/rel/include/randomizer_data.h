@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
 // Selects the enemies to spawn on a given floor, and returns the supplemental
 // module to be loaded, if any.

@@ -2,9 +2,10 @@
 
 #include <cstdint>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
-struct RandomizerState {
+class StateManager {
+public:
     enum Options_Flags {
         // Options that do not change seeding.
         MERLEE                  = 0x10,     // Infinite Merlee curses
@@ -153,6 +154,6 @@ struct RandomizerState {
     const char* GetCurrentTimeString();
 } __attribute__((__packed__));
 
-static_assert(sizeof(RandomizerState) <= 0x3c);
+static_assert(sizeof(StateManager) <= 0x3c);
 
 }

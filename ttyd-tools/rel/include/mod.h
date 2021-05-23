@@ -1,28 +1,25 @@
 #pragma once
 
-#include "timer.h"
-#include "keyboard.h"
+#include "randomizer_state.h"
 
 #include <cstdint>
 
-#include "randomizer.h"
+namespace mod::infinite_pit {
 
-namespace mod {
-
-class Mod
-{
+class Mod {
 public:
 	Mod();
-	void init();
-	
-private:
-	void updateEarly();
     
-    // Encapsulates all the main mod logic.
-    pit_randomizer::Randomizer randomizer_mod_;
+    // Sets up necessary hooks for the randomizer's code to run.
+    void Init();
+    // Code that runs every frame.
+    void Update();
+    // Code that runs drawing-related code every frame.
+    void Draw();
     
-    // Main trampoline to call once-a-frame update logic from.
-    void (*marioStMain_trampoline_)() = nullptr;
+    StateManager state_;
 };
+
+extern Mod* g_Mod;
 
 }

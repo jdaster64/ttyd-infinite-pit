@@ -4,8 +4,8 @@
 #include "common_types.h"
 #include "common_ui.h"
 #include "evt_cmd.h"
+#include "mod.h"
 #include "patch.h"
-#include "randomizer.h"
 #include "randomizer_data.h"
 #include "randomizer_strings.h"
 
@@ -23,6 +23,7 @@
 #include <ttyd/battle_enemy_item.h>
 #include <ttyd/battle_event_cmd.h>
 #include <ttyd/battle_event_default.h>
+#include <ttyd/battle_information.h>
 #include <ttyd/battle_item_data.h>
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
@@ -32,7 +33,10 @@
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/battle_weapon_power.h>
+#include <ttyd/cardmgr.h>
+#include <ttyd/dispdrv.h>
 #include <ttyd/eff_updown.h>
+#include <ttyd/event.h>
 #include <ttyd/evt_badgeshop.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
@@ -59,9 +63,12 @@
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
 #include <ttyd/memory.h>
+#include <ttyd/msgdrv.h>
 #include <ttyd/npcdrv.h>
 #include <ttyd/sac_zubastar.h>
+#include <ttyd/seq_battle.h>
 #include <ttyd/seq_mapchange.h>
+#include <ttyd/seq_title.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/sound.h>
 #include <ttyd/statuswindow.h>
@@ -176,8 +183,8 @@ extern "C" {
         return ttyd::memory::__memAlloc(heap, size);
     }
     
-    int32_t mapLoad() { return mod::pit_randomizer::LoadMap(); }
-    void onMapUnload() { mod::pit_randomizer::OnMapUnloaded(); }
+    int32_t mapLoad() { return mod::infinite_pit::LoadMap(); }
+    void onMapUnload() { mod::infinite_pit::OnMapUnloaded(); }
     
     void scaleCrashHandlerText(gc::mtx34* mtx) {
         // Sufficiently small to fit on one screen.
@@ -185,31 +192,31 @@ extern "C" {
     }
     
     void getPartyMemberMenuOrder(ttyd::win_party::WinPartyData** party_data) {
-        mod::pit_randomizer::GetPartyMemberMenuOrder(party_data);
+        mod::infinite_pit::GetPartyMemberMenuOrder(party_data);
     }
     bool checkForUnusableItemInMenu() {
-        return mod::pit_randomizer::CheckForUnusableItemInMenu();
+        return mod::infinite_pit::CheckForUnusableItemInMenu();
     }
     void useSpecialItems(ttyd::win_party::WinPartyData** party_data) {
-        mod::pit_randomizer::UseSpecialItemsInMenu(party_data);
+        mod::infinite_pit::UseSpecialItemsInMenu(party_data);
     }
     void spendFpOnSwitchPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
-        mod::pit_randomizer::SpendFpOnSwitchingPartner(unit);
+        mod::infinite_pit::SpendFpOnSwitchingPartner(unit);
     }
     int32_t sumWeaponTargetRandomWeights(int32_t* weights) {
-        return mod::pit_randomizer::SumWeaponTargetRandomWeights(weights);
+        return mod::infinite_pit::SumWeaponTargetRandomWeights(weights);
     }
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
         uint32_t unk0) {
-        mod::pit_randomizer::DisplayUpDownNumberIcons(
+        mod::infinite_pit::DisplayUpDownNumberIcons(
             number, tex_obj, icon_mtx, view_mtx, unk0);
     }
     bool checkOutsidePit() {
         return strcmp("jon", mod::GetCurrentArea()) != 0;
     }
     bool checkStarPowersEnabled() {
-        return mod::pit_randomizer::g_Randomizer->state_.StarPowerEnabled();
+        return mod::infinite_pit::g_Mod->state_.StarPowerEnabled();
     }
     ttyd::battle_database_common::BattleUnitKind* setPinchThreshold(
         ttyd::battle_database_common::BattleUnitKind* kind,
@@ -219,35 +226,35 @@ extern "C" {
             ttyd::battle_database_common::BattleUnitType::BONETAIL) {
             max_hp = base_max_hp;
         }
-        mod::pit_randomizer::SetPinchThreshold(kind, max_hp, peril);
+        mod::infinite_pit::SetPinchThreshold(kind, max_hp, peril);
         return kind;
     }
     int32_t getDangerStrength(int32_t num_badges) {
         bool weaker_rush_badges =
-            mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
-                mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
+            mod::infinite_pit::g_Mod->state_.GetOptionValue(
+                mod::infinite_pit::StateManager::WEAKER_RUSH_BADGES);
         return num_badges * (weaker_rush_badges ? 1 : 2);
     }
     int32_t getPerilStrength(int32_t num_badges) {
         bool weaker_rush_badges =
-            mod::pit_randomizer::g_Randomizer->state_.GetOptionValue(
-                mod::pit_randomizer::RandomizerState::WEAKER_RUSH_BADGES);
+            mod::infinite_pit::g_Mod->state_.GetOptionValue(
+                mod::infinite_pit::StateManager::WEAKER_RUSH_BADGES);
         return num_badges * (weaker_rush_badges ? 2 : 5);
     }
     bool checkBadgeEvasion(ttyd::battle_unit::BattleWorkUnit* unit) {
-        return mod::pit_randomizer::CheckEvasionBadges(unit);
+        return mod::infinite_pit::CheckEvasionBadges(unit);
     }
     int32_t getAudienceItem(int32_t item_type) {
-        return mod::pit_randomizer::GetRandomAudienceItem(item_type);
+        return mod::infinite_pit::GetRandomAudienceItem(item_type);
     }
     uint32_t audienceFixItemSpaceCheck(
         uint32_t empty_item_slots, uint32_t item_type) {
-        return mod::pit_randomizer::FixAudienceItemSpaceCheck(
+        return mod::infinite_pit::FixAudienceItemSpaceCheck(
             empty_item_slots, item_type);
     }
 }
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
 namespace {
 
@@ -275,6 +282,7 @@ using ::ttyd::mariost::g_MarioSt;
 using ::ttyd::npcdrv::FbatBattleInformation;
 using ::ttyd::npcdrv::NpcBattleInfo;
 using ::ttyd::npcdrv::NpcEntry;
+using ::ttyd::seqdrv::SeqIndex;
 using ::ttyd::system::getMarioStDvdRoot;
 using ::ttyd::win_party::WinPartyData;
 
@@ -282,7 +290,27 @@ namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
 namespace ItemUseLocation = ::ttyd::item_data::ItemUseLocation_Flags;
 
-// Trampoline hooks for patching in custom logic to existing TTYD C functions.    
+// Trampoline hooks for patching in custom logic to existing TTYD C functions.  
+
+// Originally in "randomizer" header.
+void (*g_stg0_00_init_trampoline)(void) = nullptr;
+void (*g_cardCopy2Main_trampoline)(int32_t) = nullptr;
+bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
+const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
+void (*g_seq_battleInit_trampoline)(void) = nullptr;
+void (*g_fbatBattleMode_trampoline)(void) = nullptr;
+void (*g_BtlActRec_JudgeRuleKeep_trampoline)(void) = nullptr;
+void (*g__rule_disp_trampoline)(void) = nullptr;
+void (*g_BattleInformationSetDropMaterial_trampoline)(FbatBattleInformation*) = nullptr;
+int32_t (*g_btlevtcmd_GetItemRecoverParam_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_ConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
+int32_t (*g_btlevtcmd_GetConsumeItem_trampoline)(EvtEntry*, bool) = nullptr;
+void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
+void (*g_seqSetSeq_trampoline)(SeqIndex, const char*, const char*) = nullptr;
+void (*g_statusWinDisp_trampoline)(void) = nullptr;
+void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
+
+// Originally in "randomizer_patches" header.
 BattleWorkUnit* (*g_BtlUnit_Entry_trampoline)(BattleUnitSetup*) = nullptr;
 int32_t (*g_BattleCalculateDamage_trampoline)(
     BattleWorkUnit*, BattleWorkUnit*, BattleWorkUnitPart*, BattleWeapon*,
@@ -320,6 +348,7 @@ const char* (*g_BattleGetRankNameLabel_trampoline)(int32_t) = nullptr;
 alignas(0x10) char  g_AdditionalRelBss[0x3d4];
 const char*         g_AdditionalModuleToLoad = nullptr;
 uintptr_t           g_PitModulePtr = 0;
+bool                g_CueGameOver = false;
 bool                g_PromptSave = false;
 bool                g_InBattle = false;
 int8_t              g_MaxMoveBadgeCounts[18];
@@ -655,20 +684,20 @@ int32_t GetBonusCakeRestoration() {
 // Returns the max level of a move badge based on the number of copies equipped.
 int32_t MaxLevelForMoveBadges(int32_t badge_count) {
     int32_t max_level = badge_count;
-    switch (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::MAX_BADGE_MOVE_LEVEL)) {
-        case RandomizerState::MAX_MOVE_LEVEL_1X: {
+    switch (g_Mod->state_.GetOptionValue(
+        StateManager::MAX_BADGE_MOVE_LEVEL)) {
+        case StateManager::MAX_MOVE_LEVEL_1X: {
             break;
         }
-        case RandomizerState::MAX_MOVE_LEVEL_2X: {
+        case StateManager::MAX_MOVE_LEVEL_2X: {
             max_level *= 2;
             break;
         }
-        case RandomizerState::MAX_MOVE_LEVEL_RANK: {
+        case StateManager::MAX_MOVE_LEVEL_RANK: {
             if (!badge_count) return 0;
             return ttyd::mario_pouch::pouchGetPtr()->rank + 1;
         }
-        case RandomizerState::MAX_MOVE_LEVEL_INFINITE: {
+        case StateManager::MAX_MOVE_LEVEL_INFINITE: {
             if (!badge_count) return 0;
             return 99;
         }
@@ -696,8 +725,8 @@ void OnFileLoad(bool new_file) {
         ttyd::mariost::g_MarioSt->flags &= ~1U;
         
         // Initializes the randomizer's state and copies it to the pouch.
-        g_Randomizer->state_.Load(/* new_save = */ true);
-        g_Randomizer->state_.Save();
+        g_Mod->state_.Load(/* new_save = */ true);
+        g_Mod->state_.Save();
         
         // Set story progress / some tutorial flags.
         ttyd::swdrv::swInit();
@@ -715,7 +744,7 @@ void OnFileLoad(bool new_file) {
         ttyd::mario_pouch::pouchGetItem(ItemType::W_EMBLEM);
         ttyd::mario_pouch::pouchGetItem(ItemType::L_EMBLEM);
         // Start with FX badges equipped if option is set.
-        if (g_Randomizer->state_.options_ & RandomizerState::START_WITH_FX) {
+        if (g_Mod->state_.options_ & StateManager::START_WITH_FX) {
             ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_P);
             ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_G);
             ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_B);
@@ -740,7 +769,7 @@ void OnFileLoad(bool new_file) {
         pouch.unallocated_bp = 3;
         ttyd::mario_pouch::pouchReviseMarioParam();
         // Assign Yoshi a random color.
-        ttyd::mario_pouch::pouchSetPartyColor(4, g_Randomizer->state_.Rand(7));
+        ttyd::mario_pouch::pouchSetPartyColor(4, g_Mod->state_.Rand(7));
     }
     g_PromptSave = false;
 }
@@ -815,17 +844,17 @@ void OnModuleLoaded(OSModuleInfo* module) {
             module_ptr + kPitMoverLastSpawnFloorOffset) = 0;
         
         // If not reward floor, reset Pit-related flags and save-related status.
-        if (g_Randomizer->state_.floor_ % 10 != 9) {
+        if (g_Mod->state_.floor_ % 10 != 9) {
             for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
                 ttyd::swdrv::swClear(i);
             }
             g_PromptSave = true;
             
-            g_Randomizer->state_.load_from_save_ = false;
+            g_Mod->state_.load_from_save_ = false;
             const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
             for (int32_t i = 0; i < 8; ++i) {
                 if (pouch.party_data[i].flags & 1) {
-                    g_Randomizer->state_.disable_partner_badges_in_shop_ = false;
+                    g_Mod->state_.disable_partner_badges_in_shop_ = false;
                     break;
                 }
             }
@@ -971,7 +1000,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
     }
     
     // Regardless of module loaded, reset Merlee curses if enabled.
-    if (g_Randomizer->state_.options_ & RandomizerState::MERLEE) {
+    if (g_Mod->state_.options_ & StateManager::MERLEE) {
         PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
         // If the player somehow managed to run out of curses, reset completely.
         if (pouch.merlee_curse_uses_remaining < 1) {
@@ -1054,7 +1083,7 @@ int32_t LoadMap() {
         // relocatable module for support enemies if necessary.
         if (g_PitModulePtr) {
             const char* area = 
-                ModuleNameFromId(SelectEnemies(g_Randomizer->state_.floor_));
+                ModuleNameFromId(SelectEnemies(g_Mod->state_.floor_));
             if (area) {
                 g_AdditionalModuleToLoad = area;
                 return 1;
@@ -1219,8 +1248,8 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
         }
         
         // Handle switch partner cost, if enabled.
-        int32_t switch_fp_cost = g_Randomizer->state_.GetOptionValue(
-            RandomizerState::SWITCH_PARTY_COST_FP);
+        int32_t switch_fp_cost = g_Mod->state_.GetOptionValue(
+            StateManager::SWITCH_PARTY_COST_FP);
         if (strats[0].type == 0 && switch_fp_cost) {
             // Reduce switch partner cost by Flower Savers.
             switch_fp_cost -= unit->badges_equipped.flower_saver;
@@ -1263,8 +1292,8 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
 }
 
 void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
-    int32_t switch_fp_cost = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::SWITCH_PARTY_COST_FP);
+    int32_t switch_fp_cost = g_Mod->state_.GetOptionValue(
+        StateManager::SWITCH_PARTY_COST_FP);
     if (switch_fp_cost > 0) {
         switch_fp_cost -= unit->badges_equipped.flower_saver;
         if (switch_fp_cost < 1) switch_fp_cost = 1;
@@ -1369,8 +1398,8 @@ bool CheckForUnusableItemInMenu() {
     
     // Mario is selected.
     if (party_member_target == 0) {
-        if (g_Randomizer->state_.GetOptionValue(
-            RandomizerState::SHINE_SPRITES_MARIO)) {
+        if (g_Mod->state_.GetOptionValue(
+            StateManager::SHINE_SPRITES_MARIO)) {
             // Can use Shine Sprites only when Mario has SP.
             if (ttyd::mario_pouch::pouchGetMaxAP() > 0) return false;
         } else {
@@ -1396,8 +1425,8 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
         int32_t& party_member_target = 
             reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
         if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3 &&
-            !g_Randomizer->state_.GetOptionValue(
-                RandomizerState::SHINE_SPRITES_MARIO)) {
+            !g_Mod->state_.GetOptionValue(
+                StateManager::SHINE_SPRITES_MARIO)) {
             // If Mario is selected for using a Shine Sprite, change the
             // target to the active party member instead.
             party_member_target = 1;
@@ -1428,7 +1457,7 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
             if (selected_party_id == 0) {
                 // Mario selected; add +0.5 max SP (up to +7.0) and restore SP.
                 PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-                if (pouch.max_sp - g_Randomizer->state_.StarPowersObtained() 
+                if (pouch.max_sp - g_Mod->state_.StarPowersObtained() 
                     * 100 < 700) {
                     pouch.max_sp += 50;
                 }
@@ -1460,7 +1489,7 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 pouch_data->max_hp += 5 * hp_plus_p_cnt;
                 
                 // Save the partner upgrade count to the randomizer state.
-                ++g_Randomizer->state_.partner_upgrades_[selected_party_id - 1];
+                ++g_Mod->state_.partner_upgrades_[selected_party_id - 1];
             }
             
             // Increment the number of actual Shine Sprites, so it shows
@@ -1472,7 +1501,7 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
     }
     
     // Track items used in the menu...
-    g_Randomizer->state_.IncrementPlayStat(RandomizerState::ITEMS_USED);
+    g_Mod->state_.IncrementPlayStat(StateManager::ITEMS_USED);
     
     // Run normal logic to add HP, FP, and SP afterwards...
 }
@@ -1482,10 +1511,10 @@ void CheckBattleCondition() {
     NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
 
     // Track the number of turns spent / number of run aways at fight's end.
-    g_Randomizer->state_.IncrementPlayStat(
-        RandomizerState::TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
+    g_Mod->state_.IncrementPlayStat(
+        StateManager::TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
     if (fbat_info->wResult != 1) {
-        g_Randomizer->state_.IncrementPlayStat(RandomizerState::TIMES_RAN_AWAY);
+        g_Mod->state_.IncrementPlayStat(StateManager::TIMES_RAN_AWAY);
     }
     
     // Did not win the fight (e.g. ran away).
@@ -1509,8 +1538,8 @@ void CheckBattleCondition() {
     
     // If battle reward mode is ALL_HELD_ITEMS, award items other than the
     // natural drop ones until there are no "recovered items" slots left.
-    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
-        == RandomizerState::ALL_HELD_ITEMS) {
+    if (g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE)
+        == StateManager::ALL_HELD_ITEMS) {
         for (int32_t i = 0; i < 8; ++i) {
             const int32_t held_item = npc_info->wHeldItems[i];
             // If there is a held item, and this isn't the natural drop...
@@ -1614,13 +1643,13 @@ int32_t AlterDamageCalculation(
     if (weapon->damage_function) ++attacker->total_damage_dealt_this_attack;
     
     // Randomize damage dealt, if option enabled.
-    const int32_t damage_scale = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::DAMAGE_RANGE);
+    const int32_t damage_scale = g_Mod->state_.GetOptionValue(
+        StateManager::DAMAGE_RANGE);
     if (damage_scale != 0) {
         // Generate a number from -25 to 25 in increments of 5.
         int32_t scale = (ttyd::system::irand(11) - 5) * 5;
         // Scale by 1x or 2x based on the setting.
-        scale *= (damage_scale / RandomizerState::DAMAGE_RANGE_25);
+        scale *= (damage_scale / StateManager::DAMAGE_RANGE_25);
         // Round damage modifier away from 0, based on the sign of the scale.
         damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
     }
@@ -1654,13 +1683,13 @@ int32_t AlterFpDamageCalculation(
         attacker, target, target_part, weapon, unk0, unk1);
     
     // Randomize damage dealt, if option enabled.
-    const int32_t damage_scale = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::DAMAGE_RANGE);
+    const int32_t damage_scale = g_Mod->state_.GetOptionValue(
+        StateManager::DAMAGE_RANGE);
     if (damage_scale != 0) {
         // Generate a number from -25 to 25 in increments of 5.
         int32_t scale = (ttyd::system::irand(11) - 5) * 5;
         // Scale by 1x or 2x based on the setting.
-        scale *= (damage_scale / RandomizerState::DAMAGE_RANGE_25);
+        scale *= (damage_scale / StateManager::DAMAGE_RANGE_25);
         // Round damage modifier away from 0, based on the sign of the scale.
         damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
     }
@@ -1671,8 +1700,8 @@ int32_t AlterFpDamageCalculation(
 }
 
 int32_t GetPinchThresholdForMaxHp(int32_t max_hp, bool peril) {
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::DANGER_PERIL_BY_PERCENT)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::DANGER_PERIL_BY_PERCENT)) {
         // Danger = 1/3 of max, Peril = 1/10 of max (rounded normally).
         int32_t threshold = peril ? (max_hp + 5) / 10 : (max_hp + 1) / 3;
         // Clamp to range [1, 99] to ensure the pinch range exists,
@@ -1695,8 +1724,8 @@ void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
 }
 
 bool CheckEvasionBadges(BattleWorkUnit* unit) {
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::CAP_BADGE_EVASION)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::CAP_BADGE_EVASION)) {
         float hit_chance = 100.f;
         for (int32_t i = 0; i < unit->badges_equipped.pretty_lucky; ++i) {
             hit_chance *= 0.90f;
@@ -1741,8 +1770,8 @@ int32_t GetDrainRestoration(EvtEntry* evt, bool hp_drain) {
         } else {
             num_badges = unit->badges_equipped.fp_drain;
         }
-        if (g_Randomizer->state_.GetOptionValue(
-            RandomizerState::HP_FP_DRAIN_PER_HIT)) {
+        if (g_Mod->state_.GetOptionValue(
+            StateManager::HP_FP_DRAIN_PER_HIT)) {
             // 1 point per damaging hit x num badges, max of 5.
             drain = unit->total_damage_dealt_this_attack * num_badges;
             if (drain > 5) drain = 5;
@@ -1799,8 +1828,8 @@ void GetDropMaterials(FbatBattleInformation* fbat_info) {
     // If using default battle reward mode, select the item drop based on
     // the previously determined enemy held item index.
     const int32_t reward_mode =
-        g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
-    if (reward_mode == 0 || reward_mode == RandomizerState::ALL_HELD_ITEMS) {
+        g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE);
+    if (reward_mode == 0 || reward_mode == StateManager::ALL_HELD_ITEMS) {
         battle_info->wItemDropped = 
             battle_info->wHeldItems[party_setup->held_item_weight];
     }
@@ -1977,8 +2006,8 @@ void DisplayStarPowerOrbs(double x, double y, int32_t star_power) {
 }
 
 int32_t GetRandomAudienceItem(int32_t item_type) {
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::AUDIENCE_ITEMS_RANDOM)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::AUDIENCE_ITEMS_RANDOM)) {
         item_type = PickRandomItem(/* seeded = */ false, 20, 10, 5, 15);
         if (item_type <= 0) {
             // Pick a coin, heart, flower, or random bad item if "none" selected.
@@ -2015,10 +2044,10 @@ void ReplaceCharlietonStock() {
     // Before setting stock, check if reloading an existing save file;
     // if so, set the RNG state to what it was at the start of the floor
     // so Charlieton's stock is the same as it was before.
-    RandomizerState& state = g_Randomizer->state_;
+    StateManager& state = g_Mod->state_;
     const int32_t current_rng_state = state.rng_state_;
-    if (g_Randomizer->state_.load_from_save_) {
-        g_Randomizer->state_.rng_state_ = state.saved_rng_state_;
+    if (g_Mod->state_.load_from_save_) {
+        g_Mod->state_.rng_state_ = state.saved_rng_state_;
     }
     
     // Fill in Charlieton's expanded inventory.
@@ -2059,6 +2088,140 @@ void ReplaceCharlietonStock() {
 
 const char* GetReplacementMessage(const char* msg_key) {
     return RandomizerStrings::LookupReplacement(msg_key);
+}
+
+void ApplyCorePatches() {
+    g_stg0_00_init_trampoline = patch::hookFunction(
+        ttyd::event::stg0_00_init, []() {
+            // Replaces existing logic, includes loading the randomizer state.
+            OnFileLoad(/* new_file = */ true);
+            ApplySettingBasedPatches();
+        });
+        
+    g_cardCopy2Main_trampoline = patch::hookFunction(
+        ttyd::cardmgr::cardCopy2Main, [](int32_t save_file_number) {
+            g_cardCopy2Main_trampoline(save_file_number);
+            OnFileLoad(/* new_file = */ false);
+            // If invalid randomizer file loaded, give the player a Game Over.
+            if (!g_Mod->state_.Load(/* new_save = */ false)) {
+                g_CueGameOver = true;
+            }
+            ApplySettingBasedPatches();
+        });
+    
+    g_OSLink_trampoline = patch::hookFunction(
+        gc::OSLink::OSLink, [](OSModuleInfo* new_module, void* bss) {
+            bool result = g_OSLink_trampoline(new_module, bss);
+            if (new_module != nullptr && result) {
+                OnModuleLoaded(new_module);
+            }
+            return result;
+        });
+
+    g_seq_battleInit_trampoline = patch::hookFunction(
+        ttyd::seq_battle::seq_battleInit, []() {
+            // Copy information from parent npc before battle, if applicable.
+            CopyChildBattleInfo(/* to_child = */ true);
+            g_seq_battleInit_trampoline();
+        });
+
+    g_fbatBattleMode_trampoline = patch::hookFunction(
+        ttyd::npcdrv::fbatBattleMode, []() {
+            bool post_battle_state = ttyd::npcdrv::fbatGetPointer()->state == 4;
+            g_fbatBattleMode_trampoline();
+            // Copy information back to parent npc after battle, if applicable.
+            if (post_battle_state) CopyChildBattleInfo(/* to_child = */ false);
+        });
+    
+    g_seqSetSeq_trampoline = patch::hookFunction(
+        ttyd::seqdrv::seqSetSeq, 
+        [](SeqIndex seq, const char* mapName, const char* beroName) {
+            OnEnterExitBattle(/* is_start = */ seq == SeqIndex::kBattle);
+            // Check for failed file load.
+            if (g_CueGameOver) {
+                seq = SeqIndex::kGameOver;
+                mapName = reinterpret_cast<const char*>(1);
+                beroName = 0;
+                g_CueGameOver = false;
+            } else if (
+                seq == SeqIndex::kMapChange && !strcmp(mapName, "aaa_00") && 
+                !strcmp(beroName, "prologue")) {
+                // If loading a new file, load the player into the pre-Pit room.
+                mapName = "tik_06";
+                beroName = "e_bero";
+            }
+            g_seqSetSeq_trampoline(seq, mapName, beroName);
+        });
+        
+    g_msgSearch_trampoline = patch::hookFunction(
+        ttyd::msgdrv::msgSearch, [](const char* msg_key) {
+            const char* replacement = GetReplacementMessage(msg_key);
+            if (replacement) return replacement;
+            return g_msgSearch_trampoline(msg_key);
+        });
+        
+    g_BtlActRec_JudgeRuleKeep_trampoline = patch::hookFunction(
+        ttyd::battle_actrecord::BtlActRec_JudgeRuleKeep, []() {
+            g_BtlActRec_JudgeRuleKeep_trampoline();
+            CheckBattleCondition();
+        });
+        
+    g__rule_disp_trampoline = patch::hookFunction(
+        ttyd::battle_seq::_rule_disp, []() {
+            // Replaces the original logic completely.
+            DisplayBattleCondition();
+        });
+        
+    g_BattleInformationSetDropMaterial_trampoline = patch::hookFunction(
+        ttyd::battle_information::BattleInformationSetDropMaterial,
+        [](FbatBattleInformation* fbat_info) {
+            // Replaces the original logic completely.
+            GetDropMaterials(fbat_info);
+        });
+        
+    g_btlevtcmd_GetItemRecoverParam_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetItemRecoverParam,
+        [](EvtEntry* evt, bool isFirstCall) {
+            g_btlevtcmd_GetItemRecoverParam_trampoline(evt, isFirstCall);
+            // Run custom behavior to replace the recovery params in some cases.
+            return GetAlteredItemRestorationParams(evt, isFirstCall);
+        });
+        
+    g_btlevtcmd_ConsumeItem_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_ConsumeItem,
+        [](EvtEntry* evt, bool isFirstCall) {
+            EnemyConsumeItem(evt);
+            return g_btlevtcmd_ConsumeItem_trampoline(evt, isFirstCall);
+        });
+        
+    g_btlevtcmd_GetConsumeItem_trampoline = patch::hookFunction(
+        ttyd::battle_event_cmd::btlevtcmd_GetConsumeItem,
+        [](EvtEntry* evt, bool isFirstCall) {
+            if (GetEnemyConsumeItem(evt)) return 2;
+            return g_btlevtcmd_GetConsumeItem_trampoline(evt, isFirstCall);
+        });
+        
+    g_BattleEnemyUseItemCheck_trampoline = patch::hookFunction(
+        ttyd::battle_enemy_item::BattleEnemyUseItemCheck,
+        [](BattleWorkUnit* unit) {
+            void* evt_code = g_BattleEnemyUseItemCheck_trampoline(unit);
+            if (!evt_code) {
+                evt_code = EnemyUseAdditionalItemsCheck(unit);
+            }
+            return evt_code;
+        });
+        
+    g_statusWinDisp_trampoline = patch::hookFunction(
+        ttyd::statuswindow::statusWinDisp, []() {
+            g_statusWinDisp_trampoline();
+            DisplayStarPowerNumber();
+        });
+        
+    g_gaugeDisp_trampoline = patch::hookFunction(
+        ttyd::statuswindow::gaugeDisp, [](double x, double y, int32_t sp) {
+            // Replaces the original logic completely.
+            DisplayStarPowerOrbs(x, y, sp);
+        });
 }
 
 void ApplyEnemyStatChangePatches() {
@@ -2152,8 +2315,8 @@ void ApplyWeaponLevelSelectionPatches() {
         ttyd::battle_ac::BattleActionCommandCheckDefence,
         [](BattleWorkUnit* unit, BattleWeapon* weapon) {
             // Run normal logic if option turned off.
-            if (!(g_Randomizer->state_.options_ 
-                    & RandomizerState::SUPERGUARDS_COST_FP)) {
+            if (!(g_Mod->state_.options_ 
+                    & StateManager::SUPERGUARDS_COST_FP)) {
                 return g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
             }
             
@@ -2750,8 +2913,8 @@ void ApplyItemAndAttackPatches() {
     g_pouchReviseMarioParam_trampoline = mod::patch::hookFunction(
         ttyd::mario_pouch::pouchReviseMarioParam, [](){
             g_pouchReviseMarioParam_trampoline();
-            if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)
-                == RandomizerState::NO_EXP_INFINITE_BP &&
+            if (g_Mod->state_.GetOptionValue(StateManager::NO_EXP_MODE)
+                == StateManager::NO_EXP_INFINITE_BP &&
                 !strcmp(GetCurrentArea(), "jon")) {
                 ttyd::mario_pouch::pouchGetPtr()->unallocated_bp = 99;
             }
@@ -2769,13 +2932,13 @@ void ApplyPlayerStatTrackingPatches() {
                 target->current_kind >= BattleUnitType::GOOMBELLA) {
                 if (damage < 0) damage = 0;
                 if (damage > 99) damage = 99;
-                g_Randomizer->state_.IncrementPlayStat(
-                    RandomizerState::PLAYER_DAMAGE, damage);
+                g_Mod->state_.IncrementPlayStat(
+                    StateManager::PLAYER_DAMAGE, damage);
             } else if (target->current_kind <= BattleUnitType::BONETAIL) {
                 if (damage < 0) damage = 0;
                 if (damage > 99) damage = 99;
-                g_Randomizer->state_.IncrementPlayStat(
-                    RandomizerState::ENEMY_DAMAGE, damage);
+                g_Mod->state_.IncrementPlayStat(
+                    StateManager::ENEMY_DAMAGE, damage);
             }
             // Run normal damage logic.
             g_BattleDamageDirect_trampoline(
@@ -2787,8 +2950,8 @@ void ApplyPlayerStatTrackingPatches() {
         ttyd::mario_pouch::pouchGetItem, [](int32_t item_type) {
             // Track coins gained.
             if (item_type == ItemType::COIN) {
-                g_Randomizer->state_.IncrementPlayStat(
-                    RandomizerState::COINS_EARNED);
+                g_Mod->state_.IncrementPlayStat(
+                    StateManager::COINS_EARNED);
             }
             // Run coin increment logic.
             return g_pouchGetItem_trampoline(item_type);
@@ -2798,12 +2961,12 @@ void ApplyPlayerStatTrackingPatches() {
         ttyd::mario_pouch::pouchAddCoin, [](int16_t coins) {
             // Track coins gained / lost; if a reward floor, assume lost
             // coins were spent on badges / items from Charlieton.
-            if (coins < 0 && g_Randomizer->state_.floor_ % 10 == 9) {
-                g_Randomizer->state_.IncrementPlayStat(
-                    RandomizerState::COINS_SPENT, -coins);
+            if (coins < 0 && g_Mod->state_.floor_ % 10 == 9) {
+                g_Mod->state_.IncrementPlayStat(
+                    StateManager::COINS_SPENT, -coins);
             } else {
-                g_Randomizer->state_.IncrementPlayStat(
-                    RandomizerState::COINS_EARNED, coins);
+                g_Mod->state_.IncrementPlayStat(
+                    StateManager::COINS_EARNED, coins);
             }
             // Run coin increment logic.
             return g_pouchAddCoin_trampoline(coins);
@@ -2817,7 +2980,7 @@ void ApplyPlayerStatTrackingPatches() {
                 counter == &actRecordWork.mario_num_times_non_attack_items_used ||
                 counter == &actRecordWork.partner_num_times_attack_items_used ||
                 counter == &actRecordWork.partner_num_times_non_attack_items_used) {
-                g_Randomizer->state_.IncrementPlayStat(RandomizerState::ITEMS_USED);
+                g_Mod->state_.IncrementPlayStat(StateManager::ITEMS_USED);
             }
             // Run act record counting logic.
             g_BtlActRec_AddCount_trampoline(counter); 
@@ -3327,21 +3490,21 @@ void ApplyMiscPatches() {
             
             // Get the percentage to scale original chances by.
             int32_t scale = 100;
-            switch (g_Randomizer->state_.GetOptionValue(
-                RandomizerState::STAGE_HAZARD_OPTIONS)) {
-                case RandomizerState::HAZARD_RATE_HIGH: {
+            switch (g_Mod->state_.GetOptionValue(
+                StateManager::STAGE_HAZARD_OPTIONS)) {
+                case StateManager::HAZARD_RATE_HIGH: {
                     scale = 250;
                     break;
                 }
-                case RandomizerState::HAZARD_RATE_LOW: {
+                case StateManager::HAZARD_RATE_LOW: {
                     scale = 50;
                     break;
                 }
-                case RandomizerState::HAZARD_RATE_OFF: {
+                case StateManager::HAZARD_RATE_OFF: {
                     scale = 0;
                     break;
                 }
-                case RandomizerState::HAZARD_RATE_NO_FOG: {
+                case StateManager::HAZARD_RATE_NO_FOG: {
                     // If stage jets are uninitialized or fog-type jets,
                     // make them unable to fire.
                     if (battleWork->stage_hazard_work.current_stage_jet_type
@@ -3394,15 +3557,15 @@ void ApplyMiscPatches() {
 void ApplySettingBasedPatches() {
     // Change stage rank-up levels (set to 100 to force no rank-up on level-up).
     auto* rankup_data = ttyd::battle_seq_end::_rank_up_data;
-    switch (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::RANK_UP_REQUIREMENT)) {
-        case RandomizerState::RANK_UP_NORMAL: {
+    switch (g_Mod->state_.GetOptionValue(
+        StateManager::RANK_UP_REQUIREMENT)) {
+        case StateManager::RANK_UP_NORMAL: {
             rankup_data[1].level = 10;
             rankup_data[2].level = 20;
             rankup_data[3].level = 30;
             break;
         }
-        case RandomizerState::RANK_UP_EARLIER: {
+        case StateManager::RANK_UP_EARLIER: {
             rankup_data[1].level = 8;
             rankup_data[2].level = 15;
             rankup_data[3].level = 25;
@@ -3417,9 +3580,9 @@ void ApplySettingBasedPatches() {
     }
     
     // Increase some move badge BP costs if playing with larger max move levels.
-    if (g_Randomizer->state_.GetOptionValue(
-            RandomizerState::MAX_BADGE_MOVE_LEVEL) !=
-            RandomizerState::MAX_MOVE_LEVEL_1X) {
+    if (g_Mod->state_.GetOptionValue(
+            StateManager::MAX_BADGE_MOVE_LEVEL) !=
+            StateManager::MAX_MOVE_LEVEL_1X) {
         itemDataTable[ItemType::POWER_JUMP].bp_cost = 2;
         itemDataTable[ItemType::POWER_SMASH].bp_cost = 2;
         itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 3;
@@ -3438,8 +3601,8 @@ void ApplySettingBasedPatches() {
     }
     
     // Increase badge BP cost and shop prices if HP/FP Drains heal per hit.
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::HP_FP_DRAIN_PER_HIT)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::HP_FP_DRAIN_PER_HIT)) {
         itemDataTable[ItemType::HP_DRAIN].bp_cost = 3;
         itemDataTable[ItemType::HP_DRAIN_P].bp_cost = 3;
         itemDataTable[ItemType::FP_DRAIN].bp_cost = 6;
@@ -3462,8 +3625,8 @@ void ApplySettingBasedPatches() {
     }
     
     // Swap SP costs of Clock Out and Power Lift.
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::SWAP_CO_PL_SP_COST)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::SWAP_CO_PL_SP_COST)) {
         ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 3;
         ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 2;
     } else {
@@ -3474,13 +3637,13 @@ void ApplySettingBasedPatches() {
 
 EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     // Initialize number of upgrades per partner.
-    const int32_t starting_rank = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::PARTNER_STARTING_RANK);
+    const int32_t starting_rank = g_Mod->state_.GetOptionValue(
+        StateManager::PARTNER_STARTING_RANK);
     for (int32_t i = 0; i < 7; ++i) {
-        g_Randomizer->state_.partner_upgrades_[i] = starting_rank;
+        g_Mod->state_.partner_upgrades_[i] = starting_rank;
     }
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::START_WITH_PARTNERS)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::START_WITH_PARTNERS)) {
         // Enable and initialize all partners.
         for (int32_t i = 1; i <= 7; ++i) {
             evt->evtArguments[0] = i;
@@ -3497,8 +3660,8 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
         // Do NOT disable partners from the reward pool; they will be
         // replaced with extra Shine Sprites.
     }
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::START_WITH_SWEET_TREAT)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::START_WITH_SWEET_TREAT)) {
         // Give the player Sweet Treat + 1.00 SP.
         ttyd::mario_pouch::pouchGetItem(ItemType::MAGICAL_MAP);
         auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
@@ -3506,28 +3669,28 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
         pouch.current_sp = pouch.max_sp;
         pouch.star_powers_obtained |= 1;
         // Disable Sweet Treat from the rewards pool.
-        g_Randomizer->state_.reward_flags_ |= (1 << 5);
+        g_Mod->state_.reward_flags_ |= (1 << 5);
     }
-    if (g_Randomizer->state_.GetOptionValue(RandomizerState::NO_EXP_MODE)) {
+    if (g_Mod->state_.GetOptionValue(StateManager::NO_EXP_MODE)) {
         auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
         pouch.level = 99;
         pouch.unallocated_bp += 90;
         pouch.total_bp += 90;
-        if (g_Randomizer->state_.GetOptionValue(
-                RandomizerState::RANK_UP_REQUIREMENT) != 
-                RandomizerState::RANK_UP_BY_FLOOR) {
+        if (g_Mod->state_.GetOptionValue(
+                StateManager::RANK_UP_REQUIREMENT) != 
+                StateManager::RANK_UP_BY_FLOOR) {
             // Start at Superstar rank, unless rank-ups are by floor number.
             pouch.rank = 3;
         }
     }
-    if (g_Randomizer->state_.GetOptionValue(
-            RandomizerState::RANK_UP_REQUIREMENT) == 
-            RandomizerState::RANK_UP_ALWAYS_MAX) {
+    if (g_Mod->state_.GetOptionValue(
+            StateManager::RANK_UP_REQUIREMENT) == 
+            StateManager::RANK_UP_ALWAYS_MAX) {
         ttyd::mario_pouch::pouchGetPtr()->rank = 3;
     }
     ApplySettingBasedPatches();
     // Save the timestamp you entered the Pit.
-    g_Randomizer->state_.SaveCurrentTime(/* pit_start = */ true);
+    g_Mod->state_.SaveCurrentTime(/* pit_start = */ true);
     // All other options are handled immediately on setting them,
     // or are checked explicitly every time they are relevant.
     return 2;
@@ -3538,11 +3701,11 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
     int32_t lead_enemy_type;
     BuildBattle(
-        g_PitModulePtr, g_Randomizer->state_.floor_, &npc_tribe_description, 
+        g_PitModulePtr, g_Mod->state_.floor_, &npc_tribe_description, 
         &npc_setup_info, &lead_enemy_type);
     int8_t* enemy_100 = 
         reinterpret_cast<int8_t*>(g_PitModulePtr + kPitEnemy100Offset);
-    int8_t battle_setup_idx = enemy_100[g_Randomizer->state_.floor_ % 100];
+    int8_t battle_setup_idx = enemy_100[g_Mod->state_.floor_ % 100];
     const int32_t x_sign = ttyd::system::irand(2) ? 1 : -1;
     const int32_t x_pos = ttyd::system::irand(50) + 80;
     const int32_t z_pos = ttyd::system::irand(200) - 100;
@@ -3628,9 +3791,9 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 
     // Set the enemies' held items, if they get any.
     const int32_t reward_mode =
-        g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
+        g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE);
     NpcBattleInfo* battle_info = &npc->battleInfo;
-    if (reward_mode == RandomizerState::NO_HELD_ITEMS) {
+    if (reward_mode == StateManager::NO_HELD_ITEMS) {
         for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
             battle_info->wHeldItems[i] = 0;
         }
@@ -3638,8 +3801,8 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
         // If item drops only come from conditions, spawn Shine Sprites
         // as held items occasionally after floor 30.
         int32_t shine_rate = 0;
-        if (g_Randomizer->state_.floor_ >= 30 &&
-            reward_mode == RandomizerState::CONDITION_DROPS_HELD) {
+        if (g_Mod->state_.floor_ >= 30 &&
+            reward_mode == StateManager::CONDITION_DROPS_HELD) {
             shine_rate = 13;
         }
             
@@ -3689,13 +3852,13 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 
 EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
     int32_t num_rewards = 
-        g_Randomizer->state_.options_ & RandomizerState::NUM_CHEST_REWARDS;
+        g_Mod->state_.options_ & StateManager::NUM_CHEST_REWARDS;
     if (num_rewards > 0) {
         // Add a bonus reward for beating a boss (Atomic Boo or Bonetail).
-        if (g_Randomizer->state_.floor_ % 50 == 49) ++num_rewards;
+        if (g_Mod->state_.floor_ % 50 == 49) ++num_rewards;
     } else {
         // Pick a number of rewards randomly from 1 ~ 5.
-        num_rewards = g_Randomizer->state_.Rand(5) + 1;
+        num_rewards = g_Mod->state_.Rand(5) + 1;
     }
     evtSetValue(evt, evt->evtArguments[0], num_rewards);
     return 2;
@@ -3718,15 +3881,15 @@ EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
 EVT_DEFINE_USER_FUNC(CheckPromptSave) {
     evtSetValue(evt, evt->evtArguments[0], g_PromptSave);
     if (g_PromptSave) {
-        g_Randomizer->state_.SaveCurrentTime();
-        g_Randomizer->state_.Save();
+        g_Mod->state_.SaveCurrentTime();
+        g_Mod->state_.Save();
         g_PromptSave = false;
     }
     return 2;
 }
 
 EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
-    int32_t actual_floor = ++g_Randomizer->state_.floor_;
+    int32_t actual_floor = ++g_Mod->state_.floor_;
     // Update the floor number used by the game.
     // Floors 101+ are treated as looping 81-90 nine times + 91-100.
     int32_t gsw_floor = actual_floor;
@@ -3740,9 +3903,9 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         case 30:
         case 60:
         case 90: {
-            if (g_Randomizer->state_.GetOptionValue(
-                    RandomizerState::RANK_UP_REQUIREMENT) == 
-                    RandomizerState::RANK_UP_BY_FLOOR) {
+            if (g_Mod->state_.GetOptionValue(
+                    StateManager::RANK_UP_REQUIREMENT) == 
+                    StateManager::RANK_UP_BY_FLOOR) {
                 ttyd::mario_pouch::pouchGetPtr()->rank++;
             }
             break;
@@ -3754,7 +3917,7 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
 }
 
 EVT_DEFINE_USER_FUNC(IncrementYoshiColor) {
-    g_Randomizer->state_.options_ |= RandomizerState::YOSHI_COLOR_SELECT;
+    g_Mod->state_.options_ |= StateManager::YOSHI_COLOR_SELECT;
     int32_t color = ttyd::mario_pouch::pouchGetPartyColor(4);
     ttyd::mario_pouch::pouchSetPartyColor(4, (color + 1) % 7);
     return 2;
@@ -3788,8 +3951,8 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
 }
 
 EVT_DEFINE_USER_FUNC(InitializePartyMember) {
-    const int32_t starting_rank = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::PARTNER_STARTING_RANK);
+    const int32_t starting_rank = g_Mod->state_.GetOptionValue(
+        StateManager::PARTNER_STARTING_RANK);
     const int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
     const int16_t starting_hp =
         ttyd::mario_pouch::_party_max_hp_table[idx * 4 + starting_rank];

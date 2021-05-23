@@ -2,7 +2,7 @@
 
 #include "common_functions.h"
 #include "common_types.h"
-#include "randomizer.h"
+#include "mod.h"
 #include "randomizer_patches.h"
 #include "randomizer_state.h"
 
@@ -24,7 +24,7 @@
 #include <cstdio>
 #include <cstring>
 
-namespace mod::pit_randomizer {
+namespace mod::infinite_pit {
 
 namespace {
 
@@ -448,7 +448,7 @@ ModuleId::e SelectEnemies(int32_t floor) {
     if (floor % 10 == 9) return ModuleId::INVALID_MODULE;
     
     const auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
-    auto& state = g_Randomizer->state_;
+    auto& state = g_Mod->state_;
     
     // If floor > 50, determine whether to use one of the preset loadouts.
     if (floor >= 50 && state.Rand(100) < 15) {
@@ -646,7 +646,7 @@ void BuildBattle(
     // Return early if this is a Bonetail fight, since it needs no changes.
     if (floor % 100 == 99) return;
     
-    auto& state = g_Randomizer->state_;
+    auto& state = g_Mod->state_;
     
     for (int32_t i = 0; i < 12; ++i) g_CustomAudienceWeights[i] = 2;
     // Make Toads slightly likelier since they're never boosted.
@@ -734,12 +734,12 @@ bool GetEnemyStats(
     const EnemyTypeInfo* ei = LookupEnemyTypeInfo(unit_type);
     if (!ei) return false;
     
-    int32_t floor_group = g_Randomizer->state_.floor_ / 10;
+    int32_t floor_group = g_Mod->state_.floor_ / 10;
     
-    int32_t hp_scale = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::POST_100_HP_SCALING) ? 10 : 5;
-    int32_t atk_scale = g_Randomizer->state_.GetOptionValue(
-        RandomizerState::POST_100_ATK_SCALING) ? 10 : 5;
+    int32_t hp_scale = g_Mod->state_.GetOptionValue(
+        StateManager::POST_100_HP_SCALING) ? 10 : 5;
+    int32_t atk_scale = g_Mod->state_.GetOptionValue(
+        StateManager::POST_100_ATK_SCALING) ? 10 : 5;
         
     int32_t base_hp_pct = 
         floor_group > 9 ?
@@ -753,13 +753,13 @@ bool GetEnemyStats(
             
     if (out_hp) {
         int32_t hp = Min(ei->hp_scale * base_hp_pct, 1000000);
-        hp *= g_Randomizer->state_.hp_multiplier_;
+        hp *= g_Mod->state_.hp_multiplier_;
         *out_hp = Clamp((hp + 5000) / 10000, 1, 9999);
     }
     if (out_atk) {
         int32_t atk = Min(ei->atk_scale * base_atk_pct, 1000000);
         atk += (base_attack_power - ei->atk_base) * 100;
-        atk *= g_Randomizer->state_.atk_multiplier_;
+        atk *= g_Mod->state_.atk_multiplier_;
         *out_atk = Clamp((atk + 5000) / 10000, 1, 99);
     }
     if (out_def) {
@@ -784,7 +784,7 @@ bool GetEnemyStats(
             // (The EXP gained will reduce slightly after floor 100.)
             if (ei->level_offset <= 10) {
                 int32_t level_offset = 
-                    ei->level_offset + (g_Randomizer->state_.floor_ < 100 ? 5 : 2);
+                    ei->level_offset + (g_Mod->state_.floor_ < 100 ? 5 : 2);
                 *out_level =
                     ttyd::mario_pouch::pouchGetPtr()->level + level_offset;
             } else {
@@ -930,18 +930,18 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    RandomizerState& state = g_Randomizer->state_;
+    StateManager& state = g_Mod->state_;
     // No conditions on Bonetail fights (or reward floors).
     if (state.floor_ % 10 == 9) return;
     
     // If using held items + bonus conditions, only pick one every ~4 floors.
     const int32_t reward_mode =
-        state.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE);
-    if ((reward_mode == 0 || reward_mode == RandomizerState::ALL_HELD_ITEMS) && 
+        state.GetOptionValue(StateManager::BATTLE_REWARD_MODE);
+    if ((reward_mode == 0 || reward_mode == StateManager::ALL_HELD_ITEMS) && 
         state.Rand(4)) return;
         
     const int32_t shine_rate =
-        reward_mode == RandomizerState::NO_HELD_ITEMS ? 8 : 30;
+        reward_mode == StateManager::NO_HELD_ITEMS ? 8 : 30;
     
     // Use the unused "random_item_weight" field to store the item reward.
     int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
@@ -1058,7 +1058,7 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     
     // If the held item drop is contingent on the condition, override the item
     // with a random one of the held items.
-    if (reward_mode == RandomizerState::CONDITION_DROPS_HELD) {
+    if (reward_mode == StateManager::CONDITION_DROPS_HELD) {
         int32_t enemy_index = npc_info->pConfiguration->held_item_weight;
         *item_reward = npc_info->wHeldItems[enemy_index];
     }
@@ -1082,8 +1082,8 @@ void GetBattleConditionString(char* out_buf) {
         ttyd::item_data::itemDataTable[item_reward].name);
     
     // If held item drop is contingent on condition, don't say which will drop.
-    if (g_Randomizer->state_.GetOptionValue(RandomizerState::BATTLE_REWARD_MODE)
-        == RandomizerState::CONDITION_DROPS_HELD) {
+    if (g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE)
+        == StateManager::CONDITION_DROPS_HELD) {
         sprintf(out_buf, "Reward challenge:\n%s", g_ConditionTextBuf);
     } else {
         sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);
@@ -1112,7 +1112,7 @@ int32_t PickRandomItem(
         normal_item_weight + recipe_item_weight + badge_weight + no_item_weight;
     int32_t result; 
     if (seeded) {
-        result = g_Randomizer->state_.Rand(total_weight);
+        result = g_Mod->state_.Rand(total_weight);
     } else {
         result = ttyd::system::irand(total_weight);
     }
@@ -1158,7 +1158,7 @@ int32_t PickRandomItem(
         }
     }
     if (seeded) {
-        result = g_Randomizer->state_.Rand(num_items_seen);
+        result = g_Mod->state_.Rand(num_items_seen);
     } else {
         result = ttyd::system::irand(num_items_seen);
     }
@@ -1198,7 +1198,7 @@ int16_t PickChestReward() {
     uint8_t weights[34];
     for (int32_t i = 0; i < 32; ++i) weights[i] = 10;
     
-    RandomizerState& state = g_Randomizer->state_;
+    StateManager& state = g_Mod->state_;
     const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     // Modify the chance of getting a partner based on the current floor
     // and the number of partners currently obtained.
@@ -1343,14 +1343,14 @@ int16_t PickChestReward() {
     
     // If partners were unlocked from beginning and a partner was selected,
     // replace the reward with an extra Shine Sprite.
-    if (reward < 0 && g_Randomizer->state_.GetOptionValue(
-        RandomizerState::START_WITH_PARTNERS)) {
+    if (reward < 0 && g_Mod->state_.GetOptionValue(
+        StateManager::START_WITH_PARTNERS)) {
         reward = ItemType::GOLD_BAR_X3;
     }
     
     // If reward was Clock Out or Power Lift, swap them if the option is set.
-    if (g_Randomizer->state_.GetOptionValue(
-        RandomizerState::SWAP_CO_PL_SP_COST)) {
+    if (g_Mod->state_.GetOptionValue(
+        StateManager::SWAP_CO_PL_SP_COST)) {
         if (reward == ItemType::EMERALD_STAR) {
             reward = ItemType::GOLD_STAR;
         } else if (reward == ItemType::GOLD_STAR) {
