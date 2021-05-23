@@ -1,11 +1,11 @@
-#include "randomizer_cheats.h"
+#include "mod_cheats.h"
 
 #include "common_functions.h"
 #include "common_types.h"
 #include "common_ui.h"
 #include "mod.h"
-#include "randomizer_menu.h"
-#include "randomizer_state.h"
+#include "mod_menu.h"
+#include "mod_state.h"
 
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>

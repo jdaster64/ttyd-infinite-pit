@@ -1,6 +1,6 @@
 #pragma once
 
-#include "randomizer_state.h"
+#include "mod_state.h"
 
 #include <cstdint>
 

@@ -1,4 +1,4 @@
-#include "randomizer_title.h"
+#include "mod_title.h"
 
 #include "common_functions.h"
 #include "common_ui.h"

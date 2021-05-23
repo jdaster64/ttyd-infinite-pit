@@ -3,11 +3,11 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "common_ui.h"
+#include "custom_strings.h"
 #include "evt_cmd.h"
 #include "mod.h"
 #include "patch.h"
 #include "randomizer_data.h"
-#include "randomizer_strings.h"
 
 #include <gc/OSLink.h>
 #include <gc/mtx.h>

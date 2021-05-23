@@ -4,7 +4,7 @@
 #include "common_types.h"
 #include "mod.h"
 #include "randomizer_patches.h"
-#include "randomizer_state.h"
+#include "mod_state.h"
 
 #include <ttyd/battle.h>
 #include <ttyd/battle_actrecord.h>
@@ -847,7 +847,7 @@ const char* SetCustomTattle(
                 hp, atk, def);
     }
     
-    // Return a key that looks up g_TattleTextBuf from randomizer_strings.
+    // Return a key that looks up g_TattleTextBuf from custom_strings.
     return "custom_tattle_battle";
 }
 
@@ -882,7 +882,7 @@ const char* SetCustomMenuTattle(const char* original_tattle_msg) {
         sprintf(g_TattleTextBuf, "No info known on this enemy.");
     }
     
-    // Return a key that looks up g_TattleTextBuf from randomizer_strings.
+    // Return a key that looks up g_TattleTextBuf from custom_strings.
     return "custom_tattle_menu";
 }
 

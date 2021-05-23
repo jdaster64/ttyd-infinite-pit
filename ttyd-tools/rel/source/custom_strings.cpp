@@ -1,8 +1,8 @@
-#include "randomizer_strings.h"
+#include "custom_strings.h"
 
 #include "mod.h"
+#include "mod_state.h"
 #include "randomizer_data.h"
-#include "randomizer_state.h"
 
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>

@@ -1,11 +1,11 @@
 #include "mod.h"
 
 #include "common_ui.h"
+#include "mod_cheats.h"
+#include "mod_menu.h"
+#include "mod_title.h"
 #include "patch.h"
-#include "randomizer_cheats.h"
-#include "randomizer_menu.h"
 #include "randomizer_patches.h"
-#include "randomizer_title.h"
 
 #include <ttyd/dispdrv.h>
 #include <ttyd/fontmgr.h>
