@@ -2,7 +2,6 @@
 
 #include "common_types.h"
 
-#include <ttyd/battle_database_common.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/npcdrv.h>
 
@@ -38,24 +37,5 @@ const char* GetCustomTattle();
 const char* SetCustomTattle(
     ttyd::battle_unit::BattleWorkUnit* unit, const char* original_tattle_msg);
 const char* SetCustomMenuTattle(const char* original_tattle_msg);
-    
-// Randomly sets parameters for a battle condition that grants a bonus item.
-void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable = true);
-
-// Returns a string based on the current battle condition, if any.
-void GetBattleConditionString(char* out_buf);
-
-// Picks an item from the standardized pool of items / stackable badges used
-// for various purposes (enemy items, Charlieton, Kiss Thief, etc.),
-// using either the mod's random state (seeded = true) or TTYD's RNG (false).
-// Returns 0 if the "no item" case was picked.
-// If force_no_partner is set or you have no partners, will not pick "P" badges.
-int32_t PickRandomItem(
-    bool seeded, int32_t normal_item_weight, int32_t recipe_item_weight,
-    int32_t badge_weight, int32_t no_item_weight = 0, bool force_no_partner = false);
-    
-// Picks a reward for a chest, updating the randomizer state accordingly.
-// Reward is either an item/badge (if the result > 0) or a partner (-1 to -7).
-int16_t PickChestReward();
 
 }

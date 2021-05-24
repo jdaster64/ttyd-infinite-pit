@@ -2,7 +2,7 @@
 
 #include "mod.h"
 #include "mod_state.h"
-#include "randomizer_data.h"
+#include "custom_enemy.h"
 
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
