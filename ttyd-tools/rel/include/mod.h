@@ -10,7 +10,7 @@ class Mod {
 public:
 	Mod();
     
-    // Sets up necessary hooks for the randomizer's code to run.
+    // Sets up necessary hooks for the mod's code to run.
     void Init();
     // Code that runs every frame.
     void Update();

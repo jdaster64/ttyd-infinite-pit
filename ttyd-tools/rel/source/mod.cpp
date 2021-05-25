@@ -5,7 +5,7 @@
 #include "mod_menu.h"
 #include "mod_title.h"
 #include "patch.h"
-#include "randomizer_patches.h"
+#include "patches_apply.h"
 
 #include <ttyd/dispdrv.h>
 #include <ttyd/fontmgr.h>
@@ -56,13 +56,7 @@ void Mod::Init() {
 	patch::hookFunction(ttyd::fontmgr::fontmgrTexSetup, [](){});
     
     // Hook / patch other functions with custom logic.
-    // TODO: Split into more reasonable siloed chunks.
-    ApplyCorePatches();
-    ApplyEnemyStatChangePatches();
-    ApplyWeaponLevelSelectionPatches();
-    ApplyItemAndAttackPatches();
-    ApplyPlayerStatTrackingPatches();
-    ApplyMiscPatches();
+    ApplyAllFixedPatches();
 }
 
 void Mod::Update() {

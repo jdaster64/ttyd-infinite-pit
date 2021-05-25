@@ -61,4 +61,21 @@ void writePatch(
     clear_DC_IC_Cache(destination, patch_len);
 }
 
+void writePatch(void* destination, uint32_t patch_data) {
+    writePatch(destination, &patch_data, sizeof(uint32_t));
+}
+
+void writeBranchPair(
+    void *original_start, void *original_end, void *new_start, void *new_end) {
+    writeBranch(original_start, new_start);
+    writeBranch(new_end, original_end);
+}
+
+void writeBranchPair(
+    void *original_start, void *new_start, void *new_end) {
+    writeBranch(original_start, new_start);
+    writeBranch(new_end, 
+        reinterpret_cast<void*>(reinterpret_cast<int32_t>(original_start) + 4));
+}
+
 }

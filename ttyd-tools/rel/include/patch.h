@@ -9,8 +9,20 @@ void writeStandardBranches(void *address, void functionStart(), void functionBra
 void writeBranch(void *ptr, void *destination);
 void writeBranchBL(void *ptr, void *destination);
 void writeBranchMain(void *ptr, void *destination, uint32_t branch);
+
+// Replaces the data at `destination` with an arbitrary patch.
 void writePatch(void* destination, const void* patch_start, const void* patch_end);
 void writePatch(void* destination, const void* patch_start, uint32_t patch_len);
+void writePatch(void* destination, uint32_t patch_data);
+
+// Wrapper for writing pair of branches, one from the start of existing code
+// into new code, and one from the end of new code into existing code.
+void writeBranchPair(
+    void *original_start, void *original_end,
+    void *new_start, void *new_end);
+// Same, but assumes the original start and end points are adjacent.
+void writeBranchPair(
+    void *original_start, void *new_start, void *new_end);
 
 template<typename Func, typename Dest>
 Func hookFunction(Func function, Dest destination)

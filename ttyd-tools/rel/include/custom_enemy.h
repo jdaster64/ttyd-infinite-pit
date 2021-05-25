@@ -22,7 +22,7 @@ void BuildBattle(
     ttyd::npcdrv::NpcSetupInfo** out_npc_setup_info, int32_t* out_lead_type);
     
 // Gets replacement stats for an enemy, based on the enemy type and current
-// floor (determined by the randomizer state).
+// floor (determined by the mod's state).
 // Will return false if no stats were found for the given enemy type.
 // If an out pointer is passed as nullptr, that stat will be skipped.
 // If out_level returns a negative number, that should be used as bonus EXP.

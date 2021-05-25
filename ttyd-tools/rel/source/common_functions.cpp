@@ -14,32 +14,6 @@
 
 namespace mod {
 
-// TODO: #ifdef switch for multiple regions.
-const uint32_t kTik06PitBeroEntryOffset = 0x1f240;
-const uint32_t kTik06RightBeroEntryOffset = 0x1f2f4;
-const uint32_t kPitBattleSetupTblOffset = 0x1d460;
-const uint32_t kPitEnemy100Offset = 0xef90;
-const uint32_t kPitTreasureTableOffset = 0x11320;
-const uint32_t kPitRewardFloorReturnBeroEntryOffset = 0x12520;
-const uint32_t kPitBossFloorEntryBeroEntryOffset = 0x1240c;
-const uint32_t kPitBossFloorReturnBeroEntryOffset = 0x12448;
-const uint32_t kPitBossFloorSetupEvtOffset = 0x124c0;
-const uint32_t kPitMoverLastSpawnFloorOffset = 0x119a0;
-const uint32_t kPitCharlietonSpawnChanceOffset = 0x11ea4;
-const uint32_t kPitCharlietonTalkEvtOffset = 0x11a1c;
-const uint32_t kPitCharlietonTalkMinItemForBadgeDialogOffset = 0x11b1c;
-const uint32_t kPitCharlietonTalkNoInvSpaceBranchOffset = 0x11c7c;
-const uint32_t kPitEvtOpenBoxOffset = 0x11348;
-const uint32_t kPitFloorIncrementEvtOffset = 0x123c4;
-const uint32_t kPitEnemySetupEvtOffset = 0x102a4;
-const uint32_t kPitOpenPipeEvtOffset = 0x120d0;
-const uint32_t kPitBonetailFirstEvtOffset = 0x14570;
-const uint32_t kPitReturnSignEvtOffset = 0x12374;
-const uint32_t kPitChainChompSetHomePosFuncOffset = 0x2d0;
-const uint32_t kPitSetupNpcExtraParametersFuncOffset = 0x388;
-const uint32_t kPitSetKillFlagFuncOffset = 0x3e8;
-
-
 bool CheckSeq(ttyd::seqdrv::SeqIndex sequence) {
     const ttyd::seqdrv::SeqIndex next_seq = ttyd::seqdrv::seqGetNextSeq();
     const ttyd::seqdrv::SeqIndex cur_seq = ttyd::seqdrv::seqGetSeq();

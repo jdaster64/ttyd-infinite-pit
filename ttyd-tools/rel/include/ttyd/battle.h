@@ -1,12 +1,10 @@
 #pragma once
 
 #include <gc/types.h>
+#include <ttyd/battle_database_common.h>
 
 #include <cstdint>
 
-namespace ttyd::battle_database_common {
-struct BattleWeapon;
-}
 namespace ttyd::battle_unit {
 struct BattleWorkUnit;
 struct BattleWorkUnitPart;

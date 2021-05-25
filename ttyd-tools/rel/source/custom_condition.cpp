@@ -3,7 +3,7 @@
 #include "custom_item.h"
 #include "mod.h"
 #include "mod_state.h"
-#include "randomizer_patches.h"
+#include "patches_options.h"
 
 #include <ttyd/battle.h>
 #include <ttyd/battle_actrecord.h>
@@ -163,7 +163,7 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
         case MARIO_FINAL_HP_LESS:
             // Override Danger / Peril thresholds with correct value,
             // based on whether the "%-based" setting is enabled.
-            param = 1 + GetPinchThresholdForMaxHp(
+            param = 1 + options::GetPinchThresholdForMaxHp(
                 ttyd::mario_pouch::pouchGetMaxHP(), /* peril? */ param == 2);
             break;
         case MARIO_FINAL_HP_MORE:

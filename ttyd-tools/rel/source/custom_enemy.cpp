@@ -22,6 +22,10 @@
 
 namespace mod::infinite_pit {
 
+// Declaration of Pit table.
+extern const int32_t g_jon_enemy_100_Offset;
+extern const int32_t g_jon_btlsetup_jon_tbl_Offset;
+
 namespace {
 
 using ::ttyd::battle_unit::BattleWorkUnit;
@@ -692,10 +696,10 @@ void BuildBattle(
     
     // Make the current floor's battle point to the constructed party setup.
     int8_t* enemy_100 =
-        reinterpret_cast<int8_t*>(pit_module_ptr + kPitEnemy100Offset);
+        reinterpret_cast<int8_t*>(pit_module_ptr + g_jon_enemy_100_Offset);
     BattleSetupData* pit_battle_setups =
         reinterpret_cast<BattleSetupData*>(
-            pit_module_ptr + kPitBattleSetupTblOffset);
+            pit_module_ptr + g_jon_btlsetup_jon_tbl_Offset);
     BattleSetupData* battle_setup = pit_battle_setups + enemy_100[floor % 100];
     battle_setup->flag_off_loadouts[0].group_data = &g_CustomBattleParty;
     battle_setup->flag_off_loadouts[1].weight = 0;

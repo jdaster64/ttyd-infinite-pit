@@ -156,7 +156,7 @@ const char* GetYoshiTextColor() {
 
 }
     
-const char* RandomizerStrings::LookupReplacement(const char* msg_key) {
+const char* StringsManager::LookupReplacement(const char* msg_key) {
     // Do not use for more than one custom message at a time!
     static char buf[512];
     

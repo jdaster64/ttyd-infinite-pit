@@ -45,7 +45,7 @@ const char* GetSavefileName() {
 }
 
 void* GetSavedStateLocation() {
-    // Store randomizer state in stored items space, since this won't be used,
+    // Store mod's state in stored items space, since this won't be used,
     // and the first byte of any possible stored item produces a "version" of 0.
     // Starts at index 1 to align to 4-byte boundary.
     return &ttyd::mario_pouch::pouchGetPtr()->stored_items[1];

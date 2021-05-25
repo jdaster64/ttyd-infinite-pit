@@ -109,13 +109,13 @@ public:
     // (total turns in battle, number of items used, etc.)
     uint8_t     play_stats_[20];
 
-    // Initializes the randomizer state based on the current save file.
-    // Returns whether the randomizer was successfully initialized.
+    // Initializes the mod's state based on the current save file.
+    // Returns whether the mod was successfully initialized.
     bool Load(bool new_save);
-    // Copies the randomizer state to g_MarioSt so it can be saved.
+    // Copies the mod's state to g_MarioSt so it can be saved.
     void Save();
     
-    // Seeds the randomizer's RNG state with an input string.
+    // Seeds the mod's RNG state with an input string.
     void SeedRng(const char* str);
     // Increments the RNG state and returns a value in a range [0, n).
     uint32_t Rand(uint32_t range);
