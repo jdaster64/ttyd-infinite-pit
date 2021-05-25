@@ -253,7 +253,7 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(g_DrawMenuPartyPinchMark_Patch_CheckResult2),
         0x4181005cU /* bgt- 0x5c */);
         
-    // Enable Star Power features always, if the randomizer option is set.
+    // Enable Star Power features always, if the option is set.
     mod::patch::writeBranchPair(
         reinterpret_cast<void*>(g__btlcmd_MakeOperationTable_AppealAlways_BH),
         reinterpret_cast<void*>(StartEnableAppealCheck),

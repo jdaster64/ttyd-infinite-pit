@@ -124,7 +124,7 @@ RETURN()
 EVT_END()
 
 // Event that handles a chest being opened, rewarding the player with
-// items / partners (1 ~ 5 based on randomizer settings, +1 for boss floors).
+// items / partners (1 ~ 5 based on the mod's settings, +1 for boss floors).
 EVT_BEGIN(ChestOpenEvt)
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
 USER_FUNC(GetNumChestRewards, LW(13))
@@ -227,7 +227,7 @@ EVT_END()
 // Event that runs before advancing to the next floor.
 // On reward floors, checks to see if the player has claimed their reward, then
 // prompts the player to save.  If conditions are met to continue, increments
-// the floor counter in the randomizer's state, as well as GSW(1321).
+// the floor counter in the mod's state, as well as GSW(1321).
 EVT_BEGIN(FloorIncrementEvt)
 SET(LW(0), GSW(1321))
 ADD(LW(0), 1)
@@ -770,8 +770,8 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
             }
         }
     }
-    // Otherwise, modify Charlieton's stock, using items from the randomizer
-    // state if continuing from an existing save file.
+    // Otherwise, modify Charlieton's stock, using the prior RNG state
+    // if continuing from a saved file.
     else {
         ReplaceCharlietonStock();
     }

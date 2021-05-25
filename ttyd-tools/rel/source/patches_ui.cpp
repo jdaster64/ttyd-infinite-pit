@@ -423,7 +423,7 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 pouch_data->current_hp += 5 * hp_plus_p_cnt;
                 pouch_data->max_hp += 5 * hp_plus_p_cnt;
                 
-                // Save the partner upgrade count to the randomizer state.
+                // Save the partner upgrade count to the mod's state.
                 ++g_Mod->state_.partner_upgrades_[selected_party_id - 1];
             }
             
