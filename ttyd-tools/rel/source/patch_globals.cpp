@@ -38,7 +38,7 @@ void (*g_seq_battleInit_trampoline)(void) = nullptr;
 const char* (*g_msgSearch_trampoline)(const char*) = nullptr;
 // cardmgr.o  800b2388
 void (*g_cardCopy2Main_trampoline)(int32_t) = nullptr;
-// mario_pouch.o  800d32e0
+// mario_pouch.o  800d3300
 int32_t (*g_pouchEquipCheckBadge_trampoline)(int16_t) = nullptr;
 // mario_pouch.o  800d35a8
 void (*g_pouchReviseMarioParam_trampoline)() = nullptr;
@@ -98,7 +98,7 @@ int32_t (*g_BtlUnit_GetWeaponCost_trampoline)(
     BattleWorkUnit*, BattleWeapon*) = nullptr;
 // battle_unit.o  80128fe0
 BattleWorkUnit* (*g_BtlUnit_Entry_trampoline)(BattleUnitSetup*) = nullptr;
-// statuswindow.o  8013c20c
+// statuswindow.o  8013cb24
 void (*g_statusWinDisp_trampoline)(void) = nullptr;
 // statuswindow.o  8013d440
 void (*g_gaugeDisp_trampoline)(double, double, int32_t) = nullptr;
@@ -283,7 +283,10 @@ extern const uint32_t g_tou2_BigBanditAttackEvt_CheckConfusionOffset = 0x65220;
 // AJI (X-Naut Fortress)
 extern const uint32_t g_aji_XNautAttackEvt_NormalAttackReturnLblOffset = 0x4787c;
 extern const uint32_t g_aji_XNautAttackEvt_JumpAttackReturnLblOffset = 0x47d14;
+extern const uint32_t g_aji_ZYux_PrimaryKindPartOffset = 0x48a14;
 extern const uint32_t g_aji_EliteXNautAttackEvt_NormalAttackReturnLblOffset = 0x4c4cc;
 extern const uint32_t g_aji_EliteXNautAttackEvt_JumpAttackReturnLblOffset = 0x4c964;
+extern const uint32_t g_aji_XYux_PrimaryKindPartOffset = 0x4f81c;
+extern const uint32_t g_aji_Yux_PrimaryKindPartOffset = 0x52e7c;
 
 }

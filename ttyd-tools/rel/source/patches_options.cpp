@@ -244,8 +244,8 @@ void ApplyFixedPatches() {
     // Fix visual indicators of partners' Danger / Peril.
     mod::patch::writeBranchPair(
         reinterpret_cast<void*>(g_DrawMenuPartyPinchMark_CheckThreshold_BH),
-        reinterpret_cast<void*>(StartCheckMarioPinchDisp),
-        reinterpret_cast<void*>(BranchBackCheckMarioPinchDisp));
+        reinterpret_cast<void*>(StartCheckPartnerPinchDisp),
+        reinterpret_cast<void*>(BranchBackCheckPartnerPinchDisp));
     mod::patch::writePatch(
         reinterpret_cast<void*>(g_DrawMenuPartyPinchMark_Patch_CheckResult1),
         0x7c032000U /* cmpw r3, r4 */);

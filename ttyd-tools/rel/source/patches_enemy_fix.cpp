@@ -81,6 +81,9 @@ extern const uint32_t g_tou2_RedMagikoopaAttackEvt_CheckEnemyNumOffset;
 extern const uint32_t g_tou2_WhtMagikoopaGaleForceDeathEvt_PatchOffset;
 extern const uint32_t g_tou2_WhtMagikoopaAttackEvt_CheckEnemyNumOffset;
 extern const uint32_t g_tou2_BigBanditAttackEvt_CheckConfusionOffset;
+extern const uint32_t g_aji_ZYux_PrimaryKindPartOffset;
+extern const uint32_t g_aji_XYux_PrimaryKindPartOffset;
+extern const uint32_t g_aji_Yux_PrimaryKindPartOffset;
 extern const uint32_t g_aji_XNautAttackEvt_NormalAttackReturnLblOffset;
 extern const uint32_t g_aji_XNautAttackEvt_JumpAttackReturnLblOffset;
 extern const uint32_t g_aji_EliteXNautAttackEvt_NormalAttackReturnLblOffset;
@@ -391,11 +394,14 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         // Make all varieties of Yux able to be hit by grounded attacks,
         // that way any partner is able to attack them.
         auto* z_yux =
-            reinterpret_cast<BattleUnitKindPart*>(module_start + 0x48a14);
+            reinterpret_cast<BattleUnitKindPart*>(
+                module_start + g_aji_ZYux_PrimaryKindPartOffset);
         auto* x_yux =
-            reinterpret_cast<BattleUnitKindPart*>(module_start + 0x4f81c);
+            reinterpret_cast<BattleUnitKindPart*>(
+                module_start + g_aji_XYux_PrimaryKindPartOffset);
         auto* yux =
-            reinterpret_cast<BattleUnitKindPart*>(module_start + 0x52e7c);
+            reinterpret_cast<BattleUnitKindPart*>(
+                module_start + g_aji_Yux_PrimaryKindPartOffset);
         z_yux->attribute_flags  &= ~0x600000;
         x_yux->attribute_flags  &= ~0x600000;
         yux->attribute_flags    &= ~0x600000;
