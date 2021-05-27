@@ -16,31 +16,14 @@ include $(DEVKITPPC)/gamecube_rules
 export ELF2REL	:=	$(PIT_TTYDTOOLS)/bin/elf2rel
 export GCIPACK	:=	python $(PIT_TTYDTOOLS)/gcipack/gcipack.py
 
-ifeq ($(VERSION),)
-all: us jp eu
-us:
-	@$(MAKE) --no-print-directory VERSION=us
-jp:
-	@$(MAKE) --no-print-directory VERSION=jp
-eu:
-	@$(MAKE) --no-print-directory VERSION=eu
-
-clean:
-	@$(MAKE) --no-print-directory clean_target VERSION=us
-	@$(MAKE) --no-print-directory clean_target VERSION=eu
-	@$(MAKE) --no-print-directory clean_target VERSION=jp
-
-.PHONY: all clean us jp eu
-else
-
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
 # BUILD is the directory where object files & intermediate files will be placed
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR)).$(VERSION)
-BUILD		:=	build.$(VERSION)
+TARGET		:=	$(notdir $(CURDIR))
+BUILD		:=	build
 SOURCES		:=	source $(wildcard source/*)
 DATA		:=	data  
 INCLUDES	:=	include
@@ -55,19 +38,6 @@ CFLAGS		= -nostdlib -ffreestanding -ffunction-sections -fdata-sections -g -Os -W
 CXXFLAGS	= -fno-exceptions -fno-rtti -std=gnu++17 $(CFLAGS)
 
 LDFLAGS		= -r -e _prolog -u _prolog -u _epilog -u _unresolved -Wl,--gc-sections -nostdlib -g $(MACHDEP) -Wl,-Map,$(notdir $@).map
-
-# Platform options
-ifeq ($(VERSION),us)
-	CFLAGS += -DTTYD_US
-	GAMECODE = "G8ME"
-else ifeq ($(VERSION),jp)
-	CFLAGS += -DTTYD_JP
-	GAMECODE = "G8MJ"
-else ifeq ($(VERSION),eu)
-	CFLAGS += -DTTYD_EU
-	GAMECODE = "G8MP"
-endif
-
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -120,7 +90,7 @@ export HFILES := $(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 # For REL linking
 export LDFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.ld)))
-export MAPFILE		:= $(CURDIR)/include/ttyd.$(VERSION).lst
+export MAPFILE		:= $(CURDIR)/include/ttyd.lst
 export BANNERFILE	:= $(CURDIR)/banner.raw
 export ICONFILE		:= $(CURDIR)/icon.raw
 
@@ -139,7 +109,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
 			-L$(LIBOGC_LIB)
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
-.PHONY: $(BUILD) clean_target
+.PHONY: $(BUILD) clean
 
 #---------------------------------------------------------------------------------
 $(BUILD):
@@ -147,8 +117,8 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
-clean_target:
-	@echo clean ... $(VERSION)
+clean:
+	@echo clean ...
 	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).dol $(OUTPUT).rel $(OUTPUT).gci
 
 #---------------------------------------------------------------------------------
@@ -172,7 +142,7 @@ $(OFILES_SOURCES) : $(HFILES)
 	
 %.gci: %.rel
 	@echo packing ... $(notdir $@)
-	@$(GCIPACK) $< "rel" "Paper Mario" "TTYD Infinite Pit" $(BANNERFILE) $(ICONFILE) $(GAMECODE)
+	@$(GCIPACK) $< "rel" "Paper Mario" "TTYD Infinite Pit" $(BANNERFILE) $(ICONFILE) "G8ME"
 	
 #---------------------------------------------------------------------------------
 # This rule links in binary data with the .jpg extension
@@ -184,7 +154,5 @@ $(OFILES_SOURCES) : $(HFILES)
 
 -include $(DEPENDS)
 
-#---------------------------------------------------------------------------------
-endif
 #---------------------------------------------------------------------------------
 endif
