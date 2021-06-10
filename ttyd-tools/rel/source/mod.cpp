@@ -2,6 +2,7 @@
 
 #include "common_ui.h"
 #include "mod_cheats.h"
+#include "mod_loading.h"
 #include "mod_menu.h"
 #include "mod_title.h"
 #include "patch.h"
@@ -61,12 +62,14 @@ void Mod::Init() {
 
 void Mod::Update() {
     TitleScreenManager::Update();
+    LoadingManager::Update();
     CheatsManager::Update();
     MenuManager::Update();
 }
 
 void Mod::Draw() {
     RegisterDrawCallback(TitleScreenManager::Draw, CameraId::k2d);
+    RegisterDrawCallback(LoadingManager::Draw, CameraId::kDebug3d);
     RegisterDrawCallback(CheatsManager::Draw, CameraId::kDebug3d);
     RegisterDrawCallback(MenuManager::Draw, CameraId::k2d);
 }

@@ -121,6 +121,7 @@
 8002e304:seqInit_MARIOSTORY
 
 // memory.o
+// .text
 // unused:smartGetWorkPtr
 8002f33c:smartTexObj
 8002f378:smartGarbage
@@ -139,6 +140,8 @@
 800300f0:__memAlloc
 80030154:memClear
 80030218:memInit
+// .data
+8041e808:mapalloc_base_ptr
 
 // evtmgr_cmd.o
 800304bc:evtSetFloat

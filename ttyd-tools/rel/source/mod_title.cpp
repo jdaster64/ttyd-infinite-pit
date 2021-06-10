@@ -15,7 +15,7 @@ namespace mod::infinite_pit {
 namespace {
     
 constexpr const char* kTitleInfo =
-    "PM:TTYD Infinite Pit v1.41.1 r47 by jdaster64\n"
+    "PM:TTYD Infinite Pit v1.50 BETA r48 by jdaster64\n"
     "https://github.com/jdaster64/ttyd-infinite-pit\n"
     "Guide / Other mods: https://goo.gl/vjJjVd";
     

@@ -12,7 +12,7 @@ void *__memAlloc(uint32_t heap, uint32_t size);
 void __memFree(uint32_t heap, void *ptr);
 void *_mapAlloc(void* heap, uint32_t size);
 // _mapAllocTail
-// _mapFree
+void _mapFree(void* heap, void* ptr);
 // smartInit
 // smartReInit
 // smartAutoFree
@@ -20,6 +20,9 @@ void *_mapAlloc(void* heap, uint32_t size);
 // smartAlloc
 // smartGarbage
 // smartTexObj
+
+// .data
+extern void* mapalloc_base_ptr;
 
 }
 

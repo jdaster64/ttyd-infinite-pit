@@ -57,6 +57,9 @@ namespace ModuleId {
         WIN,  // boggly woods
         YUU,
         MAX_MODULE_ID,
+        
+        // Not used in vanilla game.
+        CUSTOM = 40,
     };
 }
 

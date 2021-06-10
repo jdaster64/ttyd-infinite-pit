@@ -5,6 +5,7 @@
 #include "custom_enemy.h"
 #include "custom_strings.h"
 #include "mod.h"
+#include "mod_loading.h"
 #include "mod_state.h"
 #include "patch.h"
 #include "patches_apply.h"
@@ -74,11 +75,11 @@ namespace core {
 namespace {
 
 // Global variables.
-alignas(0x10) char  g_AdditionalRelBss[0x3d4];
-const char*         g_AdditionalModuleToLoad = nullptr;
-uintptr_t           g_PitModulePtr = 0;
-bool                g_PromptSave = false;
-bool                g_CueGameOver = false;
+uintptr_t   g_PitModulePtr = 0;
+char        g_LastModuleLoaded[16] = {0};
+bool        g_WaitingForCustomLoad = false;
+bool        g_PromptSave = false;
+bool        g_CueGameOver = false;
 
 // Code that runs after linking a new module.
 void OnModuleLoaded(OSModuleInfo* module) {
@@ -245,28 +246,8 @@ void ApplyFixedPatches() {
 
 int32_t LoadMap() {
     auto* mario_st = ttyd::mariost::g_MarioSt;
-    if (g_AdditionalModuleToLoad) {
-        const char* area = g_AdditionalModuleToLoad;
-        if (ttyd::filemgr::fileAsyncf(
-            nullptr, nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area)) {
-            auto* file = ttyd::filemgr::fileAllocf(
-                nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area);
-            if (file) {
-                memcpy(
-                    mario_st->pMapAlloc, *file->mpFileData,
-                    reinterpret_cast<int32_t>(file->mpFileData[1]));
-                ttyd::filemgr::fileFree(file);
-            }
-            memset(g_AdditionalRelBss, 0, 0x3c4);
-                gc::OSLink::OSLink(
-                    mario_st->pMapAlloc, g_AdditionalRelBss);
-
-            // Both maps loaded; call the prolog for the Pit and exit.
-            reinterpret_cast<void(*)(void)>(mario_st->pRelFileBase->prolog)();
-            return 2;
-        }
-        return 1;
-    }
+    
+    const char* area = ttyd::seq_mapchange::NextArea;
     if (!strcmp(ttyd::seq_mapchange::NextMap, "title")) {
         strcpy(mario_st->unk_14c, mario_st->currentMapName);
         strcpy(mario_st->currentAreaName, "");
@@ -275,7 +256,6 @@ int32_t LoadMap() {
             ttyd::seqdrv::SeqIndex::kTitle, nullptr, nullptr);
         return 1;
     }
-    const char* area = ttyd::seq_mapchange::NextArea;
     if (!strcmp(area, "tou")) {
         if (ttyd::seqdrv::seqGetSeq() == ttyd::seqdrv::SeqIndex::kTitle) {
             area = "tou2";
@@ -283,6 +263,23 @@ int32_t LoadMap() {
             area = "tou2";
         }
     }
+    
+    if (g_WaitingForCustomLoad) {
+        if (!LoadingManager::HasFinished()) return 1;
+    } else {
+        if (!strcmp(area, "jon") && strcmp(g_LastModuleLoaded, "jon")) {
+            // If loading the Pit after a different area, load custom REL first.
+            LoadingManager::StartLoading();
+            g_WaitingForCustomLoad = true;
+            return 1;
+        } else if (!strcmp(g_LastModuleLoaded, "jon") && strcmp(area, "jon")) {
+            // If unloading the Pit, unlink the custom REL.
+            gc::OSLink::OSUnlink(mario_st->pMapAlloc);
+            strcpy(g_LastModuleLoaded, "");
+        }
+    }
+    
+    // Start loading the relocatable module associated with the current area.
     if (ttyd::filemgr::fileAsyncf(
         nullptr, nullptr, "%s/rel/%s.rel", getMarioStDvdRoot(), area)) {
         auto* file = ttyd::filemgr::fileAllocf(
@@ -291,7 +288,7 @@ int32_t LoadMap() {
             if (!strncmp(area, "tst", 3) || !strncmp(area, "jon", 3)) {
                 auto* module_info = reinterpret_cast<OSModuleInfo*>(
                     ttyd::memory::_mapAlloc(
-                        reinterpret_cast<void*>(0x8041e808),
+                        ttyd::memory::mapalloc_base_ptr,
                         reinterpret_cast<int32_t>(file->mpFileData[1])));
                 mario_st->pRelFileBase = module_info;
             } else {
@@ -311,18 +308,13 @@ int32_t LoadMap() {
             mario_st->currentMapName, ttyd::seq_mapchange::NextMap,
             ttyd::seq_mapchange::NextBero);
 
-        // Determine the enemies to spawn on this floor, and load a second
-        // relocatable module for support enemies if necessary.
         if (g_PitModulePtr) {
-            const char* area = 
-                ModuleNameFromId(SelectEnemies(g_Mod->state_.floor_));
-            if (area) {
-                g_AdditionalModuleToLoad = area;
-                return 1;
-            }
+            // TODO: Move this call to where it's actually needed,
+            // and add a debug hook that allows you to specify the loadout.
+            SelectEnemies(g_Mod->state_.floor_);
         }
-        
-        // If not the Pit, or no second module needed, call the prolog and exit.
+        g_WaitingForCustomLoad = false;
+        strcpy(g_LastModuleLoaded, area);
         reinterpret_cast<void(*)(void)>(mario_st->pRelFileBase->prolog)();
         return 2;
     }
@@ -334,10 +326,6 @@ void OnMapUnloaded() {
         LinkAllCustomEvts(
             reinterpret_cast<void*>(g_PitModulePtr), ModuleId::JON,
             /* link */ false);
-        if (g_AdditionalModuleToLoad) {
-            gc::OSLink::OSUnlink(ttyd::mariost::g_MarioSt->pMapAlloc);
-            g_AdditionalModuleToLoad = nullptr;
-        }
         g_PitModulePtr = 0;
     }
     // Normal unloading logic follows...

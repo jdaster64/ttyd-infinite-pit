@@ -129,6 +129,7 @@ const NpcEntTypeInfo kNpcInfo[] = {
     { hbross_init_event, hbross_move_event, hbross_dead_event, hbross_find_event, hbross_lost_event, hbross_return_event, hbross_blow_event },
     { wanwan_init_event, wanwan_move_event, enemy_common_dead_event, wanwan_find_event, nullptr, nullptr, enemy_common_blow_event },
     { nullptr, nullptr, enemy_common_dead_event, nullptr, nullptr, nullptr, nullptr },
+    { togemet_init_event, met_move_event, enemy_common_dead_event, met_find_event, met_lost_event, met_return_event, enemy_common_blow_event },
 };
 
 const EnemyTypeInfo kEnemyInfo[] = {
@@ -246,7 +247,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
 const EnemyModuleInfo kEnemyModuleInfo[] = {
     // Bosses / special enemies.
     { BattleUnitType::BONETAIL, ModuleId::JON, 0x159d0, 34, 0 },
-    { BattleUnitType::ATOMIC_BOO, ModuleId::JIN, 0x1a6a8, 24, 1 },
+    { BattleUnitType::ATOMIC_BOO, ModuleId::JIN, 0x29ad8, 24, 1 },
     { BattleUnitType::AMAZY_DAYZEE, ModuleId::JON, 0x1c7a0, -1, 39 },
     // Pit-native enemies.
     { BattleUnitType::GLOOMBA, ModuleId::JON, 0x15a20, 1, 49 },
@@ -298,58 +299,58 @@ const EnemyModuleInfo kEnemyModuleInfo[] = {
     { BattleUnitType::BOB_ULK, ModuleId::JON, 0x1c290, 26, 11 },
     { BattleUnitType::SWAMPIRE, ModuleId::JON, 0x1c500, 23, 90 },
     // Non-Pit-native enemies.
-    { BattleUnitType::GOOMBA, ModuleId::GON, 0x16efc, 1, 43 },
-    { BattleUnitType::SPIKY_GOOMBA, ModuleId::GON, 0x16efc, 1, 44 },
-    { BattleUnitType::PARAGOOMBA, ModuleId::GON, 0x169dc, 2, 45 },
-    { BattleUnitType::KOOPA_TROOPA, ModuleId::GON, 0x16cbc, 3, 52 },
-    { BattleUnitType::PARATROOPA, ModuleId::GON, 0x1660c, 5, 53 },
-    { BattleUnitType::RED_BONES, ModuleId::GON, 0x166bc, 12, 13 },
-    { BattleUnitType::GOOMBA, ModuleId::GRA, 0x8690, 1, 43 },
-    { BattleUnitType::HYPER_GOOMBA, ModuleId::GRA, 0x8690, 1, 46 },
-    { BattleUnitType::HYPER_PARAGOOMBA, ModuleId::GRA, 0x8950, 2, 48 },
-    { BattleUnitType::HYPER_SPIKY_GOOMBA, ModuleId::GRA, 0x8c70, 1, 47 },
-    { BattleUnitType::CRAZEE_DAYZEE, ModuleId::GRA, 0x9090, 9, 38 },
-    { BattleUnitType::GOOMBA, ModuleId::TIK, 0x27030, 1, 43 },
-    { BattleUnitType::PARAGOOMBA, ModuleId::TIK, 0x27080, 2, 45 },
-    { BattleUnitType::SPIKY_GOOMBA, ModuleId::TIK, 0x270d0, 1, 44 },
-    { BattleUnitType::KOOPA_TROOPA, ModuleId::TIK, 0x26d60, 3, 52 },
-    { BattleUnitType::HAMMER_BRO, ModuleId::TIK, 0x27120, 32, 20 },
-    { BattleUnitType::MAGIKOOPA, ModuleId::TIK, 0x267d0, 31, 69 },
-    { BattleUnitType::KOOPATROL, ModuleId::TIK, 0x26d30, 4, 60 },
-    { BattleUnitType::GOOMBA, ModuleId::TOU2, 0x1eb40, 1, 43 },
-    { BattleUnitType::KP_KOOPA, ModuleId::TOU2, 0x1ec50, 3, 54 },
-    { BattleUnitType::KP_PARATROOPA, ModuleId::TOU2, 0x1ecb0, 5, 55 },
-    { BattleUnitType::SHADY_PARATROOPA, ModuleId::TOU2, 0x1f3e0, 5, 57 },
-    { BattleUnitType::HAMMER_BRO, ModuleId::TOU2, 0x1f610, 32, 20 },
-    { BattleUnitType::BOOMERANG_BRO, ModuleId::TOU2, 0x1f670, 1, 21 },
-    { BattleUnitType::FIRE_BRO, ModuleId::TOU2, 0x1f640, 1, 22 },
-    { BattleUnitType::RED_MAGIKOOPA, ModuleId::TOU2, 0x1f510, -1, 66 },
-    { BattleUnitType::WHITE_MAGIKOOPA, ModuleId::TOU2, 0x1f540, -1, 67 },
-    { BattleUnitType::GREEN_MAGIKOOPA, ModuleId::TOU2, 0x1f570, -1, 68 },
-    { BattleUnitType::GREEN_FUZZY, ModuleId::TOU2, 0x1f490, 8, 41 },
-    { BattleUnitType::PALE_PIRANHA, ModuleId::TOU2, 0x1ef10, 21, 75 },
-    { BattleUnitType::BIG_BANDIT, ModuleId::TOU2, 0x1f1b0, 1, 3 },
-    { BattleUnitType::SWOOPER, ModuleId::TOU2, 0x1f790, 23, 88 },
-    { BattleUnitType::BRISTLE, ModuleId::TOU2, 0x1f330, 18, 18 },
-    { BattleUnitType::X_NAUT, ModuleId::AJI, 0x44914, 1, 70 },
-    { BattleUnitType::ELITE_X_NAUT, ModuleId::AJI, 0x44894, 1, 72 },
-    { BattleUnitType::X_NAUT_PHD, ModuleId::AJI, 0x44aa4, 27, 71 },
-    { BattleUnitType::YUX, ModuleId::AJI, 0x44f44, 19, 94 },
-    { BattleUnitType::Z_YUX, ModuleId::AJI, 0x44b24, 19, 95 },
-    { BattleUnitType::X_YUX, ModuleId::AJI, 0x450d4, 19, 96 },
+    { BattleUnitType::GOOMBA, ModuleId::GON, 0x3c8b0, 1, 43 },
+    { BattleUnitType::SPIKY_GOOMBA, ModuleId::GON, 0x3c910, 1, 44 },
+    { BattleUnitType::PARAGOOMBA, ModuleId::GON, 0x3c8e0, 2, 45 },
+    { BattleUnitType::KOOPA_TROOPA, ModuleId::GON, 0x3c880, 3, 52 },
+    { BattleUnitType::PARATROOPA, ModuleId::GON, 0x3c820, 5, 53 },
+    { BattleUnitType::RED_BONES, ModuleId::GON, 0x2f8a8, 12, 13 },
+    { BattleUnitType::GOOMBA, ModuleId::GRA, 0x3c8b0, 1, 43 },
+    { BattleUnitType::HYPER_GOOMBA, ModuleId::GRA, 0x24f20, 1, 46 },
+    { BattleUnitType::HYPER_PARAGOOMBA, ModuleId::GRA, 0x24fb0, 2, 48 },
+    { BattleUnitType::HYPER_SPIKY_GOOMBA, ModuleId::GRA, 0x25040, 1, 47 },
+    { BattleUnitType::CRAZEE_DAYZEE, ModuleId::GRA, 0x250d0, 9, 38 },
+    { BattleUnitType::GOOMBA, ModuleId::TIK, 0x3c8b0, 1, 43 },
+    { BattleUnitType::PARAGOOMBA, ModuleId::TIK, 0x3c8e0, 2, 45 },
+    { BattleUnitType::SPIKY_GOOMBA, ModuleId::TIK, 0x3c910, 1, 44 },
+    { BattleUnitType::KOOPA_TROOPA, ModuleId::TIK, 0x3c880, 3, 52 },
+    { BattleUnitType::HAMMER_BRO, ModuleId::TIK, 0x49530, 32, 20 },
+    { BattleUnitType::MAGIKOOPA, ModuleId::TIK, 0x3c7f0, 31, 69 },
+    { BattleUnitType::KOOPATROL, ModuleId::TIK, 0x3c850, 4, 60 },
+    { BattleUnitType::GOOMBA, ModuleId::TOU2, 0x3c8b0, 1, 43 },
+    { BattleUnitType::KP_KOOPA, ModuleId::TOU2, 0x491d0, 3, 54 },
+    { BattleUnitType::KP_PARATROOPA, ModuleId::TOU2, 0x49230, 5, 55 },
+    { BattleUnitType::SHADY_PARATROOPA, ModuleId::TOU2, 0x49440, 5, 57 },
+    { BattleUnitType::HAMMER_BRO, ModuleId::TOU2, 0x49530, 32, 20 },
+    { BattleUnitType::BOOMERANG_BRO, ModuleId::TOU2, 0x49590, 1, 21 },
+    { BattleUnitType::FIRE_BRO, ModuleId::TOU2, 0x49560, 1, 22 },
+    { BattleUnitType::RED_MAGIKOOPA, ModuleId::TOU2, 0x494a0, -1, 66 },
+    { BattleUnitType::WHITE_MAGIKOOPA, ModuleId::TOU2, 0x494d0, -1, 67 },
+    { BattleUnitType::GREEN_MAGIKOOPA, ModuleId::TOU2, 0x49500, -1, 68 },
+    { BattleUnitType::GREEN_FUZZY, ModuleId::TOU2, 0x37728, 8, 41 },
+    { BattleUnitType::PALE_PIRANHA, ModuleId::TOU2, 0x49260, 21, 75 },
+    { BattleUnitType::BIG_BANDIT, ModuleId::TOU2, 0x49350, 1, 3 },
+    { BattleUnitType::SWOOPER, ModuleId::TOU2, 0x495c0, 23, 88 },
+    { BattleUnitType::BRISTLE, ModuleId::TOU2, 0x493b0, 18, 18 },
+    { BattleUnitType::X_NAUT, ModuleId::AJI, 0x1420c, 1, 70 },
+    { BattleUnitType::ELITE_X_NAUT, ModuleId::AJI, 0x141ac, 1, 72 },
+    { BattleUnitType::X_NAUT_PHD, ModuleId::AJI, 0x142fc, 27, 71 },
+    { BattleUnitType::YUX, ModuleId::AJI, 0x1438c, 19, 94 },
+    { BattleUnitType::Z_YUX, ModuleId::AJI, 0x143ec, 19, 95 },
+    { BattleUnitType::X_YUX, ModuleId::AJI, 0x1429c, 19, 96 },
     // Non-Pit-native enemies (only used for specific loadouts).
-    { BattleUnitType::GOOMBA, ModuleId::DOU, 0x163d8, 1, 43 },
-    { BattleUnitType::EMBER, ModuleId::DOU, 0x16488, 25, 24 },
-    { BattleUnitType::RED_BONES, ModuleId::LAS, 0x3c100, 12, 13 },
-    { BattleUnitType::DARK_BONES, ModuleId::LAS, 0x3c1a0, 11, 15 },
-    { BattleUnitType::BUZZY_BEETLE, ModuleId::JIN, 0x1b078, 6, 26 },
-    { BattleUnitType::SPIKE_TOP, ModuleId::JIN, 0x1b148, -1, 27 },
-    { BattleUnitType::SWOOPER, ModuleId::JIN, 0x1ab38, 23, 88 },
-    { BattleUnitType::GREEN_FUZZY, ModuleId::MUJ, 0x358b8, 8, 41 },
-    { BattleUnitType::PUTRID_PIRANHA, ModuleId::MUJ, 0x35ac8, 21, 76 },
-    { BattleUnitType::EMBER, ModuleId::MUJ, 0x35218, 25, 24 },
-    { BattleUnitType::GOOMBA, ModuleId::EKI, 0xff48, 1, 43 },
-    { BattleUnitType::RUFF_PUFF, ModuleId::EKI, 0xfff8, 22, 82 },
+    { BattleUnitType::GOOMBA, ModuleId::DOU, 0x3c8b0, 1, 43 },
+    { BattleUnitType::EMBER, ModuleId::DOU, 0x37698, 25, 24 },
+    { BattleUnitType::RED_BONES, ModuleId::LAS, 0x2f8a8, 12, 13 },
+    { BattleUnitType::DARK_BONES, ModuleId::LAS, 0x2f908, 11, 15 },
+    { BattleUnitType::BUZZY_BEETLE, ModuleId::JIN, 0x29b08, 6, 26 },
+    { BattleUnitType::SPIKE_TOP, ModuleId::JIN, 0x29b38, 35, 27 },
+    { BattleUnitType::SWOOPER, ModuleId::JIN, 0x495c0, 23, 88 },
+    { BattleUnitType::GREEN_FUZZY, ModuleId::MUJ, 0x37728, 8, 41 },
+    { BattleUnitType::PUTRID_PIRANHA, ModuleId::MUJ, 0x37758, 21, 76 },
+    { BattleUnitType::EMBER, ModuleId::MUJ, 0x37698, 25, 24 },
+    { BattleUnitType::GOOMBA, ModuleId::EKI, 0x3c8b0, 1, 43 },
+    { BattleUnitType::RUFF_PUFF, ModuleId::EKI, 0x23700, 22, 82 },
 };
 
 const int32_t kPresetLoadouts[][5] = {
@@ -654,19 +655,9 @@ void BuildBattle(
         BattleUnitSetup& custom_unit = g_CustomUnits[i];
         memcpy(&custom_unit, unit_info[i], sizeof(BattleUnitSetup));
         
-        // Special case: Goombas in modules GON and GRA need to be linked to
-        // their correct unit_kind, since they weren't actually used in battles.
-        int32_t etype = g_Enemies[i];
-        if (etype == 51) {
-            custom_unit.unit_kind_params =
-                reinterpret_cast<BattleUnitKind*>(0x805ba9a0 + 0x1dcd8);
-        } else if (etype == 57) {
-            custom_unit.unit_kind_params =
-                reinterpret_cast<BattleUnitKind*>(0x805ba9a0 + 0xa0e8);
-        }
-        
         // Make Swoopers never hang from ceiling, and Magikoopas sometimes fly,
         // but only if they're not the front enemy in the lineup.
+        int32_t etype = g_Enemies[i];
         if (etype == 82 || etype == 96 || etype == 41 || etype == 50) {
             custom_unit.unit_work[0] = 1;
         } else if (etype == 76 || etype == 77 || etype == 78 || etype == 67) {
