@@ -12,6 +12,7 @@
 #include <ttyd/battle_unit.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
+#include <ttyd/msgdrv.h>
 #include <ttyd/sac_zubastar.h>
 #include <ttyd/sound.h>
 #include <ttyd/system.h>
@@ -29,6 +30,7 @@ using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_unit::BattleWorkUnit;
+using ::ttyd::item_data::itemDataTable;
 
 namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
@@ -50,12 +52,18 @@ namespace {
 bool                g_InBattle = false;
 int8_t              g_MaxMoveBadgeCounts[18];
 int8_t              g_CurMoveBadgeCounts[18];
-char                g_MoveBadgeTextBuffers[18][24];
+int8_t              g_MaxSpecialMoveLvls[8];
+int8_t              g_CurSpecialMoveLvls[8];
+char                g_MoveBadgeTextBuffer[24];
 const char*         kMoveBadgeAbbreviations[18] = {
     "Power J.", "Multib.", "Power B.", "Tor. J.", "Shrink S.",
     "Sleep S.", "Soft S.", "Power S.", "Quake H.", "H. Throw",
     "Pier. B.", "H. Rattle", "Fire Drive", "Ice Smash",
     "Charge", "Charge", "Tough. Up", "Tough. Up"
+};
+const char*         kSpecialMoveAbbreviations[8] = {
+    "Sweet Tr.", "Earth Tr.", "Clock Out", "Power Lift",
+    "Art Attack", "Sweet F.", "Showst.", "Supernova"
 };
 
 // Returns the max level of a move badge based on the number of copies equipped.
@@ -162,12 +170,17 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                     ++g_CurMoveBadgeCounts[idx];
                     ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
                 }
+                
+                // Overwrite default text based on current power level.
+                sprintf(
+                    g_MoveBadgeTextBuffer, "%s Lv. %" PRId8,
+                    kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
+                strats[i].name = g_MoveBadgeTextBuffer;
+            } else {
+                strats[i].name = ttyd::msgdrv::msgSearch(
+                    itemDataTable[weapon->item_id].name);
             }
             
-            sprintf(
-                g_MoveBadgeTextBuffers[idx], "%s Lv. %" PRId8,
-                kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
-            strats[i].name = g_MoveBadgeTextBuffers[idx];
             strats[i].cost = GetSelectedLevelWeaponCost(unit, weapon);
             strats[i].enabled =
                 strats[i].cost <= ttyd::battle_unit::BtlUnit_GetFp(unit);
@@ -192,8 +205,59 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
         if (!weapons) return;
         for (int32_t i = 0; i < cursor->num_options; ++i) {
             if (!weapons[i].weapon) continue;
-            const int32_t idx = GetWeaponLevelSelectionIndex(
-                weapons[i].weapon->item_id);
+            auto* weapon = weapons[i].weapon;
+            
+            // Handle Special moves.
+            if (weapon->base_sp_cost) {
+                static const int8_t kSpCostLevels[] = {
+                    1, 3, 5,    1, 2, 3,    2, 3, 5,    3, 4, 6,
+                    3, 5, 7,    4, 6, 8,    2, 4, 6,    5, 7, 9,
+                };
+                
+                // Match the Star Power by its icon.
+                int32_t idx = 0;
+                switch (weapon->icon) {
+                    case 0x19f: { idx = 1; break; }
+                    case 0x1a0: { idx = 2; break; }
+                    case 0x1a2: { idx = 3; break; }
+                    case 0x1a4: { idx = 4; break; }
+                    case 0x1a5: { idx = 5; break; }
+                    case 0x1a1: { idx = 6; break; }
+                    case 0x1a3: { idx = 7; break; }
+                }
+                
+                // If current selection, and L/R pressed, change power level.
+                if (i == cursor->abs_position) {
+                    if (left_press && g_CurSpecialMoveLvls[idx] > 1) {
+                        --g_CurSpecialMoveLvls[idx];
+                        ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
+                    } else if (
+                        right_press &&
+                        g_CurSpecialMoveLvls[idx] < g_MaxSpecialMoveLvls[idx]) {
+                        ++g_CurSpecialMoveLvls[idx];
+                        ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
+                    }
+                    
+                    // Overwrite default text based on current power level.
+                    sprintf(
+                        g_MoveBadgeTextBuffer, "%s Lv. %" PRId8,
+                        kSpecialMoveAbbreviations[idx],
+                        g_CurSpecialMoveLvls[idx]);
+                    weapons[i].name = g_MoveBadgeTextBuffer;
+                } else {
+                    weapons[i].name = ttyd::msgdrv::msgSearch(weapon->name);
+                }
+                
+                // Update actual SP cost.
+                int8_t new_cost = 
+                    kSpCostLevels[idx * 3 + g_CurSpecialMoveLvls[idx] - 1];
+                mod::patch::writePatch(
+                    &ttyd::battle_mario::superActionTable[idx]->base_sp_cost,
+                    &new_cost, sizeof(new_cost));
+            }
+            
+            // Otherwise, must be an FP-costing move (assuming a badge move).
+            const int32_t idx = GetWeaponLevelSelectionIndex(weapon->item_id);
             if (idx < 0 || g_MaxMoveBadgeCounts[idx] <= 1) continue;
             
             // If current selection, and L/R pressed, change power level.
@@ -207,13 +271,16 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
                     ++g_CurMoveBadgeCounts[idx];
                     ttyd::sound::SoundEfxPlayEx(0x478, 0, 0x64, 0x40);
                 }
+                
+                // Overwrite default text based on current power level.
+                sprintf(
+                    g_MoveBadgeTextBuffer, "%s Lv. %" PRId8,
+                    kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
+                weapons[i].name = g_MoveBadgeTextBuffer;
+            } else {
+                weapons[i].name = ttyd::msgdrv::msgSearch(
+                    itemDataTable[weapon->item_id].name);
             }
-            
-            // Overwrite default text based on current power level.
-            sprintf(
-                g_MoveBadgeTextBuffers[idx], "%s Lv. %" PRId8,
-                kMoveBadgeAbbreviations[idx], g_CurMoveBadgeCounts[idx]);
-            weapons[i].name = g_MoveBadgeTextBuffers[idx];
         }
     }
 }
@@ -252,10 +319,6 @@ void ApplyFixedPatches() {
             g_DrawWeaponWin_trampoline();
         });
     
-    // Sweet Feast and Showstopper both cost 4 SP.
-    ttyd::battle_mario::marioWeapon_Genki1.base_sp_cost = 4;
-    ttyd::battle_mario::marioWeapon_Suki.base_sp_cost = 4;
-    
     // Increase attack power of Supernova to 4 per bar instead of 3.
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[1] = 4;
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[2] = 8;
@@ -286,6 +349,11 @@ void OnEnterExitBattle(bool is_start) {
             max_level = MaxLevelForMoveBadges(badge_count);
             g_MaxMoveBadgeCounts[16 + i] = max_level;
             g_CurMoveBadgeCounts[16 + i] = max_level < 99 ? max_level : 1;
+        }
+        for (int32_t i = 0; i < 8; ++i) {
+            // TODO: Should only be able to select up to the level unlocked.
+            g_MaxSpecialMoveLvls[i] = 3;
+            g_CurSpecialMoveLvls[i] = 1;
         }
         g_InBattle = true;
     } else {
