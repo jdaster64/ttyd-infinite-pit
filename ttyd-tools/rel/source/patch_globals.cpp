@@ -114,6 +114,8 @@ void (*g_BtlActRec_AddCount_trampoline)(uint8_t*) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
 // battle_seq_end.o  802166a4
 const char* (*g_BattleGetRankNameLabel_trampoline)(int32_t) = nullptr;
+// sac_genki.o  80245a50
+int32_t (*g_sac_genki_get_score_trampoline)(EvtEntry, bool) = nullptr;
 // os.a OSLink.c  8029a8e4
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 
@@ -199,6 +201,10 @@ extern const int32_t g_btlseqEnd_JudgeRuleEarly_BH = 0x80215348;
 extern const int32_t g_btlseqEnd_Patch_RemoveJudgeRule = 0x80216678;
 extern const int32_t g_select_disp_Patch_PitListPriceHook = 0x8023c120;
 extern const int32_t g_select_disp_Patch_PitItemPriceHook = 0x8023d2e0;
+extern const int32_t g_sac_genki_main_base_BlinkNumbers_BH = 0x80248220;
+extern const int32_t g_sac_genki_main_base_BlinkNumbers_EH = 0x802483b4;
+extern const int32_t g_sac_genki_main_base_SetupTargets_BH = 0x80248430;
+extern const int32_t g_sac_genki_main_base_SetupTargets_EH = 0x8024864c;
 extern const int32_t g_crashHandler_Patch_LoopForever1 = 0x8025e4a4;
 extern const int32_t g_crashHandler_Patch_LoopForever2 = 0x8025e4a8;
 extern const int32_t g_subsetevt_blow_dead_Patch_GetRewards = 0x80351ea4;
@@ -227,6 +233,8 @@ extern const int32_t g_koura_damage_core_Patch_HeavyDmg = 0x8039c190;
 extern const int32_t g_koura_damage_core_Patch_LightDmg = 0x8039c1ec;
 extern const int32_t g_koura_pose_tbl_reset_Patch_HeavyDmg = 0x8039c2ec;
 extern const int32_t g_koura_pose_tbl_reset_Patch_LightDmg = 0x8039c338;
+extern const int32_t g_genki_evt_common_Patch_SweetTreatFeastResult = 0x803b6bac;
+extern const int32_t g_genki_evt_common_SweetTreatResultJumpPoint = 0x803b6be8;
 extern const int32_t g_crashHandler_Patch_FontScale = 0x80428bc0;
 
 // Patch offsets for data in modules (relative to REL base pointer).

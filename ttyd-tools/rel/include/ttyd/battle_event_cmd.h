@@ -133,7 +133,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_AudienceDeclareACResult, 2)
 // btlevtcmd_WaitGuardMove
 // btlevtcmd_GuardMoveEnd
 // btlevtcmd_StopWaitEvent
-// btlevtcmd_StartWaitEvent
+EVT_DECLARE_USER_FUNC(btlevtcmd_StartWaitEvent, 1)
 // btlevtcmd_SetEventCeilFall
 // btlevtcmd_SetEventConfusion
 // btlevtcmd_SetEventAttack

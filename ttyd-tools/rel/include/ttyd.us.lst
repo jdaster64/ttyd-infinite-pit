@@ -995,6 +995,7 @@
 801054e8:btlevtcmd_WeaponAftereffect
 801056f4:btlevtcmd_GetItemRecoverParam
 8010749c:btlevtcmd_AudienceDeclareACResult
+8010a26c:btlevtcmd_StartWaitEvent
 8010a78c:btlevtcmd_CheckDamage
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
@@ -1118,11 +1119,6 @@
 8011aa34:BattleCheckConcluded
 8011c350:_rule_disp
 
-// battle_monosiri.o
-8012ed2c:battleSetUnitMonosiriFlag
-8012ee3c:battleCheckUnitMonosiriFlag
-8012ef20:battleGetUnitMonosiriPtr
-
 // battle_sub.o
 801253ec:BattleTransID
 
@@ -1136,6 +1132,14 @@
 801277cc:BtlUnit_CheckUnitFlag
 80127814:BtlUnit_CheckStatus
 80128fe0:BtlUnit_Entry
+
+// battle_monosiri.o
+8012ed2c:battleSetUnitMonosiriFlag
+8012ee3c:battleCheckUnitMonosiriFlag
+8012ef20:battleGetUnitMonosiriPtr
+
+// battle_camera.o
+8012bfd0:evt_btl_camera_set_mode
 
 // statuswindow.o
 // .text
@@ -1541,12 +1545,27 @@
 80229bcc:yuugijou_init
 
 // sac_zubastar.o
-// .text 
-// 80235c7c:weaponGetPower_ZubaStar
+// .text
+80235c7c:weaponGetPower_ZubaStar
 // .data
 803b5980:weapon_zubastar
 8041db20:nice_event
 803b5a40:marioAttackEvent_ZubaStar
+
+// sac_genki.o
+80245a50:get_score
+8024678c:end_genki
+
+// sac_common.o
+802489c8:sac_enemy_slide_return
+80248d70:sac_wao
+
+// sac_muki.o
+// .text
+// 8024ee50:main_muki
+// .data
+803b7f80:weapon_muki
+803b8040:marioAttackEvent_Muki
 
 // evt_memcard.o
 // .text 

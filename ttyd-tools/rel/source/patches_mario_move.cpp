@@ -1,18 +1,26 @@
 #include "patches_mario_move.h"
 
 #include "common_types.h"
+#include "evt_cmd.h"
 #include "mod.h"
 #include "mod_state.h"
 #include "patch.h"
 
 #include <ttyd/battle.h>
+#include <ttyd/battle_camera.h>
 #include <ttyd/battle_database_common.h>
+#include <ttyd/battle_event_cmd.h>
 #include <ttyd/battle_mario.h>
 #include <ttyd/battle_menu_disp.h>
 #include <ttyd/battle_unit.h>
+#include <ttyd/evtmgr.h>
+#include <ttyd/evtmgr_cmd.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/msgdrv.h>
+#include <ttyd/sac_common.h>
+#include <ttyd/sac_genki.h>
+#include <ttyd/sac_muki.h>
 #include <ttyd/sac_zubastar.h>
 #include <ttyd/sound.h>
 #include <ttyd/system.h>
@@ -20,6 +28,22 @@
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
+
+// Assembly patch functions.
+extern "C" {
+    // special_move_patches.s
+    void StartSweetTreatSetupTargets();
+    void BranchBackSweetTreatSetupTargets();
+    void StartSweetTreatBlinkNumbers();
+    void BranchBackSweetTreatBlinkNumbers();
+    
+    void sweetTreatSetupTargets() {
+        mod::infinite_pit::mario_move::SweetTreatSetUpTargets();
+    }
+    void sweetTreatBlinkNumbers() {
+        mod::infinite_pit::mario_move::SweetTreatBlinkNumbers();
+    }
+}
 
 namespace mod::infinite_pit {
 
@@ -30,6 +54,9 @@ using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_unit::BattleWorkUnit;
+using ::ttyd::evtmgr::EvtEntry;
+using ::ttyd::evtmgr_cmd::evtGetValue;
+using ::ttyd::evtmgr_cmd::evtSetValue;
 using ::ttyd::item_data::itemDataTable;
 
 namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
@@ -42,7 +69,14 @@ extern int32_t (*g_BtlUnit_GetWeaponCost_trampoline)(BattleWorkUnit*, BattleWeap
 extern int32_t (*g_pouchEquipCheckBadge_trampoline)(int16_t);
 extern void (*g_DrawOperationWin_trampoline)();
 extern void (*g_DrawWeaponWin_trampoline)();
+extern int32_t (*g_sac_genki_get_score_trampoline)(EvtEntry*, bool);
 // Patch addresses.
+extern const int32_t g_sac_genki_main_base_BlinkNumbers_BH;
+extern const int32_t g_sac_genki_main_base_BlinkNumbers_EH;
+extern const int32_t g_sac_genki_main_base_SetupTargets_BH;
+extern const int32_t g_sac_genki_main_base_SetupTargets_EH;
+extern const int32_t g_genki_evt_common_Patch_SweetTreatFeastResult;
+extern const int32_t g_genki_evt_common_SweetTreatResultJumpPoint;
 
 namespace mario_move {
 
@@ -285,6 +319,95 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
     }
 }
 
+// Returns a pointer to the common work area for all special action commands.
+void* GetSacWorkPtr() {
+    return reinterpret_cast<void*>(
+        reinterpret_cast<intptr_t>(ttyd::battle::g_BattleWork) + 0x1f4c);
+}
+
+// Declarations for USER_FUNCs.
+EVT_DECLARE_USER_FUNC(SetSweetFeastWeapon, 3)
+
+// Event for the results of Sweet Treat/Feast.
+EVT_BEGIN(SweetTreatFeastResultEvt)
+SET(LW(9), LW(10))
+ADD(LW(9), LW(11))
+ADD(LW(9), LW(12))
+IF_LARGE_EQUAL(LW(9), 1)
+    // Cheer if at least 1 pickup was collected.
+    USER_FUNC(ttyd::sac_common::sac_wao)
+END_IF()
+IF_EQUAL(LW(15), 0)
+    // If Sweet Treat, run the original code to restore HP / FP.
+    RUN_CHILD_EVT(g_genki_evt_common_SweetTreatResultJumpPoint)
+ELSE()
+    // If Sweet Feast, apply HP/FP-Regen status.
+    INLINE_EVT()
+        // Run end of original event code to properly end the attack.
+        // (Mario inflicting status on himself ends the script prematurely.)
+        USER_FUNC(ttyd::sac_genki::end_genki)
+        WAIT_MSEC(1000)
+        USER_FUNC(ttyd::sac_common::sac_enemy_slide_return)
+        WAIT_MSEC(1000)
+        USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_mode, 0, 0)
+        WAIT_MSEC(1000)
+        USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StartWaitEvent, -2)
+    END_INLINE()
+    INLINE_EVT()
+        // Apply FP-Regen status a bit later than HP-Regen.
+        WAIT_MSEC(400)
+        IF_LARGE_EQUAL(LW(12), 1)
+            USER_FUNC(SetSweetFeastWeapon, 2, LW(12), LW(9))
+            USER_FUNC(
+                ttyd::battle_event_cmd::btlevtcmd_CheckDamage,
+                -2, -2, 1, LW(9), 256, LW(5))
+        END_IF()
+    END_INLINE()
+    IF_NOT_EQUAL(LW(13), -1)
+        IF_LARGE_EQUAL(LW(11), 1)
+            // Apply HP-Regen status to partner.
+            USER_FUNC(SetSweetFeastWeapon, 1, LW(11), LW(9))
+            USER_FUNC(
+                ttyd::battle_event_cmd::btlevtcmd_CheckDamage,
+                -2, LW(13), LW(14), LW(9), 256, LW(5))
+        END_IF()
+    END_IF()
+    IF_LARGE_EQUAL(LW(10), 1)
+        // Apply HP-Regen status to Mario.
+        USER_FUNC(SetSweetFeastWeapon, 0, LW(10), LW(9))
+        USER_FUNC(
+            ttyd::battle_event_cmd::btlevtcmd_CheckDamage,
+            -2, -2, 1, LW(9), 256, LW(5))
+    END_IF()
+END_IF()
+RETURN()
+EVT_END()
+
+// Wrapper for custom Sweet Treat/Feast results event.
+EVT_BEGIN(SweetTreatFeastResultEvtHook)
+RUN_CHILD_EVT(SweetTreatFeastResultEvt)
+RETURN()
+EVT_END()
+
+// Constructs a weapon granting HP, partner HP or FP regen status.
+EVT_DEFINE_USER_FUNC(SetSweetFeastWeapon) {
+    int32_t weapon_type = evtGetValue(evt, evt->evtArguments[0]);
+    int32_t strength    = evtGetValue(evt, evt->evtArguments[1]);
+    // Build a weapon based on the base weapon for Power Lift.
+    static BattleWeapon weapon[3];
+    memcpy(&weapon[weapon_type], &ttyd::sac_muki::weapon_muki, 
+        sizeof(BattleWeapon));
+    if (weapon_type < 2) {
+        weapon[weapon_type].hp_regen_time = 5;
+        weapon[weapon_type].hp_regen_strength = strength;
+    } else {
+        weapon[weapon_type].fp_regen_time = 5;
+        weapon[weapon_type].fp_regen_strength = strength;
+    }
+    evtSetValue(evt, evt->evtArguments[2], PTR(&weapon[weapon_type]));
+    return 2;
+}
+
 }
     
 void ApplyFixedPatches() {
@@ -319,7 +442,40 @@ void ApplyFixedPatches() {
             g_DrawWeaponWin_trampoline();
         });
     
+    // Change the Sweet Treat/Feast target counts based on level.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_sac_genki_main_base_SetupTargets_BH),
+        reinterpret_cast<void*>(g_sac_genki_main_base_SetupTargets_EH),
+        reinterpret_cast<void*>(StartSweetTreatSetupTargets),
+        reinterpret_cast<void*>(BranchBackSweetTreatSetupTargets));
+    // Change the displayed numbers for Feast to 1/5 the target value.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_sac_genki_main_base_BlinkNumbers_BH),
+        reinterpret_cast<void*>(g_sac_genki_main_base_BlinkNumbers_EH),
+        reinterpret_cast<void*>(StartSweetTreatBlinkNumbers),
+        reinterpret_cast<void*>(BranchBackSweetTreatBlinkNumbers));
+    
+    g_sac_genki_get_score_trampoline = patch::hookFunction(
+        ttyd::sac_genki::get_score, [](EvtEntry* evt, bool isFirstCall) {
+            intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+            int32_t is_feast = *reinterpret_cast<int32_t*>(sac_work_addr + 0xc);
+            // For Sweet Feast, return the target value / 5, rounded up.
+            int32_t hp = *reinterpret_cast<int32_t*>(sac_work_addr + 0x10);
+            int32_t php = *reinterpret_cast<int32_t*>(sac_work_addr + 0x14);
+            int32_t fp = *reinterpret_cast<int32_t*>(sac_work_addr + 0x18);
+            evtSetValue(evt, evt->evtArguments[0], is_feast ? (hp +4) / 5 : hp);
+            evtSetValue(evt, evt->evtArguments[1], is_feast ? (php+4) / 5 : php);
+            evtSetValue(evt, evt->evtArguments[2], is_feast ? (fp +4) / 5 : fp);
+            return 2;
+        });
+
+    // Patch Sweet Treat common event to apply Regen status for Feast.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_genki_evt_common_Patch_SweetTreatFeastResult),
+        SweetTreatFeastResultEvtHook, sizeof(SweetTreatFeastResultEvtHook));
+    
     // Increase attack power of Supernova to 4 per bar instead of 3.
+    // TODO: Hook to weaponGetPower_ZubaStar to change based on power level.
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[1] = 4;
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[2] = 8;
     ttyd::sac_zubastar::weapon_zubastar.damage_function_params[3] = 12;
@@ -363,6 +519,76 @@ void OnEnterExitBattle(bool is_start) {
 
 int8_t GetToughenUpLevel(bool is_mario) {
     return g_CurMoveBadgeCounts[17 - is_mario];
+}
+
+void SweetTreatSetUpTargets() {
+    // Count of each type of target (HP, 3xHP, PHP, 3xPHP, FP, 3xFP, poison)
+    // for the three levels of Sweet Treat and Sweet Feast.
+    static constexpr const int8_t kTargetCounts[] = {
+        // Sweet Treat (25 targets total)
+        7,  0,  7,  0,  8,  0,  3,
+        3,  4,  3,  4,  5,  3,  3,
+        0,  8,  0,  8,  0,  7,  2,
+        // Sweet Feast (50 targets total)
+        12, 4,  12, 4,  12, 4,  2,
+        8,  8,  8,  8,  8,  8,  2,
+        4,  12, 4,  12, 4,  12, 2,
+    };
+    
+    intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+    int32_t is_feast = *reinterpret_cast<int32_t*>(sac_work_addr + 0xc);
+    int32_t* target_arr = *reinterpret_cast<int32_t**>(sac_work_addr + 0x5c);
+    
+    const int32_t kNumTargetTypes = 7;
+    const int32_t kNumTargets = is_feast ? 50 : 25;
+    
+    // Select which set of target counts to use.
+    int32_t start_idx;
+    if (is_feast) {
+        start_idx = kNumTargetTypes * (g_CurSpecialMoveLvls[5] + 2);
+    } else {
+        start_idx = kNumTargetTypes * (g_CurSpecialMoveLvls[0] - 1);
+    }
+    
+    // Fill the array of targets.
+    int32_t current = 0;
+    for (int32_t idx = start_idx; idx < start_idx + kNumTargetTypes; ++idx) {
+        for (int32_t i = 0; i < kTargetCounts[idx]; ++i) {
+            target_arr[current++] = idx - start_idx;
+        }
+    }
+    // Shuffle with random swaps.
+    for (int32_t i = 0; i < 200; ++i) {
+        int32_t idx_a = ttyd::system::irand(kNumTargets);
+        int32_t idx_b = ttyd::system::irand(kNumTargets);
+        int32_t tmp = target_arr[idx_a];
+        target_arr[idx_a] = target_arr[idx_b];
+        target_arr[idx_b] = tmp;
+    }
+}
+
+void SweetTreatBlinkNumbers() {
+    const intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+    const int32_t is_feast = *reinterpret_cast<int32_t*>(sac_work_addr + 0xc);
+    
+    for (int32_t i = 0; i < 12; i += 4) {
+        int32_t target_number =
+            *reinterpret_cast<int32_t*>(sac_work_addr + 0x10 + i);
+        // Sweet Feast should only give 1/5 of the target value, rounded up,
+        // since it now gives Regen status for 5 turns.
+        if (is_feast) target_number = (target_number + 4) / 5;
+        
+        float& disp_number = *reinterpret_cast<float*>(sac_work_addr + 0x1c + i);
+        if (disp_number < target_number) {
+            ++disp_number;
+            // Refresh blinking timer.
+            *reinterpret_cast<int32_t*>(sac_work_addr + 0x28 + i) = 60;
+        } else if (disp_number > target_number) {
+            --disp_number;
+            // Refresh blinking timer.
+            *reinterpret_cast<int32_t*>(sac_work_addr + 0x28 + i) = 60;
+        }
+    }
 }
 
 }  // namespace mario_move
