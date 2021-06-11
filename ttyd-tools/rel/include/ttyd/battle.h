@@ -328,7 +328,7 @@ void BtlUnit_EquipItem(
 // BattleChangeParty
 // BattlePartyAnimeLoad
 // BattleGetPartnerPtr
-// BattleGetPartyPtr
+battle_unit::BattleWorkUnit* BattleGetPartyPtr(BattleWork* battleWork);
 battle_unit::BattleWorkUnit* BattleGetMarioPtr(BattleWork* battleWork);
 // BattleGetSystemPtr
 battle_unit::BattleWorkUnitPart* BattleGetUnitPartsPtr(

@@ -466,7 +466,7 @@ void ApplyFixedPatches() {
             g_DrawWeaponWin_trampoline();
         });
     
-    // Change the Sweet Treat/Feast target counts based on level.
+    // Change the Sweet Treat/Feast target type counts based on level.
     mod::patch::writeBranchPair(
         reinterpret_cast<void*>(g_sac_genki_main_base_SetupTargets_BH),
         reinterpret_cast<void*>(g_sac_genki_main_base_SetupTargets_EH),
@@ -630,22 +630,20 @@ void SweetTreatSetUpTargets() {
     // Count of each type of target (HP, 3xHP, PHP, 3xPHP, FP, 3xFP, poison)
     // for the three levels of Sweet Treat and Sweet Feast.
     static constexpr const int8_t kTargetCounts[] = {
-        // Sweet Treat (25 targets total)
+        // Sweet Treat (up to 25 targets total)
         7,  0,  7,  0,  8,  0,  3,
         3,  4,  3,  4,  5,  3,  3,
         0,  8,  0,  8,  0,  7,  2,
-        // Sweet Feast (50 targets total)
+        // Sweet Feast (up to 50 targets total)
         14, 2,  14, 2,  14, 2,  2,
         9,  7,  9,  7,  9,  7,  2,
         4,  12, 4,  12, 4,  12, 2,
     };
+    const int32_t kNumTargetTypes = 7;
     
     intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
     int32_t is_feast = *reinterpret_cast<int32_t*>(sac_work_addr + 0xc);
     int32_t* target_arr = *reinterpret_cast<int32_t**>(sac_work_addr + 0x5c);
-    
-    const int32_t kNumTargetTypes = 7;
-    const int32_t kNumTargets = is_feast ? 50 : 25;
     
     // Select which set of target counts to use.
     int32_t start_idx;
@@ -655,21 +653,37 @@ void SweetTreatSetUpTargets() {
         start_idx = kNumTargetTypes * (g_CurSpecialMoveLvls[0] - 1);
     }
     
+    // Determine whether Mario's partner is dead or nonexistent.
+    BattleWorkUnit* unit =
+        ttyd::battle::BattleGetPartyPtr(ttyd::battle::g_BattleWork);
+    bool mario_alone = !unit || ttyd::battle_unit::BtlUnit_CheckStatus(unit, 27);
+    
     // Fill the array of targets.
-    int32_t current = 0;
-    for (int32_t idx = start_idx; idx < start_idx + kNumTargetTypes; ++idx) {
-        for (int32_t i = 0; i < kTargetCounts[idx]; ++i) {
-            target_arr[current++] = idx - start_idx;
+    int32_t num_targets = 0;
+    for (int32_t type = 0; type < kNumTargetTypes; ++type) {
+        int32_t num_of_type = kTargetCounts[start_idx + type];
+        if (mario_alone) {
+            // If partner is dead / not present, give Mario 50% more HP targets,
+            // and skip the partner targets.
+            if (type == 0 || type == 1) num_of_type = num_of_type * 3 / 2;
+            if (type == 2 || type == 3) continue;
+        }
+        for (int32_t i = 0; i < num_of_type; ++i) {
+            target_arr[num_targets++] = type;
         }
     }
     // Shuffle with random swaps.
     for (int32_t i = 0; i < 200; ++i) {
-        int32_t idx_a = ttyd::system::irand(kNumTargets);
-        int32_t idx_b = ttyd::system::irand(kNumTargets);
+        int32_t idx_a = ttyd::system::irand(num_targets);
+        int32_t idx_b = ttyd::system::irand(num_targets);
         int32_t tmp = target_arr[idx_a];
         target_arr[idx_a] = target_arr[idx_b];
         target_arr[idx_b] = tmp;
     }
+    
+    // Set duration of attack based on the number of targets used.
+    int32_t timer = (is_feast ? 0x12 : 0x25) * num_targets;
+    *reinterpret_cast<int32_t*>(sac_work_addr + 0x40) = timer;
 }
 
 void SweetTreatBlinkNumbers() {

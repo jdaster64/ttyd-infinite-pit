@@ -31,7 +31,7 @@ EVT_DECLARE_USER_FUNC(end_genki, 0)
 // main_target
 // main_mario
 // main_base
-// main_genki
+EVT_DECLARE_USER_FUNC(main_genki, 2)
 
 }
 

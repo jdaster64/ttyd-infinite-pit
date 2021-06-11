@@ -957,6 +957,7 @@
 // battle.o
 // .text
 800f831c:BtlUnit_EquipItem
+800f8728:BattleGetPartyPtr
 800f87a8:BattleGetMarioPtr
 800f8874:BattleGetUnitPartsPtr
 800f88cc:BattleGetUnitPtr
@@ -1558,6 +1559,7 @@
 // sac_genki.o
 80245a50:get_score
 8024678c:end_genki
+80248738:main_genki
 
 // sac_common.o
 802489c8:sac_enemy_slide_return
