@@ -114,8 +114,20 @@ void (*g_BtlActRec_AddCount_trampoline)(uint8_t*) = nullptr;
 void* (*g_BattleEnemyUseItemCheck_trampoline)(BattleWorkUnit*) = nullptr;
 // battle_seq_end.o  802166a4
 const char* (*g_BattleGetRankNameLabel_trampoline)(int32_t) = nullptr;
+// sac_bakugame.o  8022f990
+int32_t (*g_bakuGameDecideWeapon_trampoline)(EvtEntry*, bool) = nullptr;
+// sac_zubastar.o  80235c7c
+uint32_t (*g_weaponGetPower_ZubaStar_trampoline)(
+    BattleWorkUnit*, BattleWeapon*, BattleWorkUnit*, BattleWorkUnitPart*) = nullptr;
 // sac_genki.o  80245a50
-int32_t (*g_sac_genki_get_score_trampoline)(EvtEntry, bool) = nullptr;
+int32_t (*g_sac_genki_get_score_trampoline)(EvtEntry*, bool) = nullptr;
+// sac_deka.o  80249048
+int32_t (*g_weaponGetPower_Deka_trampoline)(
+    BattleWorkUnit*, BattleWeapon*, BattleWorkUnit*, BattleWorkUnitPart*) = nullptr;
+// sac_muki.o  8024ee50
+int32_t (*g_main_muki_trampoline)(EvtEntry*, bool) = nullptr;
+// sac_suki.o  8024fa74
+int32_t (*g_sac_suki_set_weapon_trampoline)(EvtEntry*, bool) = nullptr;
 // os.a OSLink.c  8029a8e4
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 
@@ -199,12 +211,15 @@ extern const int32_t g_getBadgeBottakuru100TableMaxCount_Patch_ShopSize = 0x801f
 extern const int32_t g_BattleBreakSlot_PointInc_EnableAlways_BH = 0x802034b4;
 extern const int32_t g_btlseqEnd_JudgeRuleEarly_BH = 0x80215348;
 extern const int32_t g_btlseqEnd_Patch_RemoveJudgeRule = 0x80216678;
+extern const int32_t g_scissor_damage_sub_ArtAttackDamage_BH = 0x80231cc0;
+extern const int32_t g_scissor_damage_sub_ArtAttackDamage_EH = 0x80231d38;
 extern const int32_t g_select_disp_Patch_PitListPriceHook = 0x8023c120;
 extern const int32_t g_select_disp_Patch_PitItemPriceHook = 0x8023d2e0;
 extern const int32_t g_sac_genki_main_base_BlinkNumbers_BH = 0x80248220;
 extern const int32_t g_sac_genki_main_base_BlinkNumbers_EH = 0x802483b4;
 extern const int32_t g_sac_genki_main_base_SetupTargets_BH = 0x80248430;
 extern const int32_t g_sac_genki_main_base_SetupTargets_EH = 0x8024864c;
+extern const int32_t g_sac_deka_main_base_GetNumberOfBars_BH = 0x8024b0b8;
 extern const int32_t g_crashHandler_Patch_LoopForever1 = 0x8025e4a4;
 extern const int32_t g_crashHandler_Patch_LoopForever2 = 0x8025e4a8;
 extern const int32_t g_subsetevt_blow_dead_Patch_GetRewards = 0x80351ea4;

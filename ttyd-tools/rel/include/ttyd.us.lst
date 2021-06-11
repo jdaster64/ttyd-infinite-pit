@@ -1544,6 +1544,9 @@
 // evt_yuugijou.o
 80229bcc:yuugijou_init
 
+// sac_bakugame.o
+8022f990:bakuGameDecideWeapon
+
 // sac_zubastar.o
 // .text
 80235c7c:weaponGetPower_ZubaStar
@@ -1560,12 +1563,19 @@
 802489c8:sac_enemy_slide_return
 80248d70:sac_wao
 
+// sac_deka.o
+80249048:weaponGetPower_Deka
+
+// sac_suki.o
+8024fa74:sac_suki_set_weapon
+
 // sac_muki.o
 // .text
-// 8024ee50:main_muki
+8024ee50:main_muki
 // .data
 803b7f80:weapon_muki
 803b8040:marioAttackEvent_Muki
+804285b0:_sac_muki_power_per_arrow
 
 // evt_memcard.o
 // .text 

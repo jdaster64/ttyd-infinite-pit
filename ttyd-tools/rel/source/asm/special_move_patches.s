@@ -2,6 +2,10 @@
 .global BranchBackSweetTreatSetupTargets
 .global StartSweetTreatBlinkNumbers
 .global BranchBackSweetTreatBlinkNumbers
+.global StartEarthTremorNumberOfBars
+.global BranchBackEarthTremorNumberOfBars
+.global StartArtAttackCalculateDamage
+.global BranchBackArtAttackCalculateDamage
 
 StartSweetTreatSetupTargets:
 # Replace existing logic to set up how many of each target type appears.
@@ -17,25 +21,20 @@ bl sweetTreatBlinkNumbers
 BranchBackSweetTreatBlinkNumbers:
 b 0
 
-# StartAudienceItem:
-# stwu %sp,-0x18(%sp)
-# stmw %r29,0x8(%sp)
-# mr %r31,%r3
-# mr %r30,%r4
-# mr %r29,%r6
+StartEarthTremorNumberOfBars:
+# Override the normal length of the minigame (r0 = number of bars completed).
+bl getEarthTremorNumberOfBars
+cmpw %r0, %r3
 
-# mr %r3,%r0
-# bl getAudienceItem
-# mr %r0,%r3
+BranchBackEarthTremorNumberOfBars:
+b 0
 
-# mr %r3,%r31
-# mr %r4,%r30
-# mr %r6,%r29
-# lmw %r29,0x8(%sp)
-# addi %sp,%sp,0x18
+StartArtAttackCalculateDamage:
+# r27 has the percentage of the enemy circled (integer out of 100).
+mr %r3, %r27
+# Replace existing logic to calculate the damage dealt for a given percentage.
+bl getArtAttackPower
+stw %r3, 0x0 (%r31)
 
-# # Restore overwritten assembly
-# stw %r0,0x10(%r6)
-
-# BranchBackAudienceItem:
-# b 0
+BranchBackArtAttackCalculateDamage:
+b 0

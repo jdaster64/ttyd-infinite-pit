@@ -18,9 +18,12 @@
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/msgdrv.h>
+#include <ttyd/sac_bakugame.h>
 #include <ttyd/sac_common.h>
+#include <ttyd/sac_deka.h>
 #include <ttyd/sac_genki.h>
 #include <ttyd/sac_muki.h>
+#include <ttyd/sac_suki.h>
 #include <ttyd/sac_zubastar.h>
 #include <ttyd/sound.h>
 #include <ttyd/system.h>
@@ -36,12 +39,22 @@ extern "C" {
     void BranchBackSweetTreatSetupTargets();
     void StartSweetTreatBlinkNumbers();
     void BranchBackSweetTreatBlinkNumbers();
+    void StartEarthTremorNumberOfBars();
+    void BranchBackEarthTremorNumberOfBars();
+    void StartArtAttackCalculateDamage();
+    void BranchBackArtAttackCalculateDamage();
     
     void sweetTreatSetupTargets() {
         mod::infinite_pit::mario_move::SweetTreatSetUpTargets();
     }
     void sweetTreatBlinkNumbers() {
         mod::infinite_pit::mario_move::SweetTreatBlinkNumbers();
+    }
+    int32_t getEarthTremorNumberOfBars() {
+        return mod::infinite_pit::mario_move::GetEarthTremorNumberOfBars();
+    }
+    int32_t getArtAttackPower(int32_t circled_percent) {
+        return mod::infinite_pit::mario_move::GetArtAttackPower(circled_percent);
     }
 }
 
@@ -54,6 +67,7 @@ using ::ttyd::battle::BattleWorkCommandOperation;
 using ::ttyd::battle::BattleWorkCommandWeapon;
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_unit::BattleWorkUnit;
+using ::ttyd::battle_unit::BattleWorkUnitPart;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::evtmgr_cmd::evtGetValue;
 using ::ttyd::evtmgr_cmd::evtSetValue;
@@ -70,6 +84,13 @@ extern int32_t (*g_pouchEquipCheckBadge_trampoline)(int16_t);
 extern void (*g_DrawOperationWin_trampoline)();
 extern void (*g_DrawWeaponWin_trampoline)();
 extern int32_t (*g_sac_genki_get_score_trampoline)(EvtEntry*, bool);
+extern uint32_t (*g_weaponGetPower_Deka_trampoline)(
+    BattleWorkUnit*, BattleWeapon*, BattleWorkUnit*, BattleWorkUnitPart*);
+extern int32_t (*g_bakuGameDecideWeapon_trampoline)(EvtEntry*, bool);
+extern int32_t (*g_main_muki_trampoline)(EvtEntry*, bool);
+extern int32_t (*g_sac_suki_set_weapon_trampoline)(EvtEntry*, bool);
+extern uint32_t (*g_weaponGetPower_ZubaStar_trampoline)(
+    BattleWorkUnit*, BattleWeapon*, BattleWorkUnit*, BattleWorkUnitPart*);
 // Patch addresses.
 extern const int32_t g_sac_genki_main_base_BlinkNumbers_BH;
 extern const int32_t g_sac_genki_main_base_BlinkNumbers_EH;
@@ -77,6 +98,9 @@ extern const int32_t g_sac_genki_main_base_SetupTargets_BH;
 extern const int32_t g_sac_genki_main_base_SetupTargets_EH;
 extern const int32_t g_genki_evt_common_Patch_SweetTreatFeastResult;
 extern const int32_t g_genki_evt_common_SweetTreatResultJumpPoint;
+extern const int32_t g_sac_deka_main_base_GetNumberOfBars_BH;
+extern const int32_t g_scissor_damage_sub_ArtAttackDamage_BH;
+extern const int32_t g_scissor_damage_sub_ArtAttackDamage_EH;
 
 namespace mario_move {
 
@@ -455,6 +479,7 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(StartSweetTreatBlinkNumbers),
         reinterpret_cast<void*>(BranchBackSweetTreatBlinkNumbers));
     
+    // Hook the Sweet Treat/Feast results function to return the right values.
     g_sac_genki_get_score_trampoline = patch::hookFunction(
         ttyd::sac_genki::get_score, [](EvtEntry* evt, bool isFirstCall) {
             intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
@@ -473,14 +498,94 @@ void ApplyFixedPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(g_genki_evt_common_Patch_SweetTreatFeastResult),
         SweetTreatFeastResultEvtHook, sizeof(SweetTreatFeastResultEvtHook));
+
+    // Change the number of action command bars to fill for Earth Tremor.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_sac_deka_main_base_GetNumberOfBars_BH),
+        reinterpret_cast<void*>(StartEarthTremorNumberOfBars),
+        reinterpret_cast<void*>(BranchBackEarthTremorNumberOfBars));
+
+    // Change the attack power for Earth Tremor to "level + bars full".
+    g_weaponGetPower_Deka_trampoline = patch::hookFunction(
+        ttyd::sac_deka::weaponGetPower_Deka, [](
+            BattleWorkUnit*, BattleWeapon*,
+            BattleWorkUnit*, BattleWorkUnitPart*) {
+            intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+            int32_t bars_full = *reinterpret_cast<int32_t*>(sac_work_addr + 0x44);
+            return static_cast<uint32_t>(g_CurSpecialMoveLvls[1] + bars_full);
+        });
+        
+    // Change Clock Out's turn count based on power level.
+    g_bakuGameDecideWeapon_trampoline = patch::hookFunction(
+        ttyd::sac_bakugame::bakuGameDecideWeapon,
+        [](EvtEntry* evt, bool isFirstCall) {
+            // Call vanilla logic.
+            g_bakuGameDecideWeapon_trampoline(evt, isFirstCall);
+            
+            intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+            BattleWeapon& weapon = 
+                *reinterpret_cast<BattleWeapon*>(sac_work_addr + 0xf8);
+            // Modify turn count (-1 for level 1, +1 for level 3; min 1 turn).
+            if (weapon.stop_chance) {
+                weapon.stop_time += (g_CurSpecialMoveLvls[2] - 2);
+                if (weapon.stop_time < 1) weapon.stop_time = 1;
+            }
+            return 2;
+        });
+
+    // Change the rate at which Power Lift's gauges fill based on level.
+    g_main_muki_trampoline = patch::hookFunction(
+        ttyd::sac_muki::main_muki, [](EvtEntry* evt, bool isFirstCall) {
+            // Change the amount of power gained per arrow hit on startup.
+            if (isFirstCall) {
+                float arrow_power = 0.20001;
+                switch (g_CurSpecialMoveLvls[3]) {
+                    case 2: arrow_power = 0.25001; break;
+                    case 3: arrow_power = 0.33334; break;
+                }
+                mod::patch::writePatch(
+                    &ttyd::sac_muki::_sac_muki_power_per_arrow,
+                    &arrow_power, sizeof(float));
+            }
+            // Call vanilla logic.
+            return g_main_muki_trampoline(evt, isFirstCall);
+        });
+
+    // Change the damage dealt by Art Attack to 2/3/4 max based on level.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_scissor_damage_sub_ArtAttackDamage_BH),
+        reinterpret_cast<void*>(g_scissor_damage_sub_ArtAttackDamage_EH),
+        reinterpret_cast<void*>(StartArtAttackCalculateDamage),
+        reinterpret_cast<void*>(BranchBackArtAttackCalculateDamage));
+
+    // Change Showstopper's OHKO rate based on power level.
+    g_sac_suki_set_weapon_trampoline = patch::hookFunction(
+        ttyd::sac_suki::sac_suki_set_weapon,
+        [](EvtEntry* evt, bool isFirstCall) {
+            // Call vanilla logic.
+            g_sac_suki_set_weapon_trampoline(evt, isFirstCall);
+            
+            intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+            BattleWeapon& weapon = 
+                *reinterpret_cast<BattleWeapon*>(sac_work_addr + 0x284);
+            int32_t bars_full = evtGetValue(evt, evt->evtArguments[0]) - 1;
+            switch (g_CurSpecialMoveLvls[6]) {
+                case 1: weapon.ohko_chance = 30 + bars_full * 7;  break;
+                case 2: weapon.ohko_chance = 50 + bars_full * 9;  break;
+                case 3: weapon.ohko_chance = 70 + bars_full * 11; break;
+            }
+            return 2;
+        });
     
-    // Increase attack power of Supernova to 4 per bar instead of 3.
-    // TODO: Hook to weaponGetPower_ZubaStar to change based on power level.
-    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[1] = 4;
-    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[2] = 8;
-    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[3] = 12;
-    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[4] = 16;
-    ttyd::sac_zubastar::weapon_zubastar.damage_function_params[5] = 20;
+    // Change attack power of Supernova to 3x-5x based on power level.  
+    g_weaponGetPower_ZubaStar_trampoline = patch::hookFunction(
+        ttyd::sac_zubastar::weaponGetPower_ZubaStar, [](
+            BattleWorkUnit*, BattleWeapon*, 
+            BattleWorkUnit*, BattleWorkUnitPart*) {
+            intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
+            int32_t level = *reinterpret_cast<int32_t*>(sac_work_addr + 0x10);
+            return static_cast<uint32_t>(level * (g_CurSpecialMoveLvls[7] + 2));
+        });
 }
 
 void OnEnterExitBattle(bool is_start) {
@@ -530,8 +635,8 @@ void SweetTreatSetUpTargets() {
         3,  4,  3,  4,  5,  3,  3,
         0,  8,  0,  8,  0,  7,  2,
         // Sweet Feast (50 targets total)
-        12, 4,  12, 4,  12, 4,  2,
-        8,  8,  8,  8,  8,  8,  2,
+        14, 2,  14, 2,  14, 2,  2,
+        9,  7,  9,  7,  9,  7,  2,
         4,  12, 4,  12, 4,  12, 2,
     };
     
@@ -589,6 +694,17 @@ void SweetTreatBlinkNumbers() {
             *reinterpret_cast<int32_t*>(sac_work_addr + 0x28 + i) = 60;
         }
     }
+}
+
+int32_t GetEarthTremorNumberOfBars() {
+    // The level 1 and 2 versions have shorter minigames, at 3 and 4 bars.
+    return g_CurSpecialMoveLvls[1] + 2;
+}
+
+int32_t GetArtAttackPower(int32_t circled_percent) {
+    // Like vanilla, circling 90% or more = full damage;
+    // the damage dealt is up to 2, 3, or 4 based on the level.
+    return (g_CurSpecialMoveLvls[4] + 1) * circled_percent / 90;
 }
 
 }  // namespace mario_move

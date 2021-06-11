@@ -24,11 +24,12 @@ extern "C" {
 // main_point
 // main_cursor
 // main_base
-// main_muki
+EVT_DECLARE_USER_FUNC(main_muki, 1);
 
 // .data
 extern battle_database_common::BattleWeapon weapon_muki;
 extern int32_t marioAttackEvent_Muki[1];
+extern float _sac_muki_power_per_arrow;
 
 }
 

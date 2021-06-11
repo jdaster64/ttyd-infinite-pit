@@ -5,6 +5,11 @@
 
 #include <cstdint>
 
+namespace ttyd::battle_unit {
+struct BattleWorkUnit;
+struct BattleWorkUnitPart;
+}
+
 namespace ttyd::sac_zubastar {
 
 extern "C" {
@@ -20,7 +25,10 @@ extern "C" {
 // zubastar_get_kouten
 // zubastar_bunkatu
 // zubastar_create_takaku
-// weaponGetPower_ZubaStar
+uint32_t weaponGetPower_ZubaStar(
+    battle_unit::BattleWorkUnit* unit1,
+    battle_database_common::BattleWeapon* weapon,
+    battle_unit::BattleWorkUnit* unit2, battle_unit::BattleWorkUnitPart* part);
 // GetZubaStarPtr
 // zubaStarDispStar
 // main_star

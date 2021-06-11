@@ -16,5 +16,9 @@ int8_t GetToughenUpLevel(bool is_mario);
 void SweetTreatSetUpTargets();
 // Replaces the logic for numbers displaying / blinking for Sweet Treat / Feast.
 void SweetTreatBlinkNumbers();
+// Returns how many action command bars should appear for Earth Tremor.
+int32_t GetEarthTremorNumberOfBars();
+// Returns the attack power for Art Attack given the circled percentage.
+int32_t GetArtAttackPower(int32_t circled_percent);
 
 }
