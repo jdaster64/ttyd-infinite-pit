@@ -37,6 +37,7 @@
 
 #include <cinttypes>
 #include <cstdio>
+#include <cstring>
 
 // Assembly patch functions.
 extern "C" {
@@ -69,24 +70,25 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 extern const int32_t g_select_disp_Patch_PitListPriceHook;
 extern const int32_t g_select_disp_Patch_PitItemPriceHook;
 extern const int32_t g_getBadgeBottakuru100TableMaxCount_Patch_ShopSize;
-extern const uint32_t g_jon_setup_npc_ex_para_FuncOffset;
-extern const uint32_t g_jon_yattukeFlag_FuncOffset;
-extern const uint32_t g_jon_enemy_100_Offset;
-extern const uint32_t g_jon_enemy_setup_EvtOffset;
-extern const uint32_t g_jon_evt_open_box_EvtOffset;
-extern const uint32_t g_jon_idouya_setup_MoverLastSpawnFloorOffset;
-extern const uint32_t g_jon_talk_gyousyou_MinItemForBadgeDialogOffset;
-extern const uint32_t g_jon_talk_gyousyou_NoInvSpaceBranchOffset;
-extern const uint32_t g_jon_gyousyou_setup_CharlietonSpawnChanceOffset;
-extern const uint32_t g_jon_dokan_open_PipeOpenEvtOffset;
-extern const uint32_t g_jon_evt_kanban2_ReturnSignEvtOffset;
-extern const uint32_t g_jon_floor_inc_EvtOffset;
-extern const uint32_t g_jon_bero_boss_EntryBeroEntryOffset;
-extern const uint32_t g_jon_bero_boss_ReturnBeroEntryOffset;
-extern const uint32_t g_jon_setup_boss_EvtOffset;
-extern const uint32_t g_jon_bero_return_ReturnBeroEntryOffset;
-extern const uint32_t g_jon_zonbaba_first_event_EvtOffset;
-extern const uint32_t g_jon_btlsetup_jon_tbl_Offset;
+extern const int32_t g_jon_setup_npc_ex_para_FuncOffset;
+extern const int32_t g_jon_yattukeFlag_FuncOffset;
+extern const int32_t g_jon_init_evt_MoverSetupHookOffset;
+extern const int32_t g_jon_enemy_100_Offset;
+extern const int32_t g_jon_enemy_setup_EvtOffset;
+extern const int32_t g_jon_evt_open_box_EvtOffset;
+extern const int32_t g_jon_move_evt_EvtOffset;
+extern const int32_t g_jon_talk_gyousyou_MinItemForBadgeDialogOffset;
+extern const int32_t g_jon_talk_gyousyou_NoInvSpaceBranchOffset;
+extern const int32_t g_jon_gyousyou_setup_CharlietonSpawnChanceOffset;
+extern const int32_t g_jon_dokan_open_PipeOpenEvtOffset;
+extern const int32_t g_jon_evt_kanban2_ReturnSignEvtOffset;
+extern const int32_t g_jon_floor_inc_EvtOffset;
+extern const int32_t g_jon_bero_boss_EntryBeroEntryOffset;
+extern const int32_t g_jon_bero_boss_ReturnBeroEntryOffset;
+extern const int32_t g_jon_setup_boss_EvtOffset;
+extern const int32_t g_jon_bero_return_ReturnBeroEntryOffset;
+extern const int32_t g_jon_zonbaba_first_event_EvtOffset;
+extern const int32_t g_jon_btlsetup_jon_tbl_Offset;
 
 namespace field {
 
@@ -103,6 +105,10 @@ const char kChainChompName[] = "\x83\x8f\x83\x93\x83\x8f\x83\x93";
 const char kRedChompName[] = 
     "\x83\x6f\x81\x5b\x83\x58\x83\x67\x83\x8f\x83\x93\x83\x8f\x83\x93";
 const char kBonetailName[] = "\x83\x5d\x83\x93\x83\x6f\x83\x6f";
+const char kChetRippoName[] =
+    "\x83\x70\x83\x8f\x81\x5b\x83\x5f\x83\x45\x83\x93\x89\xae";
+
+ttyd::npcdrv::NpcSetupInfo g_ChetRippoNpcSetupInfo;
     
 // Declarations for USER_FUNCs.
 EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
@@ -360,6 +366,33 @@ EVT_END()
 // Wrapper for Charlieton full-inventory event.
 EVT_BEGIN(CharlietonInvFullEvtHook)
 RUN_CHILD_EVT(CharlietonInvFullEvt)
+RETURN()
+EVT_PATCH_END()
+
+// Chet Rippo NPC talking event.
+EVT_BEGIN(ChetRippoTalkEvt)
+// TODO: Fill out dialogue tree; for now this gives "no messages" text.
+USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("blah_blah"), 0, PTR("me"))
+RETURN()
+EVT_END()
+
+// Chet Rippo NPC spawning event.
+EVT_BEGIN(ChetRippoSetupEvt)
+// Only spawn on reward floors.
+SET(LW(0), GSW(1321))
+ADD(LW(0), 1)
+IF_NOT_EQUAL(LW(0), 100)
+    MOD(LW(0), 10)
+    IF_EQUAL(LW(0), 0)
+        USER_FUNC(
+            ttyd::evt_npc::evt_npc_entry, PTR(kChetRippoName), PTR("c_levela"))
+        USER_FUNC(ttyd::evt_npc::evt_npc_set_tribe,
+            PTR(kChetRippoName), PTR(kChetRippoName))
+        USER_FUNC(ttyd::evt_npc::evt_npc_setup, PTR(&g_ChetRippoNpcSetupInfo))
+        USER_FUNC(ttyd::evt_npc::evt_npc_set_position,
+            PTR(kChetRippoName), -160, 0, 110)
+    END_IF()
+END_IF()
 RETURN()
 EVT_PATCH_END()
 
@@ -749,9 +782,18 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         reinterpret_cast<void*>(
             module_start + g_jon_gyousyou_setup_CharlietonSpawnChanceOffset),
             1000);
+            
+    // Spawn Chet Rippo NPC.
+    memset(&g_ChetRippoNpcSetupInfo, 0, sizeof(g_ChetRippoNpcSetupInfo));
+    g_ChetRippoNpcSetupInfo.nameJp = kChetRippoName;
+    g_ChetRippoNpcSetupInfo.flags = 0x10000600;
+    g_ChetRippoNpcSetupInfo.regularEvtCode = nullptr;
+    g_ChetRippoNpcSetupInfo.talkEvtCode = const_cast<int32_t*>(ChetRippoTalkEvt);
+    // Hook Chet Rippo setup function in place of Mover event call.
     mod::patch::writePatch(
         reinterpret_cast<void*>(
-            module_start + g_jon_idouya_setup_MoverLastSpawnFloorOffset), 0);
+            module_start + g_jon_init_evt_MoverSetupHookOffset),
+        reinterpret_cast<int32_t>(ChetRippoSetupEvt));
     
     // If not reward floor, reset Pit-related flags and save-related status.
     if (g_Mod->state_.floor_ % 10 != 9) {
