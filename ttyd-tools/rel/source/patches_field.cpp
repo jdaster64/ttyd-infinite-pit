@@ -25,7 +25,9 @@
 #include <ttyd/evt_npc.h>
 #include <ttyd/evt_party.h>
 #include <ttyd/evt_pouch.h>
+#include <ttyd/evt_shop.h>
 #include <ttyd/evt_snd.h>
+#include <ttyd/evt_win.h>
 #include <ttyd/evt_window.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
@@ -120,6 +122,9 @@ EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
 EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
+EVT_DECLARE_USER_FUNC(CheckAnyStatsDowngradeable, 1)
+EVT_DECLARE_USER_FUNC(CheckStatDowngradeable, 2)
+EVT_DECLARE_USER_FUNC(DowngradeStat, 1)
 
 // Event that plays "get partner" fanfare.
 EVT_BEGIN(PartnerFanfareEvt)
@@ -369,12 +374,186 @@ RUN_CHILD_EVT(CharlietonInvFullEvt)
 RETURN()
 EVT_PATCH_END()
 
-// Chet Rippo NPC talking event.
-EVT_BEGIN(ChetRippoTalkEvt)
-// TODO: Fill out dialogue tree; for now this gives "no messages" text.
-USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("blah_blah"), 0, PTR("me"))
+// Chet Rippo item-selling event.
+EVT_BEGIN(ChetRippoSellItemsEvent)
+USER_FUNC(ttyd::evt_shop::sell_pouchcheck_func)
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_no_items"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_which_item"))
+USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(8))
+LBL(0)
+USER_FUNC(ttyd::evt_window::evt_win_item_select, 1, 3, LW(1), LW(4))
+IF_SMALL_EQUAL(LW(1), 0)
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
+    USER_FUNC(ttyd::evt_msg::evt_msg_print,
+        0, PTR("rippo_exit"), 0, PTR(kChetRippoName))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_shop::name_price, LW(1), LW(2), LW(3))
+USER_FUNC(ttyd::evt_msg::evt_msg_fill_num, 0, LW(14), PTR("rippo_item_ok"), LW(3))
+USER_FUNC(ttyd::evt_msg::evt_msg_fill_item, 1, LW(14), LW(14), LW(2))
+USER_FUNC(ttyd::evt_msg::evt_msg_print, 1, LW(14), 0, PTR(kChetRippoName))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_item_different"))
+    GOTO(0)
+END_IF()
+USER_FUNC(ttyd::evt_pouch::N_evt_pouch_remove_item_index, LW(1), LW(4), LW(0))
+USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
+USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(8))
+WAIT_MSEC(200)
+USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
+USER_FUNC(ttyd::evt_shop::sell_pouchcheck_func)
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_item_thanks_last"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_item_thanks_next"))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_exit"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_continue)
+USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(8))
+GOTO(0)
 RETURN()
 EVT_END()
+
+// Chet Rippo badge-selling event.
+EVT_BEGIN(ChetRippoSellBadgesEvent)
+USER_FUNC(ttyd::evt_pouch::evt_pouch_get_havebadgecnt, LW(0))
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_no_badges"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_which_item"))
+USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(8))
+LBL(0)
+USER_FUNC(ttyd::evt_window::evt_win_other_select, 12)
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
+    USER_FUNC(ttyd::evt_msg::evt_msg_print,
+        0, PTR("rippo_exit"), 0, PTR(kChetRippoName))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_fill_num, 0, LW(14), PTR("rippo_item_ok"), LW(3))
+USER_FUNC(ttyd::evt_msg::evt_msg_fill_item, 1, LW(14), LW(14), LW(2))
+USER_FUNC(ttyd::evt_msg::evt_msg_print, 1, LW(14), 0, PTR(kChetRippoName))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_item_different"))
+    GOTO(0)
+END_IF()
+USER_FUNC(ttyd::evt_pouch::N_evt_pouch_remove_item_index, LW(1), LW(4), LW(0))
+USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
+USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(8))
+WAIT_MSEC(200)
+USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
+USER_FUNC(ttyd::evt_pouch::evt_pouch_get_havebadgecnt, LW(0))
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_item_thanks_last"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_item_thanks_next"))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_exit"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_continue)
+USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(8))
+GOTO(0)
+RETURN()
+EVT_END()
+
+// Chet Rippo stat-selling event.
+EVT_BEGIN(ChetRippoSellStatsEvent)
+USER_FUNC(CheckAnyStatsDowngradeable, LW(0))
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_no_stats"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_which_stat"))
+LBL(0)
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_stat_menu"))
+SWITCH(LW(0))
+    CASE_EQUAL(3)
+        USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_exit"))
+        RETURN()
+END_SWITCH()
+USER_FUNC(CheckStatDowngradeable, LW(0), LW(1))
+IF_EQUAL(LW(1), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_stat_too_low"))
+    GOTO(0)
+END_IF()
+IF_EQUAL(LW(1), 2)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_no_free_bp"))
+    RETURN()
+END_IF()
+SWITCH(LW(0))
+    CASE_EQUAL(0)
+        SET(LW(1), PTR("rippo_confirm_hp"))
+    CASE_EQUAL(1)
+        SET(LW(1), PTR("rippo_confirm_fp"))
+    CASE_ETC()
+        SET(LW(1), PTR("rippo_confirm_bp"))
+END_SWITCH()
+SET(LW(2), LW(0))
+USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(8))
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, LW(1))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_stat_different"))
+    GOTO(0)
+END_IF()
+USER_FUNC(DowngradeStat, LW(2))
+USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, 25)
+USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(8))
+WAIT_MSEC(200)
+USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
+USER_FUNC(CheckAnyStatsDowngradeable, LW(0))
+IF_EQUAL(LW(0), 0)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_stat_thanks_last"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_stat_thanks_next"))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_exit"))
+    RETURN()
+END_IF()
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_which_stat"))
+GOTO(0)
+RETURN()
+EVT_END()
+
+// Chet Rippo NPC talking event.
+EVT_BEGIN(ChetRippoTalkEvt)
+USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 0)
+USER_FUNC(ttyd::evt_win::unitwin_get_work_ptr, LW(10))
+USER_FUNC(ttyd::evt_msg::evt_msg_print,
+    0, PTR("rippo_intro"), 0, PTR(kChetRippoName))
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_top_menu"))
+SWITCH(LW(0))
+    CASE_EQUAL(0)
+        RUN_CHILD_EVT(ChetRippoSellItemsEvent)
+    CASE_EQUAL(1)
+        RUN_CHILD_EVT(ChetRippoSellBadgesEvent)
+    CASE_EQUAL(2)
+        RUN_CHILD_EVT(ChetRippoSellStatsEvent)
+    CASE_EQUAL(3)
+        USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("rippo_exit"))
+END_SWITCH()
+USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
+RETURN()
+EVT_END()
+
+// TODO: Fill out dialogue tree; for now this gives "no messages" text.
+// USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("blah_blah"), 0, PTR("me"))
 
 // Chet Rippo NPC spawning event.
 EVT_BEGIN(ChetRippoSetupEvt)
@@ -653,6 +832,62 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
                 (1 << (item + 1 - ItemType::DIAMOND_STAR));
         }
     }
+    return 2;
+}
+
+// Returns whether any stat upgrades can be sold.
+EVT_DEFINE_USER_FUNC(CheckAnyStatsDowngradeable) {
+    bool can_downgrade = ttyd::mario_pouch::pouchGetPtr()->level > 1 &&
+        !g_Mod->state_.GetOptionValue(StateManager::NO_EXP_MODE);
+    evtSetValue(evt, evt->evtArguments[0], can_downgrade);
+    return 2;
+}
+
+// Returns whether the stat is high enough to downgrade, or 2 if the stat is
+// high enough but there isn't enough free BP available to downgrade.
+EVT_DEFINE_USER_FUNC(CheckStatDowngradeable) {
+    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    int32_t downgrade_state = 0;
+    switch (evtGetValue(evt, evt->evtArguments[0])) {
+        case 0: {
+            downgrade_state = pouch.base_max_hp > 10 ? 1 : 0;
+            break;
+        }
+        case 1: {
+            downgrade_state = pouch.base_max_fp > 5 ? 1 : 0;
+            break;
+        }
+        case 2: {
+            if (pouch.total_bp > 3) {
+                downgrade_state = pouch.unallocated_bp >= 3 ? 1 : 2;
+            }
+            break;
+        }
+    }
+    evtSetValue(evt, evt->evtArguments[1], downgrade_state);
+    return 2;
+}
+
+// Downgrades the selected stat.
+EVT_DEFINE_USER_FUNC(DowngradeStat) {
+    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+    switch (evtGetValue(evt, evt->evtArguments[0])) {
+        case 0: {
+            pouch.base_max_hp -= 5;
+            break;
+        }
+        case 1: {
+            pouch.base_max_fp -= 5;
+            break;
+        }
+        case 2: {
+            pouch.total_bp -= 3;
+            pouch.unallocated_bp -= 3;
+            break;
+        }
+    }
+    pouch.level -= 1;
+    ttyd::mario_pouch::pouchReviseMarioParam();
     return 2;
 }
 

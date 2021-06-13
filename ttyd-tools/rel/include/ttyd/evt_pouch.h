@@ -14,7 +14,7 @@ EVT_DECLARE_USER_FUNC(evt_pouch_get_yoshiname, 1)
 // evt_pouch_receive_mail
 // evt_pouch_majinai_set
 // evt_pouch_get_equipbadgecnt
-// evt_pouch_get_havebadgecnt
+EVT_DECLARE_USER_FUNC(evt_pouch_get_havebadgecnt, 1)
 // evt_pouch_get_haveitemcnt
 // evt_pouch_all_party_recovery
 // evt_pouch_mario_recovery
@@ -27,7 +27,7 @@ EVT_DECLARE_USER_FUNC(evt_pouch_party_join, 1)
 // evt_pouch_check_item
 // evt_pouch_remove_keepitem
 // evt_pouch_add_keepitem
-// N_evt_pouch_remove_item_index
+EVT_DECLARE_USER_FUNC(N_evt_pouch_remove_item_index, 3)
 // evt_pouch_remove_item
 EVT_DECLARE_USER_FUNC(evt_pouch_add_item, 2)
 // evt_pouch_get_starstone

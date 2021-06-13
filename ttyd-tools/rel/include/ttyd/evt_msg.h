@@ -8,10 +8,10 @@ namespace ttyd::evt_msg {
 
 extern "C" {
 
-EVT_DECLARE_USER_FUNC(unk_US_EU_05_800d0998, 4)
-// unk_US_EU_06_800d0a4c
-EVT_DECLARE_USER_FUNC(unk_US_EU_07_800d12b0, 4)
-// unk_US_EU_08_800d1364
+EVT_DECLARE_USER_FUNC(evt_msg_fill_num, 4)  // unk_800d0998
+// _evt_msg_fill_num / unk_US_EU_06_800d0a4c
+EVT_DECLARE_USER_FUNC(evt_msg_fill_item, 4)  // unk_800d12b0
+// _evt_msg_fill_item / unk_US_EU_08_800d1364
 // evt_msg_npc
 // evt_msg_pri
 // evt_msg_togelr

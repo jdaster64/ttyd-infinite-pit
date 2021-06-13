@@ -73,6 +73,28 @@ namespace MsgKey {
         PIT_CHEST_UNCLAIMED,
         PIT_DISABLED_RETURN,
         PIT_REWARD_PARTY_JOIN,
+        RIPPO_CONFIRM_BP,
+        RIPPO_CONFIRM_FP,
+        RIPPO_CONFIRM_HP,
+        RIPPO_EXIT,
+        RIPPO_INTRO,
+        RIPPO_ITEM_DIFFERENT,
+        RIPPO_ITEM_OK,
+        RIPPO_ITEM_THANKS_LAST,
+        RIPPO_ITEM_THANKS_NEXT,
+        RIPPO_NO_BADGES,
+        RIPPO_NO_FREE_BP,
+        RIPPO_NO_ITEMS,
+        RIPPO_NO_STATS,
+        RIPPO_STAT_DIFFERENT,
+        RIPPO_STAT_MENU,
+        RIPPO_STAT_THANKS_LAST,
+        RIPPO_STAT_THANKS_NEXT,
+        RIPPO_STAT_TOO_LOW,
+        RIPPO_TOP_MENU,
+        RIPPO_WHICH_ITEM,
+        RIPPO_WHICH_STAT,
+        RIPPO_YES_NO,
         TIK_06_02,
     };
 }
@@ -139,6 +161,28 @@ constexpr const char* kKeyLookups[] = {
     "pit_chest_unclaimed",
     "pit_disabled_return",
     "pit_reward_party_join",
+    "rippo_confirm_bp",
+    "rippo_confirm_fp",
+    "rippo_confirm_hp",
+    "rippo_exit",
+    "rippo_intro",
+    "rippo_item_different",
+    "rippo_item_ok",
+    "rippo_item_thanks_last",
+    "rippo_item_thanks_next",
+    "rippo_no_badges",
+    "rippo_no_free_bp",
+    "rippo_no_items",
+    "rippo_no_stats",
+    "rippo_stat_different",
+    "rippo_stat_menu",
+    "rippo_stat_thanks_last",
+    "rippo_stat_thanks_next",
+    "rippo_stat_too_low",
+    "rippo_top_menu",
+    "rippo_which_item",
+    "rippo_which_stat",
+    "rippo_yes_no",
     "tik_06_02",
 };
 
@@ -410,6 +454,82 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                        "when your ally is in Danger.";
             }
             return nullptr;
+        case MsgKey::RIPPO_CONFIRM_BP:
+            return "<p>\nI'll give you 25 coins for 3 BP.\n"
+                   "<wait 350>You won't be able to get it back,\n"
+                   "so are you absolutely sure?\n<o>";
+        case MsgKey::RIPPO_CONFIRM_FP:
+            return "<p>\nI'll give you 25 coins for 5 FP.\n"
+                   "<wait 350>You won't be able to get it back,\n"
+                   "so are you absolutely sure?\n<o>";
+        case MsgKey::RIPPO_CONFIRM_HP:
+            return "<p>\nI'll give you 25 coins for 5 HP.\n"
+                   "<wait 350>You won't be able to get it back,\n"
+                   "so are you absolutely sure?\n<o>";
+        case MsgKey::RIPPO_EXIT:
+            return "<p>\nNow get outta here!\n<k>";
+        case MsgKey::RIPPO_INTRO:
+            return "<shake>\n"
+                   "Hee hee hee!</shake><wait 300> I can help\n"
+                   "lighten your load if you've\n"
+                   "got junk weighing you down!\n<k>\n<p>\n"
+                   "What're you selling?\n<o>";
+        case MsgKey::RIPPO_ITEM_DIFFERENT:
+            return "<p>\nHmph. Anything else tickle \n"
+                   "your fancy, then?\n<k>";
+        case MsgKey::RIPPO_STAT_DIFFERENT:
+            return "<p>\nHmph. Anything else tickle \n"
+                   "your fancy, then?\n<o>";
+        case MsgKey::RIPPO_ITEM_OK:
+            return "I'm afraid I can only spare\n"
+                   "a mere <NUM> coin<S> for your\n"
+                   "<ITEM>. OK?\n<o>";
+        case MsgKey::RIPPO_ITEM_THANKS_LAST:
+            return "<p>\nIf you don't have anything\n"
+                   "else for me, then get\n"
+                   "outta here!\n<k>";
+        case MsgKey::RIPPO_ITEM_THANKS_NEXT:
+            return "<p>\nYeah, yeah. <wait 500>You got any\n"
+                   "other goods?\n<o>";
+        case MsgKey::RIPPO_NO_BADGES:
+        case MsgKey::RIPPO_NO_ITEMS:
+            return "<p>\nI don't see any of those\n"
+                   "in your stash. <wait 300>Quit wastin'\n"
+                   "both our time!\n<k>";
+        case MsgKey::RIPPO_NO_FREE_BP:
+            return "<p>\nYou're too loaded up\n"
+                   "with gear! <wait 300>Make some\n"
+                   "space first, <wait 200>sheesh!\n<k>";
+        case MsgKey::RIPPO_NO_STATS:
+            return "<p>\n<dynamic 3>Ha,</dynamic> <wait 200>are you kidding?\n"
+                   "<wait 300>Go level up some, <wait 150>then we\n"
+                   "can talk business!\n<k>";
+        case MsgKey::RIPPO_STAT_MENU:
+            return "<select 0 3 0 40>\nHP\nFP\nBP";
+        case MsgKey::RIPPO_STAT_THANKS_LAST:
+            return "<p>\nI'm finished. <wait 500>So... \n"
+                   "<wait 300>Unless you need anything\n"
+                   "else, get outta here!\n<k>";
+        case MsgKey::RIPPO_STAT_THANKS_NEXT:
+            return "<p>\nDone. <wait 500>So... \n"
+                   "<wait 300>Got any other stat points\n"
+                   "you aren't usin'?\n<o>";
+        case MsgKey::RIPPO_STAT_TOO_LOW:
+            return "<p>\nYou're looking too low on\n"
+                   "that already! <wait 250>Perhaps\n"
+                   "something else?\n<o>";
+        case MsgKey::RIPPO_TOP_MENU: {
+            if (g_Mod->state_.GetOptionValue(StateManager::NO_EXP_MODE)) {
+                return "<select 0 3 0 40>\nItems\nBadges";
+            }
+            return "<select 0 3 0 40>\nItems\nBadges\nLevel-ups";
+        }
+        case MsgKey::RIPPO_WHICH_ITEM:
+            return "<p>\nWhaddya want to sell?\n<k>";
+        case MsgKey::RIPPO_WHICH_STAT:
+            return "<p>\nWhaddya want to sell?\n<o>";
+        case MsgKey::RIPPO_YES_NO:
+            return "<select 0 1 0 40>\nYes\nNo";
     }
     // Should not be reached.
     return nullptr;

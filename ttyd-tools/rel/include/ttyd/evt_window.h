@@ -23,7 +23,7 @@ EVT_DECLARE_USER_FUNC(evt_win_coin_on, 2)
 // evt_win_item_desttable
 // evt_win_item_maketable
 EVT_DECLARE_USER_FUNC(evt_win_other_select, 1)
-// evt_win_item_select
+EVT_DECLARE_USER_FUNC(evt_win_item_select, 4)
 
 
 // evt_snd_bgm_scope

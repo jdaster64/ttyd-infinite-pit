@@ -668,8 +668,8 @@
 800b2388:cardCopy2Main
 
 // evt_msg.o
-800d0998:unk_US_EU_05_800d0998
-800d12b0:unk_US_EU_07_800d12b0
+800d0998:evt_msg_fill_num
+800d12b0:evt_msg_fill_item
 800d2008:evt_msg_toge
 800d2090:evt_msg_select
 800d21fc:evt_msg_continue
@@ -724,9 +724,15 @@
 // event.o
 800ee688:stg0_00_init
 
+// evt_shop.o
+800eecd0:sell_pouchcheck_func
+800eed08:name_price
+
 // evt_pouch.o
 800f07d0:evt_pouch_get_yoshiname
+800f0928:evt_pouch_get_havebadgecnt
 800f0a8c:evt_pouch_party_join
+800f0d0c:N_evt_pouch_remove_item_index
 800f0e20:evt_pouch_add_item
 800f0fe8:evt_pouch_add_coin
 800f1018:evt_pouch_get_coin
@@ -1170,6 +1176,9 @@
 // .data
 803773d8:g_winPartyDt
 
+// evt_win.o
+80177b28:unitwin_get_work_ptr
+
 // win_main.o
 8017ebd4:winGetPtr
 
@@ -1533,6 +1542,7 @@
 80209aac:evt_win_coin_off
 80209b5c:evt_win_coin_on
 8020a2c4:evt_win_other_select
+8020a374:evt_win_item_select
 
 // battle_seq_end.o
 // .text
