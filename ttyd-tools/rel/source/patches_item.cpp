@@ -183,15 +183,22 @@ void ApplyFixedPatches() {
     for (int32_t i = ItemType::GOLD_BAR; i < ItemType::MAX_ITEM_TYPE; ++i) {
         ItemData& item = itemDataTable[i];
         
-        // Assign new price.
+        // Assign new buy / sell prices.
         if (i >= ItemType::THUNDER_BOLT) {
             const int32_t word_index = (i - ItemType::THUNDER_BOLT) >> 3;
             const int32_t nybble_index = (i - ItemType::THUNDER_BOLT) & 7;
             const int32_t tier =
                 (kPriceTiers[word_index] >> (nybble_index << 2)) & 15;
             item.buy_price = kPrices[tier];
-            item.sell_price = kPrices[tier] / 5;
+            if (i >= ItemType::POWER_JUMP) {
+                item.sell_price = kPrices[tier] / 10;
+            } else {
+                item.sell_price = kPrices[tier] / 5;
+            }
+            if (item.sell_price < 1) item.sell_price = 1;
         }
+        // Set Shine Sprite sell price.
+        itemDataTable[ItemType::GOLD_BAR_X3].sell_price = 20;
         
         if (i < ItemType::POWER_JUMP) {
             // For all items that restore HP or FP, assign the "cooked item"
