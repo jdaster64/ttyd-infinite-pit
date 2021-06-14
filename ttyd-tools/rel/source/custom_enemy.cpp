@@ -3,6 +3,7 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "mod.h"
+#include "mod_debug.h"
 #include "mod_state.h"
 
 #include <ttyd/battle.h>
@@ -426,9 +427,26 @@ const EnemyTypeInfo* LookupEnemyTypeInfo(int32_t unit_type) {
     return ei;
 }
 
+void PopulateDebugEnemyLoadout(int32_t* debug_enemies) {
+    constexpr const int32_t kNumEnemyTypes = 
+        sizeof(kEnemyModuleInfo) / sizeof(EnemyModuleInfo);
+    g_NumEnemies = 0;
+    for (int32_t i = 0; i < 5; ++i) {
+        if (debug_enemies[i] == -1) {
+            g_Enemies[i] = -1;
+            continue;
+        }
+        for (int32_t idx = 0; idx < kNumEnemyTypes; ++idx) {
+            if (kEnemyModuleInfo[idx].unit_type == debug_enemies[i]) {
+                g_Enemies[i] = idx;
+                ++g_NumEnemies;
+                break;
+            }
+        }
+    }
 }
 
-
+}
 
 ModuleId::e SelectEnemies(int32_t floor) {
     // Special cases: Floor X00 (Bonetail), X49 (Atomic Boo).
@@ -446,6 +464,12 @@ ModuleId::e SelectEnemies(int32_t floor) {
     }
     // If a reward floor, no enemies to spawn.
     if (floor % 10 == 9) return ModuleId::INVALID_MODULE;
+    
+    // Check to see if there is a debug set of enemies, and use it if so.
+    if (int32_t* debug_enemies = DebugManager::GetEnemies(); debug_enemies) {
+        PopulateDebugEnemyLoadout(debug_enemies);
+        return ModuleId::INVALID_MODULE;
+    }
     
     const auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
     auto& state = g_Mod->state_;
@@ -874,6 +898,24 @@ const char* SetCustomMenuTattle(const char* original_tattle_msg) {
     
     // Return a key that looks up g_TattleTextBuf from custom_strings.
     return "custom_tattle_menu";
+}
+
+bool IsEligibleLoadoutEnemy(int32_t unit_type) {
+    for (const auto& emi : kEnemyModuleInfo) {
+        if (emi.unit_type == unit_type && emi.battle_unit_setup_offset >= 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsEligibleFrontEnemy(int32_t unit_type) {
+    for (const auto& emi : kEnemyModuleInfo) {
+        if (emi.unit_type == unit_type && emi.npc_ent_type_info_idx >= 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 }

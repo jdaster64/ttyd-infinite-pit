@@ -38,4 +38,10 @@ const char* SetCustomTattle(
     ttyd::battle_unit::BattleWorkUnit* unit, const char* original_tattle_msg);
 const char* SetCustomMenuTattle(const char* original_tattle_msg);
 
+// Used for debugging purposes:
+// Returns whether a battle unit type can included in a starting loadout.
+bool IsEligibleLoadoutEnemy(int32_t unit_type);
+// Returns whether a battle unit type can be the first enemy in a loadout.
+bool IsEligibleFrontEnemy(int32_t unit_type);
+
 }

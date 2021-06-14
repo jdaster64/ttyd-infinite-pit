@@ -4,6 +4,7 @@
 #include "common_types.h"
 #include "common_ui.h"
 #include "mod.h"
+#include "mod_debug.h"
 #include "mod_menu.h"
 #include "mod_state.h"
 
@@ -29,6 +30,7 @@ uint32_t secretCode_BonusOptions2   = 043652131;
 uint32_t secretCode_BonusOptions3   = 031313141;
 uint32_t secretCode_RtaTimer        = 034345566;
 uint32_t secretCode_UnlockFxBadges  = 026122146;
+uint32_t secretCode_DebugMode       = 036363636;
 
 // Random state.
 bool g_DrawRtaTimer = false;
@@ -79,6 +81,11 @@ void CheatsManager::Update() {
             ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
             ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
         }
+    }
+    // TODO: Turn off before releases!
+    if ((code_history & 0xFFFFFF) == secretCode_DebugMode) {
+        code_history = 0;
+        DebugManager::ChangeMode();
     }
 }
 
