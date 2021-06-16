@@ -17,7 +17,8 @@ public:
     // Code that runs drawing-related code every frame.
     void Draw();
     
-    StateManager state_;
+    // TODO: Rename back to "state_" once migration to StateManager_v2 is done.
+    StateManager_v2 ztate_;
 };
 
 extern Mod* g_Mod;

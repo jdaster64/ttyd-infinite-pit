@@ -69,23 +69,34 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    StateManager& state = g_Mod->state_;
+    StateManager_v2& state = g_Mod->ztate_;
     // No conditions on Bonetail fights (or reward floors).
     if (state.floor_ % 10 == 9) return;
     
-    // If using held items + bonus conditions, only pick one every ~4 floors.
-    const int32_t reward_mode =
-        state.GetOptionValue(StateManager::BATTLE_REWARD_MODE);
-    if ((reward_mode == 0 || reward_mode == StateManager::ALL_HELD_ITEMS) && 
-        state.Rand(4)) return;
+    // Only have conditions on ~1/4 floors for one/all held drops + bonus modes.
+    int32_t reward_mode = state.GetOptionValue(OPT_BATTLE_REWARD_MODE);
+    uint32_t condition_chance = 0;
+    switch (reward_mode) {
+        case OPTVAL_DROP_STANDARD:
+        case OPTVAL_DROP_ALL_HELD: {
+            condition_chance = 1;
+            break;
+        }
+        case OPTVAL_DROP_HELD_FROM_BONUS:
+        case OPTVAL_DROP_NO_HELD_W_BONUS: {
+            condition_chance = 4;
+            break;
+        }
+    }
+    if (state.Rand(4, RNG_CONDITION) >= condition_chance) return;
         
     const int32_t shine_rate =
-        reward_mode == StateManager::NO_HELD_ITEMS ? 8 : 30;
+        reward_mode == OPTVAL_DROP_NO_HELD_W_BONUS ? 8 : 30;
     
     // Use the unused "random_item_weight" field to store the item reward.
     int32_t* item_reward = &npc_info->pConfiguration->random_item_weight;
     *item_reward = PickRandomItem(
-        /* seeded = */ true, 10, 10, 40, state.floor_ < 30 ? 0 : shine_rate);
+        RNG_CONDITION_ITEM, 10, 10, 40, state.floor_ < 30 ? 0 : shine_rate);
     // If the "none" case was picked, make it a Shine Sprite.
     if (*item_reward <= 0) *item_reward = ItemType::GOLD_BAR_X3;
     
@@ -101,14 +112,9 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
         num_partners += pouch.party_data[i].flags & 1;
     }
     
-    // Disable conditions that rely on Star Power or having 1 or more partners.
+    // Disable conditions that rely on having partners or FP-using moves.
     for (auto& condition : conditions) {
         switch (condition.type) {
-            case SPECIAL_MOVES_LESS:
-            case SPECIAL_MOVES_MORE:
-            case APPEAL_MORE:
-                if (!pouch.star_powers_obtained) condition.weight = 0;
-                break;
             case PARTNER_TOTAL_DAMAGE_LESS:
             case MARIO_INACTIVE_TURNS:
             case MARIO_NO_ATTACK_TURNS:
@@ -124,8 +130,11 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
             case MARIO_ATTACK_AUDIENCE_MORE:
                 // This condition will be guaranteed a Shine Sprite,
                 // so there needs to be a partner (and SP needs to be unlocked).
-                if (!pouch.star_powers_obtained) condition.weight = 0;
                 if (num_partners < 1) condition.weight = 0;
+                break;
+            case FP_MORE:
+                // "Use FP" shouldn't appear too early in the Pit.
+                if (state.floor_ < 30) condition.weight = 0;
                 break;
         }
     }
@@ -134,25 +143,16 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     for (int32_t i = 0; i < kNumConditions; ++i) 
         sum_weights += conditions[i].weight;
     
-    int32_t weight = state.Rand(sum_weights);
+    int32_t weight = state.Rand(sum_weights, RNG_CONDITION);
     int32_t idx = 0;
     for (; (weight -= conditions[idx].weight) >= 0; ++idx);
     
     // Finalize and assign selected condition's parameters.
     int32_t param = conditions[idx].param_min;
-    if (conditions[idx].type == FP_MORE && state.floor_ < 30) {
-        // v1.2: Special case; "Use FP" shouldn't appear too early in the Pit.
-        // Replace it with something random that doesn't have any parameters.
-        switch (state.Rand(4)) {
-            case 0: idx = 0;    break;  // No jump
-            case 1: idx = 2;    break;  // No hammer
-            case 2: idx = 6;    break;  // No damage w/Mario
-            case 3: idx = 18;   break;  // No spending FP
-        }
-        param = conditions[idx].param_min;
-    } else if (conditions[idx].param_max > 0) {
-        param += state.Rand(conditions[idx].param_max - 
-                            conditions[idx].param_min + 1);
+    if (conditions[idx].param_max > 0) {
+        param += state.Rand(
+            conditions[idx].param_max - conditions[idx].param_min + 1,
+            RNG_CONDITION);
     }
     switch (conditions[idx].type) {
         case TOTAL_DAMAGE_LESS:
@@ -168,7 +168,7 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
             break;
         case MARIO_FINAL_HP_MORE:
             // Make it based on percentage of max HP.
-            param = state.Rand(4);
+            param = state.Rand(4, RNG_CONDITION);
             switch (param) {
                 case 0:
                     // Half, rounded up.
@@ -221,8 +221,7 @@ void GetBattleConditionString(char* out_buf) {
         ttyd::item_data::itemDataTable[item_reward].name);
     
     // If held item drop is contingent on condition, don't say which will drop.
-    if (g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE)
-        == StateManager::CONDITION_DROPS_HELD) {
+    if (g_Mod->ztate_.CheckOptionValue(OPTVAL_DROP_HELD_FROM_BONUS)) {
         sprintf(out_buf, "Reward challenge:\n%s", g_ConditionTextBuf);
     } else {
         sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);

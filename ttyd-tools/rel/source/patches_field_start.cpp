@@ -106,6 +106,10 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
             StateManager::RANK_UP_ALWAYS_MAX) {
         ttyd::mario_pouch::pouchGetPtr()->rank = 3;
     }
+    
+    // TODO: Set up starting inventory.
+    // TODO: Set up Merlee curse.
+    
     options::ApplySettingBasedPatches();
     // Save the timestamp you entered the Pit.
     g_Mod->state_.SaveCurrentTime(/* pit_start = */ true);

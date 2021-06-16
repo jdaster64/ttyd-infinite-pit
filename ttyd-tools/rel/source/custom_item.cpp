@@ -3,7 +3,6 @@
 #include "mod.h"
 #include "mod_state.h"
 
-#include <ttyd/mario_pouch.h>
 #include <ttyd/system.h>
 
 #include <cstdint>
@@ -12,13 +11,13 @@ namespace mod::infinite_pit {
 
 namespace {
 
-using ::ttyd::mario_pouch::PouchData;
-
 }
 
 int32_t PickRandomItem(
-    bool seeded, int32_t normal_item_weight, int32_t recipe_item_weight,
-    int32_t badge_weight, int32_t no_item_weight, bool force_no_partner) {
+    int32_t sequence, int32_t normal_item_weight, int32_t recipe_item_weight,
+    int32_t badge_weight, int32_t no_item_weight) {
+    StateManager_v2& state = g_Mod->ztate_;
+    
     // Bitfields of whether each item is included in the pool or not;
     // item X is enabled if kItemPool[X / 16 - offset] & (1 << (X % 16)) != 0.
     static constexpr const uint16_t kNormalItems[] = {
@@ -37,11 +36,7 @@ int32_t PickRandomItem(
     int32_t total_weight =
         normal_item_weight + recipe_item_weight + badge_weight + no_item_weight;
     int32_t result; 
-    if (seeded) {
-        result = g_Mod->state_.Rand(total_weight);
-    } else {
-        result = ttyd::system::irand(total_weight);
-    }
+    result = state.Rand(total_weight, sequence);
     const uint16_t* bitfield;
     int32_t len_bitfield;
     int32_t offset;
@@ -60,18 +55,15 @@ int32_t PickRandomItem(
         } else {
             current_weight += badge_weight;
             if (result < current_weight) {
-                // Count available partners.
-                const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-                int32_t num_partners = 0;
-                for (int32_t i = 0; i < 8; ++i) {
-                    num_partners += pouch.party_data[i].flags & 1;
-                }
-                // Exclude 'P' badges if no partners unlocked yet.
-                bitfield = (num_partners && !force_no_partner)
-                    ? kStackableBadges : kStackableBadgesNoP;
+                bool partners_enabled =
+                    state.GetOptionNumericValue(OPT_ENABLE_P_BADGES);
+                bitfield =
+                    partners_enabled ? kStackableBadges : kStackableBadgesNoP;
                 len_bitfield = sizeof(kStackableBadges) / sizeof(uint16_t);
                 offset = 0xf0;
             } else {
+                // "No item" chosen; make sure # of rand calls is consistent.
+                state.Rand(1, sequence);
                 return 0;
             }
         }
@@ -83,11 +75,7 @@ int32_t PickRandomItem(
             if (bitfield[i] & (1U << bit)) ++num_items_seen;
         }
     }
-    if (seeded) {
-        result = g_Mod->state_.Rand(num_items_seen);
-    } else {
-        result = ttyd::system::irand(num_items_seen);
-    }
+    result = state.Rand(num_items_seen, sequence);
     num_items_seen = 0;
     for (int32_t i = 0; i < len_bitfield; ++i) {
         for (int32_t bit = 0; bit < 16; ++bit) {

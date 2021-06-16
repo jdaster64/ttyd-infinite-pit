@@ -1084,6 +1084,7 @@ uint32_t StateManager_v2::Rand(uint32_t range, int32_t sequence) {
                 data[1] = floor_;
                 break;
             }
+            case RNG_INVENTORY_UPGRADE:
             case RNG_CHEST_BADGE_FIXED:
             case RNG_PARTNER:
             case RNG_STAR_POWER:

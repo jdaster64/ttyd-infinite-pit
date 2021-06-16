@@ -123,6 +123,10 @@ const char*         kSpecialMoveAbbreviations[8] = {
     "Sweet Tr.", "Earth Tr.", "Clock Out", "Power Lift",
     "Art Attack", "Sweet F.", "Showst.", "Supernova"
 };
+const int8_t        kSpCostLevels[] = {
+    1, 3, 5,    1, 2, 3,    2, 3, 5,    3, 4, 6,
+    3, 5, 7,    4, 6, 8,    2, 4, 6,    5, 7, 9,
+};
 
 // Returns the max level of a move badge based on the number of copies equipped.
 int32_t MaxLevelForMoveBadges(int32_t badge_count) {
@@ -267,11 +271,6 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
             
             // Handle Special moves.
             if (weapon->base_sp_cost) {
-                static const int8_t kSpCostLevels[] = {
-                    1, 3, 5,    1, 2, 3,    2, 3, 5,    3, 4, 6,
-                    3, 5, 7,    4, 6, 8,    2, 4, 6,    5, 7, 9,
-                };
-                
                 // Match the Star Power by its icon.
                 int32_t idx = 0;
                 switch (weapon->icon) {
@@ -624,6 +623,19 @@ void OnEnterExitBattle(bool is_start) {
 
 int8_t GetToughenUpLevel(bool is_mario) {
     return g_CurMoveBadgeCounts[17 - is_mario];
+}
+
+bool CanUnlockNextLevel(int32_t star_power) {
+    int32_t current_level = g_Mod->ztate.GetStarPowerLevel(star_power);
+    if (current_level == 3) return false;
+    // Get the max SP the player would have without using any Shine Sprites.
+    int32_t max_sp = 50;
+    for (int32_t i = 0; i < 8; ++i) {
+        max_sp += g_Mod->ztate.GetStarPowerLevel(i) * 50;
+    }
+    // See if the next level of this star power could be affordable.
+    int32_t required_sp = kSpCostLevels[star_power * 3 + current_level];
+    return max_sp + 50 >= required_sp * 100;
 }
 
 void SweetTreatSetUpTargets() {

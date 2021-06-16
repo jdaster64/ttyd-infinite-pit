@@ -9,9 +9,8 @@
 
 namespace mod::infinite_pit {
 
-// Selects the enemies to spawn on a given floor, and returns the supplemental
-// module to be loaded, if any.
-ModuleId::e SelectEnemies(int32_t floor);
+// Selects the loadout of enemies to spawn on a given floor.
+void SelectEnemies(int32_t floor);
     
 // Procedurally builds a NpcSetupInfo and BattleSetupData based on the floor #.
 // Returns the salient NPC info (the battle is constructed in place over

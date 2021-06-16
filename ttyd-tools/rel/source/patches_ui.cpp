@@ -431,6 +431,8 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
             // the total count used in the Mario menu.
             if (ttyd::mario_pouch::pouchGetPtr()->shine_sprites < 999) {
                 ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
+                
+                // TODO: Increment Shine Sprites used in new StateManager.
             }
         }
     }

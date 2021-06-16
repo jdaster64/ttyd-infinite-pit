@@ -166,12 +166,12 @@ public:
     // Game state / progression.
     uint8_t     partner_upgrades_[7];   // Includes Super- and Ultra- rank.
     int32_t     floor_;
+    uint32_t    reward_flags_;          // Everything but Star Powers.
     uint16_t    star_power_levels_;
-    uint8_t     partners_unlocked_;
-    uint8_t     reserved_0x0f_;         // Padding byte.
+    uint8_t     padding_[2];
     // RNG state.
     uint32_t    filename_seed_;
-    uint16_t    rng_sequences_[22];
+    uint16_t    rng_sequences_[24];
     // Game timers.
     uint64_t    pit_start_time_;
     uint64_t    last_save_time_;
@@ -381,25 +381,26 @@ enum RngSequence {
     
     // Mangled w/floor number; may stay reasonably consistent even if using
     // options that change seeding for unrelated features.
-    RNG_ENEMY               = 1,    // Enemy loadout generation.
+    RNG_ENEMY               = 1,    // Enemy loadout generation (+ item drop).
     RNG_ITEM                = 2,    // Items (for enemy loadouts or shops).
     RNG_CONDITION           = 3,    // Bonus challenge condition.
     RNG_CONDITION_ITEM      = 4,    // Bonus challenge reward.
     
     // Not mangled w/ floor number; order should stay completely consistent,
     // independent of all seeding options (unless partners are disabled).
-    RNG_CHEST_BADGE_FIXED   = 5,    // Chest one-time badges' order.
-    RNG_PARTNER             = 6,    // Partners' obtained order.
-    RNG_STAR_POWER          = 7,    // Star powers' obtained order.
-    RNG_KISS_THIEF          = 8,    // Kiss Thief reward order.
+    RNG_INVENTORY_UPGRADE   = 5,    // Super/Ultra Boots, Hammer, Strange Sack.    
+    RNG_CHEST_BADGE_FIXED   = 6,    // Chest one-time badges' order.
+    RNG_PARTNER             = 7,    // Partners' obtained order.
+    RNG_STAR_POWER          = 8,    // Star powers' obtained order.
+    RNG_KISS_THIEF          = 9,    // Kiss Thief reward order.
     
     // Not mangled w/ floor number; will stay more or less consistent depending
     // on when partners are first unlocked, but independent of other options.
-    RNG_CHEST_BADGE_RANDOM  = 9,    // Chest random badge order.
-    RNG_AUDIENCE_ITEM       = 10,   // Random audience items (if using option).
+    RNG_CHEST_BADGE_RANDOM  = 10,   // Chest random badge order.
+    RNG_AUDIENCE_ITEM       = 11,   // Random audience items (if using option).
     
     // Only used for picking random filenames.
-    RNG_FILENAME            = 11,
+    RNG_FILENAME            = 12,
     
     RNG_SEQUENCE_MAX,
 };
