@@ -32,7 +32,6 @@ uint32_t secretCode_RtaTimer        = 034345566;
 uint32_t secretCode_UnlockFxBadges  = 026122146;
 uint32_t secretCode_DebugMode       = 036363636;
 
-// Random state.
 bool g_DrawRtaTimer = false;
 
 }
@@ -65,7 +64,8 @@ void CheatsManager::Update() {
     }
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions3) {
         code_history = 0;
-        MenuManager::SetMenuPageVisibility(7, true);
+        // TODO: Implement toggling BGM on/off.
+        // MenuManager::SetMenuPageVisibility(7, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_UnlockFxBadges) {
@@ -93,7 +93,7 @@ void CheatsManager::Draw() {
     if (InMainGameModes() && g_DrawRtaTimer) {
         // Print the current RTA timer to the screen.
         char buf[32];
-        sprintf(buf, "%s", g_Mod->state_.GetCurrentTimeString());
+        sprintf(buf, "%s", g_Mod->ztate_.GetCurrentTimeString());
         DrawText(buf, -260, -195, 0xFF, true, ~0U, 0.75f, /* center-left */ 3);
     }
 }

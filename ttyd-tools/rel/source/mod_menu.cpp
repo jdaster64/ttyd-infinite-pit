@@ -71,47 +71,45 @@ bool ShouldTickOrAutotick(int32_t time_held) {
 
 int32_t GetMenuState(int32_t page, int32_t selection) {
     switch (100 * page + selection) {
-        case 101: return StateManager::NUM_CHEST_REWARDS;
-        case 102: return StateManager::BATTLE_REWARD_MODE;
-        case 103: return StateManager::START_WITH_PARTNERS;
-        case 104: return StateManager::START_WITH_SWEET_TREAT;
+        case 101: return OPT_CHEST_REWARDS;
+        case 102: return OPT_NO_EXP_MODE;
+        case 103: return OPT_BATTLE_REWARD_MODE;
+        case 104: return MENU_SET_DEFAULT;
         
-        case 201: return StateManager::NO_EXP_MODE;
-        case 202: return StateManager::START_WITH_NO_ITEMS;
-        case 203: return StateManager::SHINE_SPRITES_MARIO;
-        case 204: return StateManager::ALWAYS_ENABLE_AUDIENCE;
+        case 201: return OPT_PARTNERS_OBTAINED;
+        case 202: return OPT_PARTNER_RANK;
+        case 203: return OPT_BADGE_MOVE_LEVEL;
+        case 204: return OPT_STARTER_ITEMS;
         
-        case 301: return StateManager::MERLEE;
-        case 302: return StateManager::SUPERGUARDS_COST_FP;
-        case 303: return StateManager::SWITCH_PARTY_COST_FP;
-        case 304: return StateManager::INVALID_OPTION;
+        case 301: return OPTNUM_ENEMY_HP;
+        case 302: return OPTNUM_ENEMY_ATK;
+        case 303: return OPT_FLOOR_100_HP_SCALE;
+        case 304: return OPT_FLOOR_100_ATK_SCALE;
         
-        case 401: return StateManager::HP_MODIFIER;
-        case 402: return StateManager::ATK_MODIFIER;
-        case 403: return StateManager::POST_100_HP_SCALING;
-        case 404: return StateManager::POST_100_ATK_SCALING;
+        case 401: return OPTNUM_SUPERGUARD_SP_COST;
+        case 402: return OPTNUM_SWITCH_PARTY_FP_COST;
+        case 403: return OPT_MERLEE_CURSE;
+        case 404: return OPT_STAGE_RANK;
         
-        case 501: return StateManager::WEAKER_RUSH_BADGES;
-        case 502: return StateManager::CAP_BADGE_EVASION;
-        case 503: return StateManager::HP_FP_DRAIN_PER_HIT;
-        case 504: return StateManager::SWAP_CO_PL_SP_COST;
+        case 501: return OPT_PERCENT_BASED_DANGER;
+        case 502: return OPT_WEAKER_RUSH_BADGES;
+        case 503: return OPT_EVASION_BADGES_CAP;
+        case 504: return OPT_64_STYLE_HP_FP_DRAIN;
         
-        case 601: return StateManager::STAGE_HAZARD_OPTIONS;
-        case 602: return StateManager::DAMAGE_RANGE;
-        case 603: return StateManager::AUDIENCE_ITEMS_RANDOM;
-        case 604: return StateManager::INVALID_OPTION;
+        case 601: return OPT_STAGE_HAZARDS;
+        case 602: return OPT_RANDOM_DAMAGE;
+        case 603: return OPT_AUDIENCE_RANDOM_THROWS;
+        case 604: return OPT_CHET_RIPPO_APPEARANCE;
         
-        case 701: return StateManager::PARTNER_STARTING_RANK;
-        case 702: return StateManager::DANGER_PERIL_BY_PERCENT;
-        case 703: return StateManager::MAX_BADGE_MOVE_LEVEL;
-        case 704: return StateManager::RANK_UP_REQUIREMENT;
-        
-        default:  return StateManager::CHANGE_PAGE;
+        default:  return MENU_CHANGE_PAGE;
     }
 }
 
 uint32_t GetActiveColor(int32_t selection, uint8_t alpha) {
-    return (menu_selection_ == selection ? -0xffffU : -0xffU) | alpha;
+    // Return a bright red if the selection is "reset settings to default".
+    if (selection == MENU_SET_DEFAULT) return 0xff000000U | alpha;
+    // Otherwise, return yellow if the option is selected, and white otherwise.
+    return (menu_selection_ == selection ? ~0x12ffffU : ~0xffU) | alpha;
 }
 
 void DrawMenuString(
@@ -133,8 +131,7 @@ void ChangeSelection(int32_t direction) {
         menu_selection_ += direction;
         if (menu_selection_ < 1) menu_selection_ += kOptionsPerPage;
         if (menu_selection_ > kOptionsPerPage) menu_selection_ -= kOptionsPerPage;
-        if (GetMenuState(menu_page_, menu_selection_)
-            != StateManager::INVALID_OPTION) break;
+        if (GetMenuState(menu_page_, menu_selection_) != MENU_EMPTY_OPTION) break;
     }
 }
 
@@ -190,7 +187,7 @@ void MenuManager::Update() {
     }
         
     menu_state_ = GetMenuState(menu_page_, menu_selection_);
-    StateManager& state = g_Mod->state_;
+    StateManager_v2& state = g_Mod->ztate_;
     
     if (time_button_held_ < 0) return;
     switch (last_command_) {
@@ -210,21 +207,24 @@ void MenuManager::Update() {
             if (last_command_ == kMenuLeftCommand) direction = -1;
             
             switch (menu_state_) {
-                case StateManager::HP_MODIFIER:
-                case StateManager::ATK_MODIFIER: {
-                    if (ShouldTickOrAutotick(time_button_held_)) {
-                        state.ChangeOption(menu_state_, direction);
-                    }
-                    break;
-                }
-                case StateManager::CHANGE_PAGE: {
+                case MENU_CHANGE_PAGE: {
                     if (time_button_held_ == 0) {
                         ChangePage(direction ? direction : 1);
                     }
                     break;
                 }
-                default: {
+                case MENU_SET_DEFAULT: {
                     if (time_button_held_ == 0) {
+                        state.SetDefaultOptions();
+                    }
+                    break;
+                }
+                default: {
+                    bool press_registered =
+                        (menu_state_ >> 28 >= 3)  // If option is numeric
+                            ? ShouldTickOrAutotick(time_button_held_)
+                            : time_button_held_ == 0;
+                    if (press_registered) {
                         state.ChangeOption(menu_state_, direction);
                     }
                     break;
@@ -276,18 +276,21 @@ void MenuManager::Draw() {
     
     char name_buf[128];
     char value_buf[32];
-    uint32_t color, special_color;
+    uint32_t color;
+    bool is_default, affects_seeding;
     
-    const StateManager& state = g_Mod->state_;
+    const StateManager_v2& state = g_Mod->ztate_;
     
     for (int32_t selection = 1; selection < kOptionsPerPage; ++selection) {
-        // Get text strings & color for options on the current page.
-        color = GetActiveColor(selection, alpha);
+        // Get text strings / info and color for current option.
         int32_t menu_state = GetMenuState(menu_page_, selection);
-        state.GetOptionStrings(menu_state, name_buf, value_buf, &special_color);
-        // Draw the row's description and current value.
+        state.GetOptionStrings(
+            menu_state, name_buf, value_buf, &is_default, &affects_seeding);
+        color = GetActiveColor(selection, alpha);
+        // Draw the option's description and current value.
         DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
-        if (special_color) color = special_color;
+        // If changed from default, color the value slightly darker and bluer.
+        color -= (is_default ? 0 : 0x40300000U);
         DrawMenuString(value_buf, kValueX, kRowY, color, /* right-center */ 5);
         // Advance to the next row's Y position.
         kRowY -= 19;
@@ -305,12 +308,13 @@ void MenuManager::Draw() {
     DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
     
     // Print a warning over selections that change seeding.
-    if ((menu_page_ == 1 && menu_selection_ != kOptionsPerPage) ||
-        (menu_page_ == 7 && menu_selection_ == 1)) {
+    state.GetOptionStrings(
+        menu_selection_, name_buf, value_buf, &is_default, &affects_seeding);
+    if (affects_seeding) {
         sprintf(name_buf, "*Affects seeding");
         DrawText(
             name_buf, kValueX, kRowY + 1, 0xffu, true, 
-            /* color = red */ 0xff0000ffU, 0.575f, /* right-top */ 2);
+            /* color = red */ 0xff000000U | alpha, 0.575f, /* right-top */ 2);
     }
 }
 

@@ -1244,6 +1244,18 @@ void StateManager_v2::GetOptionStrings(
     bool* is_default, bool* affects_seeding) const {
     const int32_t value = GetOptionValue(option);
     const int32_t num_value = GetOptionNumericValue(option);
+    if (option >> 28 == 7) {
+        // Menu placeholder option; return empty strings.
+        *is_default = false;
+        *affects_seeding = false;
+        strcpy(name_buf, "");
+        strcpy(value_buf, "");
+        if (option == MENU_CHANGE_PAGE) {
+            strcpy(name_buf, "<< Reset all settings to default >>");
+        }
+        return;
+    }
+    
     // Get option parts.
     int32_t x, y, w, z;
     GetOptionParts(option, &x, &y, &w, &z);
