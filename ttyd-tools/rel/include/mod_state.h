@@ -164,7 +164,7 @@ public:
     uint8_t     version_;
     
     // Game state / progression.
-    uint8_t     partner_upgrades_[7];   // Number of upgrades past Ultra-rank.
+    uint8_t     partner_upgrades_[7];   // Includes Super- and Ultra- rank.
     int32_t     floor_;
     uint16_t    star_power_levels_;
     uint8_t     partners_unlocked_;
@@ -176,7 +176,7 @@ public:
     uint64_t    pit_start_time_;
     uint64_t    last_save_time_;
     // Option values & gameplay stats; all accessed by new Options enum.
-    uint8_t     option_flags_[16];      // Last 4 bytes reserved for cosmetics.
+    uint32_t    option_flags_[4];       // Last 4 bytes reserved for cosmetics.
     uint8_t     option_bytes_[32];
     uint8_t     play_stats_  [64];
 
@@ -190,10 +190,12 @@ public:
     int32_t GetStarPowerLevel(int32_t star_power_type) const;
     
     // Fetches a random value from the desired sequence (using the RngSequence
-    // enum), returning a value in the range [0, range).
-    // If sequence == 0, returns a random value using ttyd::system::irand().
-    uint32_t Rand(uint32_t range, int32_t sequence = 0);
+    // enum), returning a value in the range [0, range). If `sequence` is not
+    // a valid enum value, returns a random value using ttyd::system::irand().
+    uint32_t Rand(uint32_t range, int32_t sequence = -1);
     
+    // Set all options / play stats to 0.
+    void ClearAllOptions();
     // Set all non-cosmetic options to their default values.
     void SetDefaultOptions();
     // Changes the selected option/stat by the given amount.
@@ -201,22 +203,26 @@ public:
     // numeric options will saturate and will not increment if `change` is 0.
     void ChangeOption(int32_t option, int32_t change = 1);
     // Sets the selected option/stat to a particular value.
-    void SetOption(int32_t option, int32_t value);
-    // Returns the appropriate numeric value for the specified option
-    // (e.g. 0 or 1 for boolean options, or the percent for HP/ATK modifiers).
+    // If option is set to an OPTVAL_xxx, 'value' is ignored.
+    void SetOption(int32_t option, int32_t value = 0);
+    // Returns the appropriate flag / numeric value for the specified option.
+    // Returns -1 if the option doesn't exist or if the wrong type is requested.
     int32_t GetOptionValue(int32_t option) const;
+    int32_t GetOptionFlagValue(int32_t option) const;
+    int32_t GetOptionNumericValue(int32_t option) const;
     // Checks whether a flag option has a particular value.
     bool CheckOptionValue(int32_t option_value) const;
     // Returns strings for the given menu option and its current value,
     // and whether the value is default / affects seeding in any way.
     void GetOptionStrings(
-        int32_t option, char* name, char* value,
+        int32_t option, char* name_buf, char* value_buf,
         bool* is_default, bool* affects_seeding) const;
 
     // Returns a string representing all of this file's user-selectable options.
     const char* GetEncodedOptions() const;
     // Gets a string containing all the saved gameplay stats on this save file.
-    void GetPlayStatsString(char* out_buf) const;
+    // Returns false if no play stats are present on this save file.
+    bool GetPlayStatsString(char* out_buf) const;
     
     // Saves the current clock time (used for calculating RTA time since start).
     void SaveCurrentTime(bool pit_start = false);
@@ -233,7 +239,7 @@ static_assert(sizeof(StateManager_v2) <= 0x120);
 // Types of options / encoding:
 //  - OPT_BLAH:     Flag option type    (0x1 XX Y W ZZZ);
 //      Represents the range of bits [XX, XX+Y) and having ZZZ possible values.
-//      (if ZZZZ <= 2, it is assumed to take only two possible values).
+//      Bits used for a single option should not cross a word boundary.
 //  - OPTVAL_BLAH:  Flag option value   (0x1 XX Y W ZZZ);
 //      Represents the range of bits [XX, XX+Y) being set to the value ZZZ.
 //  - OPTNUM_BLAH:  Bytes option value  (0x3 XX Y W ZZZ);
@@ -245,9 +251,11 @@ static_assert(sizeof(StateManager_v2) <= 0x120);
 //
 //  Use of "W" bits:
 //      If (W & 7) == 0 or 1: 
-//          Numeric options / play stats are clamped to the range [0/1, ZZZ].
+//          Numeric options / play stats are clamped to the range [0 or 1, ZZZ].
 //      If (W & 7) == 2:
-//          Numeric options / play stats are clamped to the range [0, 10^ZZZ-1].
+//          Numeric options / play stats are clamped to Z digits (from 1-9).
+//      If (W & 7) == 3:
+//          Numeric options / play stats are clamped to +/- Z digits (from 1-9).
 //      If W & 8 != 0, the option affects seeding.
 // 
 // Intentionally placed in global namespace for convenience.
@@ -274,10 +282,10 @@ enum Options_v2 {
     OPTVAL_PARTNERS_ONE_START   = 0x2'08'2'8'002,   // one at start, rest later
     OPTVAL_PARTNERS_NEVER       = 0x2'08'2'8'003,   // no partners at all
     // Which rank partners start at.
-    OPT_PARTNER_RANK            = 0x1'0a'2'8'003,
-    OPTVAL_PARTNER_RANK_NORMAL  = 0x2'0a'2'8'000,
-    OPTVAL_PARTNER_RANK_SUPER   = 0x2'0a'2'8'001,
-    OPTVAL_PARTNER_RANK_ULTRA   = 0x2'0a'2'8'002,
+    OPT_PARTNER_RANK            = 0x1'0a'2'0'003,
+    OPTVAL_PARTNER_RANK_NORMAL  = 0x2'0a'2'0'000,
+    OPTVAL_PARTNER_RANK_SUPER   = 0x2'0a'2'0'001,
+    OPTVAL_PARTNER_RANK_ULTRA   = 0x2'0a'2'0'002,
     // How high a level of each badge-based move can be used.
     OPT_BADGE_MOVE_LEVEL        = 0x1'0c'2'0'004,
     OPTVAL_BADGE_MOVE_1X        = 0x2'0c'2'0'000,   // up to 1x badges equipped
@@ -288,8 +296,8 @@ enum Options_v2 {
     OPT_STARTER_ITEMS           = 0x1'0e'2'0'002,
     OPTVAL_STARTER_ITEMS_OFF    = 0x2'0e'2'0'000,
     OPTVAL_STARTER_ITEMS_NORMAL = 0x2'0e'2'0'001,
-    OPTVAL_STARTER_ITEMS_SET_2  = 0x2'0e'2'0'002,   // TODO: use?
-    OPTVAL_STARTER_ITEMS_SET_3  = 0x2'0e'2'0'003,   // TODO: use?
+    OPTVAL_STARTER_ITEMS_SET_2  = 0x2'0e'2'0'002,   // Reserved for future use?
+    OPTVAL_STARTER_ITEMS_SET_3  = 0x2'0e'2'0'003,   // Reserved for future use?
     // Whether to use faster enemy stat scaling after floor 100.
     OPT_FLOOR_100_HP_SCALE      = 0x1'10'1'0'002,
     OPT_FLOOR_100_ATK_SCALE     = 0x1'11'1'0'002,
@@ -332,7 +340,7 @@ enum Options_v2 {
     OPT_ENABLE_PARTNER_REWARD   = 0x1'65'1'0'002,
     
     // Numeric options.
-    // Global HP and ATK scaling.
+    // Global HP and ATK scaling (in percentage).
     OPTNUM_ENEMY_HP             = 0x3'00'2'1'3e8,
     OPTNUM_ENEMY_ATK            = 0x3'02'2'1'3e8,
     // SP cost for Superguarding (in increments of 0.01 SP).
@@ -357,35 +365,43 @@ enum Options_v2 {
     STAT_ITEMS_SOLD             = 0x4'25'3'2'007,
     STAT_BADGES_SOLD            = 0x4'28'3'2'007,
     STAT_LEVELS_SOLD            = 0x4'2b'2'2'004,
+    STAT_SHINE_SPRITES          = 0x4'2d'2'2'003,
 };
 
 // An enumeration of all of the RNG sequences used by StateManager_v2.
+// All RNG calls (except RNG_VANILLA) mangle the results with the filename seed,
+// so results should differ between seeds, but be consistent on the same seed.
 enum RngSequence {
     // "Totally random"; not reproducible run-to-run.
-    RNG_VANILLA             = 0,    // Calls ttyd::system::irand().
+    RNG_VANILLA             = -1,    // Calls ttyd::system::irand().
     
     // Mangled w/floor number and OPT_CHEST_REWARDS; will change dramatically
     // if using options that change seeding, but will be consistent otherwise.
-    RNG_CHEST               = 1,    // Chest top-level weighting.
+    RNG_CHEST               = 0,    // Chest top-level weighting.
     
     // Mangled w/floor number; may stay reasonably consistent even if using
     // options that change seeding for unrelated features.
-    RNG_ENEMY               = 2,    // Enemy loadout generation.
-    RNG_ITEM                = 3,    // Items (for enemy loadouts or shops).
-    RNG_CONDITION           = 4,    // Condition rule.
-    RNG_CONDITION_ITEM      = 5,    // Condition reward.
+    RNG_ENEMY               = 1,    // Enemy loadout generation.
+    RNG_ITEM                = 2,    // Items (for enemy loadouts or shops).
+    RNG_CONDITION           = 3,    // Bonus challenge condition.
+    RNG_CONDITION_ITEM      = 4,    // Bonus challenge reward.
     
     // Not mangled w/ floor number; order should stay completely consistent,
     // independent of all seeding options (unless partners are disabled).
-    RNG_CHEST_BADGE_FIXED   = 6,    // Chest one-time badges' order.
-    RNG_PARTNER             = 7,    // Partners' obtained order.
-    RNG_STAR_POWER          = 8,    // Star powers' obtained order.
-    RNG_KISS_THIEF          = 9,    // Kiss Thief reward order.
+    RNG_CHEST_BADGE_FIXED   = 5,    // Chest one-time badges' order.
+    RNG_PARTNER             = 6,    // Partners' obtained order.
+    RNG_STAR_POWER          = 7,    // Star powers' obtained order.
+    RNG_KISS_THIEF          = 8,    // Kiss Thief reward order.
     
     // Not mangled w/ floor number; will stay more or less consistent depending
     // on when partners are first unlocked, but independent of other options.
-    RNG_CHEST_BADGE_RANDOM  = 10,   // Chest random badge order.
-    RNG_AUDIENCE_ITEM       = 11,   // Random audience items (if using option).
+    RNG_CHEST_BADGE_RANDOM  = 9,    // Chest random badge order.
+    RNG_AUDIENCE_ITEM       = 10,   // Random audience items (if using option).
+    
+    // Only used for picking random filenames.
+    RNG_FILENAME            = 11,
+    
+    RNG_SEQUENCE_MAX,
 };
 
 }

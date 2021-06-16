@@ -97,10 +97,17 @@ int32_t CountSetBits(uint32_t x) {
 }
 
 uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit) {
+    // TODO: Replace with rlwinm?
     return (~0U >> (31-end_bit)) - (1U << start_bit) + 1;
 }
 
+uint32_t GetShiftedBitMask(uint32_t x, uint32_t start_bit, uint32_t end_bit) {
+    // TODO: Replace with rlwinm?
+    return (x & GetBitMask(start_bit, end_bit)) >> start_bit;
+}
+
 int32_t IntegerToFmtString(int32_t val, char* out_buf, int32_t max_val) {
+    // TODO: Add support for negative values?
     if (val < 0) return 0;
     if (val > max_val) val = max_val;
     if (val >= 1'000'000) {

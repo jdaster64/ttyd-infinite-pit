@@ -43,6 +43,8 @@ int32_t CountSetBits(uint32_t x);
 // Gets a 32-bit bit mask from [start_bit, end_bit].
 // Assumes 0 <= start_bit <= end_bit <= 31.
 uint32_t GetBitMask(uint32_t start_bit, uint32_t end_bit);
+// Gets the bits [start_bit, end_bit] of x, shifted to start at the ones' place.
+uint32_t GetShiftedBitMask(uint32_t x, uint32_t start_bit, uint32_t end_bit);
 
 // Converts a positive integer under a billion to a string with 1000-separators.
 // Returns the number of characters printed to the string.

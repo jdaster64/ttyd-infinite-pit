@@ -202,7 +202,7 @@ const char* GetYoshiTextColor() {
     
 const char* StringsManager::LookupReplacement(const char* msg_key) {
     // Do not use for more than one custom message at a time!
-    static char buf[512];
+    static char buf[1024];
     
     // Handle journal Tattle entries.
     if (strstr(msg_key, "menu_enemy_")) {

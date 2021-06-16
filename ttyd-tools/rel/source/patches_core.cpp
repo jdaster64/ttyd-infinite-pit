@@ -122,10 +122,6 @@ void OnFileLoad(bool new_file = true) {
         // rather than in place in the center of the room.
         ttyd::mariost::g_MarioSt->flags &= ~1U;
         
-        // Initializes the mod's state and copies it to the pouch.
-        g_Mod->state_.Load(/* new_save = */ true);
-        g_Mod->state_.Save();
-        
         // Set story progress / some tutorial flags.
         ttyd::swdrv::swInit();
         ttyd::swdrv::swByteSet(0, 405);     // post-game story progress
@@ -134,6 +130,10 @@ void OnFileLoad(bool new_file = true) {
         ttyd::swdrv::swSet(0xeb);           // Item tutorial
         ttyd::swdrv::swSet(0xec);           // Save Block tutorial-related
         ttyd::swdrv::swSet(0x15d9);         // Star piece in Pit room collected
+        
+        // Initializes the mod's state and copies it to the pouch.
+        g_Mod->state_.Load(/* new_save = */ true);
+        g_Mod->state_.Save();
         
         // Update any stats / equipment / flags as necessary.
         ttyd::mario_pouch::pouchGetItem(ItemType::BOOTS);
