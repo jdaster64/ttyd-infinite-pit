@@ -1070,10 +1070,15 @@ uint32_t StateManager_v2::Rand(uint32_t range, int32_t sequence) {
     if (sequence > RNG_VANILLA && sequence < RNG_SEQUENCE_MAX) {
         uint32_t data[2] = { 0, 0 };
         uint16_t* seq_val = rng_sequences_ + sequence;
-        data[0] = (*seq_val)++;
+        // Include the sequence id and current position, so the beginnings of
+        // different sequences can't end up identical.
+        // (e.g. chest random badge rewards + first floor's enemy items)
+        data[0] = (*seq_val)++ | (sequence << 16);
         switch (sequence) {
             case RNG_CHEST: {
-                data[0] |= GetOptionNumericValue(OPT_CHEST_REWARDS);
+                // Mix in the number of rewards, so the types of rewards are
+                // totally differently ordered for each setting.
+                data[0] |= GetOptionNumericValue(OPT_CHEST_REWARDS) << 24;
                 data[1] = floor_;
                 break;
             }

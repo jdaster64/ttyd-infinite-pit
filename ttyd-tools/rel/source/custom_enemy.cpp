@@ -160,6 +160,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { -1, ModuleId::INVALID_MODULE, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0 },
     { -1, ModuleId::INVALID_MODULE, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0 },
     { -1, ModuleId::INVALID_MODULE, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0 },
+    { -1, ModuleId::INVALID_MODULE, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0 },
     { 0x37698, ModuleId::CUSTOM, 159, 0x24, 13, 6, 0, 3, 0, 6, 2, 0, 1 },
     { 0x18ab0, ModuleId::JON, 302, 0x24, 10, 6, 0, 3, 1, 6, 2, 0, 1 },
     { 0x37728, ModuleId::CUSTOM, 249, 0x10, 13, 6, 0, 2, 1, 4, -1, 0, 0 },
@@ -594,7 +595,7 @@ void SelectEnemies(int32_t floor) {
         // Randomly upweight a handful of enemies by 100% or 50%.
         for (int32_t i = 0; i < 6; ++i) {
             int32_t idx = state.Rand(kNumEnemyTypes, RNG_ENEMY);
-            for (int32_t slot = 0; slot < 6; ++slot) {
+            for (int32_t slot = 0; slot < 5; ++slot) {  // don't change 6th slot
                 weights[slot][idx] = weights[slot][idx] * (i < 3 ? 4 : 3) / 2;
             }
         }

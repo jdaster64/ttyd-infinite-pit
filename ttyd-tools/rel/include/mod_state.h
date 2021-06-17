@@ -404,7 +404,7 @@ enum RngSequence {
     RNG_CHEST_BADGE_RANDOM  = 10,   // Chest random badge order.
     RNG_AUDIENCE_ITEM       = 11,   // Random audience items (if using option).
     
-    // Only used for picking random filenames.
+    // Used for picking random filenames; should NOT be used for anything else.
     RNG_FILENAME            = 12,
     
     RNG_SEQUENCE_MAX,
