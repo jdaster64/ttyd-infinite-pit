@@ -101,7 +101,7 @@ void OnModuleLoaded(OSModuleInfo* module) {
             pouch.next_merlee_curse_type = 0;
         }
         pouch.merlee_curse_uses_remaining = 99;
-    }    
+    }
 }
 
 // Initializes various game data when loading a new file; analogous to /

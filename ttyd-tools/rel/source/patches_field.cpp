@@ -903,6 +903,14 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
     if (module_id != ModuleId::JON || !module_ptr) return;
     const uint32_t module_start = reinterpret_cast<uint32_t>(module_ptr);
     
+    // Reset RNG states that reset every floor.
+    StateManager_v2& state = g_Mod->ztate_;
+    state.rng_sequences_[RNG_CHEST] = 0;
+    state.rng_sequences_[RNG_ENEMY] = 0;
+    state.rng_sequences_[RNG_ITEM] = 0;
+    state.rng_sequences_[RNG_CONDITION] = 0;
+    state.rng_sequences_[RNG_CONDITION_ITEM] = 0;
+    
     // Apply custom logic to box opening event to allow spawning partners.
     mod::patch::writePatch(
         reinterpret_cast<void*>(module_start + g_jon_evt_open_box_EvtOffset),
@@ -972,7 +980,7 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         reinterpret_cast<int32_t>(ChetRippoSetupEvt));
     
     // If not reward floor, reset Pit-related flags and save-related status.
-    if (g_Mod->ztate_.floor_ % 10 != 9) {
+    if (state.floor_ % 10 != 9) {
         // Clear "chest open" and "Bonetail beaten" flags.
         for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
             ttyd::swdrv::swClear(i);
@@ -989,9 +997,9 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
             }
         }
         // Enable "P" badges only after obtaining the first one.
-        g_Mod->ztate_.SetOption(OPT_ENABLE_P_BADGES, has_partner);
+        state.SetOption(OPT_ENABLE_P_BADGES, has_partner);
         // Only one partner allowed per reward floor, re-enable them for next.
-        g_Mod->ztate_.SetOption(OPT_ENABLE_PARTNER_REWARD, true);
+        state.SetOption(OPT_ENABLE_PARTNER_REWARD, true);
     }
     // Otherwise, modify Charlieton's stock, using the prior RNG state
     // if continuing from a saved file.
