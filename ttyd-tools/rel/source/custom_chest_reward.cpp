@@ -84,30 +84,6 @@ int16_t PickUniqueBadge(StateManager_v2& state) {
     return kRewards[reward_idx];
 }
 
-int16_t PickPartner(StateManager_v2& state) {
-    uint16_t weights[7] = { 10, 10, 10, 10, 10, 10, 10 };
-    for (int32_t i = 0; i < 7; ++i) {
-        if (state.reward_flags_ & (1 << (i + 17))) weights[i] = 0;
-    }
-    
-    int32_t sum_weights = 0;
-    for (const auto& weight : weights) sum_weights += weight;
-    
-    int32_t weight = state.Rand(sum_weights, RNG_PARTNER);
-    int32_t reward_idx = 0;
-    for (; (weight -= weights[reward_idx]) >= 0; ++reward_idx);
-    reward_idx += 17;
-    
-    state.reward_flags_ |= (1 << reward_idx);
-    if (state.CheckOptionValue(OPTVAL_PARTNERS_ALL_START)) {
-        // Replace rewards with Shine Sprites if starting with all partners.
-        return ItemType::GOLD_BAR_X3;
-    }
-    // Disable getting partners until the next reward floor.
-    state.SetOption(OPT_ENABLE_PARTNER_REWARD, 0);
-    return kRewards[reward_idx];
-}
-
 int16_t PickStarPower(StateManager_v2& state) {
     uint16_t weights[8];
     for (int32_t i = 0; i < 8; ++i) {
@@ -141,9 +117,10 @@ int16_t PickChestReward() {
         if (int32_t num_partners_remaining =
             7 - CountSetBits(GetBitMask(17, 23) & state.reward_flags_);
             num_partners_remaining) {
-            if (num_partners_remaining == 7 && state.floor_ == 29) {
-                // Force a partner on floor 30.
-                return PickPartner(state);
+            if (num_partners_remaining == 7 && state.floor_ == 29 &&
+                !state.CheckOptionValue(OPTVAL_PARTNERS_ALL_START)) {
+                // Force a partner on floor 30 you don't have any.
+                return PickPartnerReward();
             }
             int32_t partner_weight = 10;
             int32_t num_partners = 7 - num_partners_remaining;
@@ -195,13 +172,40 @@ int16_t PickChestReward() {
     switch (reward_idx) {
         case REWARD_INVENTORY_UPGRADE:  return PickInventoryUpgrade(state);
         case REWARD_UNIQUE_BADGE:       return PickUniqueBadge(state);
-        case REWARD_PARTNER:            return PickPartner(state);
         case REWARD_STAR_POWER:         return PickStarPower(state);
+        case REWARD_PARTNER: {
+            const int32_t partner_reward = PickPartnerReward();
+            // Replace rewards with Shine Sprites if starting with all partners.
+            return state.CheckOptionValue(OPTVAL_PARTNERS_ALL_START)
+                ? ItemType::GOLD_BAR_X3 : partner_reward;
+        }
         case REWARD_RANDOM_BADGE:
             return PickRandomItem(RNG_CHEST_BADGE_RANDOM, 0, 0, 1, 0);
     }
     // Not one of the other categories, must be a Shine Sprite.
     return ItemType::GOLD_BAR_X3;
+}
+
+int16_t PickPartnerReward() {
+    StateManager_v2& state = g_Mod->ztate_;
+
+    uint16_t weights[7] = { 10, 10, 10, 10, 10, 10, 10 };
+    for (int32_t i = 0; i < 7; ++i) {
+        if (state.reward_flags_ & (1 << (i + 17))) weights[i] = 0;
+    }
+    
+    int32_t sum_weights = 0;
+    for (const auto& weight : weights) sum_weights += weight;
+    
+    int32_t weight = state.Rand(sum_weights, RNG_PARTNER);
+    int32_t reward_idx = 0;
+    for (; (weight -= weights[reward_idx]) >= 0; ++reward_idx);
+    reward_idx += 17;
+    
+    state.reward_flags_ |= (1 << reward_idx);
+    // Disable getting partners until the next reward floor.
+    state.SetOption(OPT_ENABLE_PARTNER_REWARD, 0);
+    return kRewards[reward_idx];
 }
 
 }

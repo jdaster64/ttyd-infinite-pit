@@ -333,14 +333,8 @@ bool CheckForUnusableItemInMenu() {
     
     // Mario is selected.
     if (party_member_target == 0) {
-        if (g_Mod->state_.GetOptionValue(
-            StateManager::SHINE_SPRITES_MARIO)) {
-            // Can use Shine Sprites only when Mario has SP.
-            if (ttyd::mario_pouch::pouchGetMaxAP() > 0) return false;
-        } else {
-            // Shine Sprites will be used on partners instead.
-            return false;
-        }
+        // Can only use Shine Sprites if max SP > 0.
+        if (ttyd::mario_pouch::pouchGetMaxAP() > 0) return false;
     } else {
         // Shine Sprites can always be used on partners.
         return false;
@@ -357,16 +351,8 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
     
     // If the item is a Strawberry Cake or Shine Sprite...
     if (item == ItemType::CAKE || item == ItemType::GOLD_BAR_X3) {
-        int32_t& party_member_target = 
+        int32_t& party_member_target =
             reinterpret_cast<int32_t*>(winPtr)[0x2dc / 4];
-        if (party_member_target == 0 && item == ItemType::GOLD_BAR_X3 &&
-            !g_Mod->state_.GetOptionValue(
-                StateManager::SHINE_SPRITES_MARIO)) {
-            // If Mario is selected for using a Shine Sprite, change the
-            // target to the active party member instead.
-            party_member_target = 1;
-        }
-        
         int32_t selected_party_id = 0;
         if (party_member_target > 0) {
             // Convert the selected menu index into the PouchPartyData index.
@@ -390,12 +376,9 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 item::GetBonusCakeRestoration());
         } else if (item == ItemType::GOLD_BAR_X3) {
             if (selected_party_id == 0) {
-                // Mario selected; add +0.5 max SP (up to +7.0) and restore SP.
+                // Mario selected; add +0.5 max SP (up to 20) and restore SP.
                 PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-                if (pouch.max_sp - g_Mod->state_.StarPowersObtained() 
-                    * 100 < 700) {
-                    pouch.max_sp += 50;
-                }
+                if (pouch.max_sp < 2000) pouch.max_sp += 50;
                 pouch.current_sp = pouch.max_sp;
             } else {
                 ttyd::mario_pouch::PouchPartyData* pouch_data =
@@ -424,21 +407,21 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 pouch_data->max_hp += 5 * hp_plus_p_cnt;
                 
                 // Save the partner upgrade count to the mod's state.
-                ++g_Mod->state_.partner_upgrades_[selected_party_id - 1];
+                ++g_Mod->ztate_.partner_upgrades_[selected_party_id - 1];
             }
             
             // Increment the number of actual Shine Sprites, so it shows
             // the total count used in the Mario menu.
             if (ttyd::mario_pouch::pouchGetPtr()->shine_sprites < 999) {
                 ++ttyd::mario_pouch::pouchGetPtr()->shine_sprites;
-                
-                // TODO: Increment Shine Sprites used in new StateManager.
+                // Track Shine Sprites used in StateManager.
+                g_Mod->ztate_.ChangeOption(STAT_SHINE_SPRITES);
             }
         }
     }
     
-    // Track items used in the menu...
-    g_Mod->state_.IncrementPlayStat(StateManager::ITEMS_USED);
+    // Track items used in the menu.
+    g_Mod->ztate_.ChangeOption(STAT_ITEMS_USED);
     
     // Run normal logic to add HP, FP, and SP afterwards...
 }

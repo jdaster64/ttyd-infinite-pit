@@ -83,7 +83,8 @@ extern "C" {
         return kind;
     }
     bool checkStarPowersEnabled() {
-        return mod::infinite_pit::g_Mod->state_.StarPowerEnabled();
+        // Star Powers will always be enabled in v2.
+        return true;
     }
 }
 
@@ -148,21 +149,20 @@ void ApplyFixedPatches() {
             
             // Get the percentage to scale original chances by.
             int32_t scale = 100;
-            switch (g_Mod->state_.GetOptionValue(
-                StateManager::STAGE_HAZARD_OPTIONS)) {
-                case StateManager::HAZARD_RATE_HIGH: {
+            switch (g_Mod->ztate_.GetOptionValue(OPT_STAGE_HAZARDS)) {
+                case OPTVAL_STAGE_HAZARDS_HIGH: {
                     scale = 250;
                     break;
                 }
-                case StateManager::HAZARD_RATE_LOW: {
+                case OPTVAL_STAGE_HAZARDS_LOW: {
                     scale = 50;
                     break;
                 }
-                case StateManager::HAZARD_RATE_OFF: {
+                case OPTVAL_STAGE_HAZARDS_OFF: {
                     scale = 0;
                     break;
                 }
-                case StateManager::HAZARD_RATE_NO_FOG: {
+                case OPTVAL_STAGE_HAZARDS_NO_FOG: {
                     // If stage jets are uninitialized or fog-type jets,
                     // make them unable to fire.
                     if (battleWork->stage_hazard_work.current_stage_jet_type
@@ -202,12 +202,11 @@ void ApplyFixedPatches() {
             return 2;
         });
     
-    // Apply patch to give the player infinite BP if NO_EXP_INFINITE_BP enabled.
+    // Apply patch to give the player infinite BP if enabled.
     g_pouchReviseMarioParam_trampoline = mod::patch::hookFunction(
         ttyd::mario_pouch::pouchReviseMarioParam, [](){
             g_pouchReviseMarioParam_trampoline();
-            if (g_Mod->state_.GetOptionValue(StateManager::NO_EXP_MODE)
-                == StateManager::NO_EXP_INFINITE_BP &&
+            if (g_Mod->ztate_.CheckOptionValue(OPTVAL_NO_EXP_MODE_INFINITE) &&
                 !strcmp(GetCurrentArea(), "jon")) {
                 ttyd::mario_pouch::pouchGetPtr()->unallocated_bp = 99;
             }
@@ -308,21 +307,9 @@ void ApplyFixedPatches() {
 void ApplySettingBasedPatches() {
     // Change stage rank-up levels (set to 100 to force no rank-up on level-up).
     auto* rankup_data = ttyd::battle_seq_end::_rank_up_data;
-    switch (g_Mod->state_.GetOptionValue(
-        StateManager::RANK_UP_REQUIREMENT)) {
-        case StateManager::RANK_UP_NORMAL: {
-            rankup_data[1].level = 10;
-            rankup_data[2].level = 20;
-            rankup_data[3].level = 30;
-            break;
-        }
-        case StateManager::RANK_UP_EARLIER: {
-            rankup_data[1].level = 8;
-            rankup_data[2].level = 15;
-            rankup_data[3].level = 25;
-            break;
-        }
-        default: {  // Non-level based.
+    switch (g_Mod->ztate_.GetOptionValue(OPT_STAGE_RANK)) {
+        case OPTVAL_STAGE_RANK_30_FLOORS:
+        case OPTVAL_STAGE_RANK_ALWAYSMAX: {
             rankup_data[1].level = 100;
             rankup_data[2].level = 100;
             rankup_data[3].level = 100;
@@ -331,9 +318,7 @@ void ApplySettingBasedPatches() {
     }
     
     // Increase some move badge BP costs if playing with larger max move levels.
-    if (g_Mod->state_.GetOptionValue(
-            StateManager::MAX_BADGE_MOVE_LEVEL) !=
-            StateManager::MAX_MOVE_LEVEL_1X) {
+    if (g_Mod->ztate_.CheckOptionValue(OPTVAL_BADGE_MOVE_1X)) {
         itemDataTable[ItemType::POWER_JUMP].bp_cost = 2;
         itemDataTable[ItemType::POWER_SMASH].bp_cost = 2;
         itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 3;
@@ -352,8 +337,7 @@ void ApplySettingBasedPatches() {
     }
     
     // Increase badge BP cost and shop prices if HP/FP Drains heal per hit.
-    if (g_Mod->state_.GetOptionValue(
-        StateManager::HP_FP_DRAIN_PER_HIT)) {
+    if (g_Mod->ztate_.GetOptionNumericValue(OPT_64_STYLE_HP_FP_DRAIN)) {
         itemDataTable[ItemType::HP_DRAIN].bp_cost = 3;
         itemDataTable[ItemType::HP_DRAIN_P].bp_cost = 3;
         itemDataTable[ItemType::FP_DRAIN].bp_cost = 6;
@@ -374,21 +358,11 @@ void ApplySettingBasedPatches() {
         itemDataTable[ItemType::FP_DRAIN].buy_price = 125;
         itemDataTable[ItemType::FP_DRAIN_P].buy_price = 125;
     }
-    
-    // Swap SP costs of Clock Out and Power Lift.
-    if (g_Mod->state_.GetOptionValue(
-        StateManager::SWAP_CO_PL_SP_COST)) {
-        ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 3;
-        ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 2;
-    } else {
-        ttyd::battle_mario::marioWeapon_BakuGame.base_sp_cost = 2;
-        ttyd::battle_mario::marioWeapon_Muki.base_sp_cost = 3;
-    }
 }
 
 void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
-    int32_t switch_fp_cost = g_Mod->state_.GetOptionValue(
-        StateManager::SWITCH_PARTY_COST_FP);
+    int32_t switch_fp_cost = 
+        g_Mod->ztate_.GetOptionValue(OPTNUM_SWITCH_PARTY_FP_COST);
     if (switch_fp_cost > 0) {
         switch_fp_cost -= unit->badges_equipped.flower_saver;
         if (switch_fp_cost < 1) switch_fp_cost = 1;
@@ -403,8 +377,7 @@ void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
 }
 
 int32_t GetPinchThresholdForMaxHp(int32_t max_hp, bool peril) {
-    if (g_Mod->state_.GetOptionValue(
-        StateManager::DANGER_PERIL_BY_PERCENT)) {
+    if (g_Mod->ztate_.GetOptionNumericValue(OPT_PERCENT_BASED_DANGER)) {
         // Danger = 1/3 of max, Peril = 1/10 of max (rounded normally).
         int32_t threshold = peril ? (max_hp + 5) / 10 : (max_hp + 1) / 3;
         // Clamp to range [1, 99] to ensure the pinch range exists,
@@ -427,9 +400,8 @@ void SetPinchThreshold(BattleUnitKind* kind, int32_t max_hp, bool peril) {
 }
 
 int32_t GetRandomAudienceItem(int32_t item_type) {
-    if (g_Mod->state_.GetOptionValue(
-        StateManager::AUDIENCE_ITEMS_RANDOM)) {
-        item_type = PickRandomItem(/* seeded = */ false, 20, 10, 5, 15);
+    if (g_Mod->ztate_.GetOptionNumericValue(OPT_AUDIENCE_RANDOM_THROWS)) {
+        item_type = PickRandomItem(RNG_AUDIENCE_ITEM, 20, 10, 5, 15);
         if (item_type <= 0) {
             // Pick a coin, heart, flower, or random bad item if "none" selected.
             switch (ttyd::system::irand(10)) {

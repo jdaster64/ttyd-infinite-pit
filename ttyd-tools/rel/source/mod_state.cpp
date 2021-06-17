@@ -291,7 +291,7 @@ void StateManager::ChangeOption(int32_t option, int32_t change) {
             if (value > Options_v1_40::MAX_MOVE_LEVEL_INFINITE) value = 0;
             options_v1_40_ = (options_v1_40_ & ~option) | value;
             break;
-        }        
+        }
         case RANK_UP_REQUIREMENT: {
             if (change == 0) change = 1;
             option = Options_v1_40::RANK_UP_REQUIREMENT;

@@ -582,11 +582,11 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
     int32_t lead_enemy_type;
     BuildBattle(
-        core::GetPitModulePtr(), g_Mod->state_.floor_, &npc_tribe_description, 
+        core::GetPitModulePtr(), g_Mod->ztate_.floor_, &npc_tribe_description, 
         &npc_setup_info, &lead_enemy_type);
     int8_t* enemy_100 = reinterpret_cast<int8_t*>(
         core::GetPitModulePtr() + g_jon_enemy_100_Offset);
-    int8_t battle_setup_idx = enemy_100[g_Mod->state_.floor_ % 100];
+    int8_t battle_setup_idx = enemy_100[g_Mod->ztate_.floor_ % 100];
     const int32_t x_sign = ttyd::system::irand(2) ? 1 : -1;
     const int32_t x_pos = ttyd::system::irand(50) + 80;
     const int32_t z_pos = ttyd::system::irand(200) - 100;
@@ -666,17 +666,15 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
     NpcEntry* npc = ttyd::evt_npc::evtNpcNameToPtr(evt, name);
     ttyd::npcdrv::npcSetBattleInfo(npc, battle_id);
     
-    PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-    
     // If on a Bonetail floor and Bonetail is already defeated,
     // skip the item / condition generation to keep seeding consistent.
     if (ttyd::swdrv::swGet(0x13dc)) return 2;
 
     // Set the enemies' held items, if they get any.
     const int32_t reward_mode =
-        g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE);
+        g_Mod->ztate_.GetOptionValue(OPT_BATTLE_REWARD_MODE);
     NpcBattleInfo* battle_info = &npc->battleInfo;
-    if (reward_mode == StateManager::NO_HELD_ITEMS) {
+    if (reward_mode == OPTVAL_DROP_NO_HELD_W_BONUS) {
         for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
             battle_info->wHeldItems[i] = 0;
         }
@@ -684,45 +682,13 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
         // If item drops only come from conditions, spawn Shine Sprites
         // as held items occasionally after floor 30.
         int32_t shine_rate = 0;
-        if (g_Mod->state_.floor_ >= 30 &&
-            reward_mode == StateManager::CONDITION_DROPS_HELD) {
+        if (g_Mod->ztate_.floor_ >= 30 &&
+            reward_mode == OPTVAL_DROP_HELD_FROM_BONUS) {
             shine_rate = 13;
         }
-            
         for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
-            int32_t item =
-                PickRandomItem(/* seeded = */ true, 40, 20, 40, shine_rate);
-            
-            // Indirectly attacking enemies should not hold defense-increasing
-            // badges if the player cannot damage them at base rank equipment /
-            // without a damaging Star Power.
-            if (pouch.jump_level < 2 && !(pouch.star_powers_obtained & 0x92)) {
-                const BattleUnitSetup& unit_setup = 
-                    battle_info->pConfiguration->enemy_data[i];
-                switch (unit_setup.unit_kind_params->unit_type) {
-                    case BattleUnitType::DULL_BONES:
-                    case BattleUnitType::LAKITU:
-                    case BattleUnitType::DARK_LAKITU:
-                    case BattleUnitType::MAGIKOOPA:
-                    case BattleUnitType::RED_MAGIKOOPA:
-                    case BattleUnitType::WHITE_MAGIKOOPA:
-                    case BattleUnitType::GREEN_MAGIKOOPA:
-                    case BattleUnitType::HAMMER_BRO:
-                    case BattleUnitType::BOOMERANG_BRO:
-                    case BattleUnitType::FIRE_BRO:
-                        switch (item) {
-                            case ItemType::DEFEND_PLUS:
-                            case ItemType::DEFEND_PLUS_P:
-                            case ItemType::P_DOWN_D_UP:
-                            case ItemType::P_DOWN_D_UP_P:
-                                // Pick a new item, disallowing badges.
-                                item = PickRandomItem(
-                                    /* seeded = */ true, 40, 20, 0, shine_rate);
-                        }
-                }
-            }
-            
-            if (!item) item = ItemType::GOLD_BAR_X3;
+            int32_t item = PickRandomItem(RNG_ITEM, 40, 20, 40, shine_rate);            
+            if (!item) item = ItemType::GOLD_BAR_X3;  // Shine Sprite
             battle_info->wHeldItems[i] = item;
         }
     }
@@ -735,14 +701,13 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 
 // Returns the number of chest rewards to spawn based on the floor number.
 EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
-    int32_t num_rewards = 
-        g_Mod->state_.options_ & StateManager::NUM_CHEST_REWARDS;
+    int32_t num_rewards = g_Mod->ztate_.GetOptionNumericValue(OPT_CHEST_REWARDS);
     if (num_rewards > 0) {
         // Add a bonus reward for beating a boss (Atomic Boo or Bonetail).
-        if (g_Mod->state_.floor_ % 50 == 49) ++num_rewards;
+        if (g_Mod->ztate_.floor_ % 50 == 49) ++num_rewards;
     } else {
-        // Pick a number of rewards randomly from 1 ~ 5.
-        num_rewards = g_Mod->state_.Rand(5) + 1;
+        // Pick a number of rewards randomly from 1 ~ 7.
+        num_rewards = g_Mod->ztate_.Rand(7, RNG_CHEST) + 1;
     }
     evtSetValue(evt, evt->evtArguments[0], num_rewards);
     return 2;
@@ -768,8 +733,8 @@ EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
 EVT_DEFINE_USER_FUNC(CheckPromptSave) {
     evtSetValue(evt, evt->evtArguments[0], core::GetShouldPromptSave());
     if (core::GetShouldPromptSave()) {
-        g_Mod->state_.SaveCurrentTime();
-        g_Mod->state_.Save();
+        g_Mod->ztate_.SaveCurrentTime();
+        g_Mod->ztate_.Save();
         core::SetShouldPromptSave(false);
     }
     return 2;
@@ -777,7 +742,7 @@ EVT_DEFINE_USER_FUNC(CheckPromptSave) {
 
 // Increments the actual current Pit floor, and the corresponding GSW value.
 EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
-    int32_t actual_floor = ++g_Mod->state_.floor_;
+    int32_t actual_floor = ++g_Mod->ztate_.floor_;
     // Update the floor number used by the game.
     // Floors 101+ are treated as looping 81-90 nine times + 91-100.
     int32_t gsw_floor = actual_floor;
@@ -791,9 +756,7 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         case 30:
         case 60:
         case 90: {
-            if (g_Mod->state_.GetOptionValue(
-                    StateManager::RANK_UP_REQUIREMENT) == 
-                    StateManager::RANK_UP_BY_FLOOR) {
+            if (g_Mod->ztate_.CheckOptionValue(OPTVAL_STAGE_RANK_30_FLOORS)) {
                 ttyd::mario_pouch::pouchGetPtr()->rank++;
             }
             break;
@@ -816,21 +779,20 @@ EVT_DEFINE_USER_FUNC(GetUniqueItemName) {
     return 2;
 }
 
-// If the item is a Crystal Star, gives the player +1.00 max SP and
-// the respective Star Power.
+// If the item is a Crystal Star, gives the player +0.50 max SP (to a max of 20)
+// and enable / level-up the item's respective Star Power.
 EVT_DEFINE_USER_FUNC(AddItemStarPower) {
     int16_t item = evtGetValue(evt, evt->evtArguments[0]);
     if (item == ItemType::MAGICAL_MAP ||
         (item >= ItemType::DIAMOND_STAR && item <= ItemType::CRYSTAL_STAR)) {
         PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-        pouch.max_sp += 100;
+        if (pouch.max_sp < 2000) pouch.max_sp += 50;
         pouch.current_sp = pouch.max_sp;
-        if (item == ItemType::MAGICAL_MAP) {
-            pouch.star_powers_obtained |= 1;
-        } else {
-            pouch.star_powers_obtained |= 
-                (1 << (item + 1 - ItemType::DIAMOND_STAR));
-        }
+        
+        int32_t star_power_type =
+            item == ItemType::MAGICAL_MAP ? 0 : item - ItemType::DIAMOND_STAR + 1;
+        pouch.star_powers_obtained |= (1 << star_power_type);
+        g_Mod->ztate_.star_power_levels_ += (1 << (2 * star_power_type));
     }
     return 2;
 }
@@ -838,7 +800,7 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
 // Returns whether any stat upgrades can be sold.
 EVT_DEFINE_USER_FUNC(CheckAnyStatsDowngradeable) {
     bool can_downgrade = ttyd::mario_pouch::pouchGetPtr()->level > 1 &&
-        !g_Mod->state_.GetOptionValue(StateManager::NO_EXP_MODE);
+        !g_Mod->ztate_.GetOptionNumericValue(OPT_NO_EXP_MODE);
     evtSetValue(evt, evt->evtArguments[0], can_downgrade);
     return 2;
 }
@@ -893,28 +855,18 @@ EVT_DEFINE_USER_FUNC(DowngradeStat) {
 
 // Replaces Pit Charlieton's stock with items from the random pool.
 void ReplaceCharlietonStock() {
-    // Before setting stock, check if reloading an existing save file;
-    // if so, set the RNG state to what it was at the start of the floor
-    // so Charlieton's stock is the same as it was before.
-    StateManager& state = g_Mod->state_;
-    const int32_t current_rng_state = state.rng_state_;
-    if (g_Mod->state_.load_from_save_) {
-        g_Mod->state_.rng_state_ = state.saved_rng_state_;
-    }
-    
-    // Fill in Charlieton's expanded inventory.
     int32_t* inventory = ttyd::evt_badgeshop::badge_bottakuru100_table;
+    // Fill in Charlieton's expanded inventory.
     for (int32_t i = 0; i < kNumCharlietonItemsPerType * 3; ++i) {
         bool found = true;
         while (found) {
             found = false;
             int32_t item = PickRandomItem(
-                /* seeded = */ true,
+                RNG_ITEM,
                 i / kNumCharlietonItemsPerType == 0,
                 i / kNumCharlietonItemsPerType == 1, 
                 i / kNumCharlietonItemsPerType == 2, 
-                0,
-                /* force_no_partner = */ state.disable_partner_badges_in_shop_);
+                0);
             // Make sure no duplicate items exist.
             for (int32_t j = 0; j < i; ++j) {
                 if (inventory[j] == item) {
@@ -924,17 +876,6 @@ void ReplaceCharlietonStock() {
             }
             inventory[i] = item;
         }
-    }
-    
-    if (state.load_from_save_) {
-        // If loaded from save, restore the previous RNG value so the seed
-        // matches up with where it should start on the following floor.
-        state.rng_state_ = current_rng_state;
-    } else {
-        // Otherwise, save what the RNG was before generating the list, so the
-        // item list can be duplicated after loading a save.
-        state.saved_rng_state_ = current_rng_state;
-        state.load_from_save_ = true;
     }
 }
 
@@ -1031,21 +972,26 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         reinterpret_cast<int32_t>(ChetRippoSetupEvt));
     
     // If not reward floor, reset Pit-related flags and save-related status.
-    if (g_Mod->state_.floor_ % 10 != 9) {
+    if (g_Mod->ztate_.floor_ % 10 != 9) {
+        // Clear "chest open" and "Bonetail beaten" flags.
         for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
             ttyd::swdrv::swClear(i);
         }
         
         core::SetShouldPromptSave(true);
-        g_Mod->state_.load_from_save_ = false;
 
         const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        bool has_partner = false;
         for (int32_t i = 0; i < 8; ++i) {
             if (pouch.party_data[i].flags & 1) {
-                g_Mod->state_.disable_partner_badges_in_shop_ = false;
+                has_partner = true;
                 break;
             }
         }
+        // Enable "P" badges only after obtaining the first one.
+        g_Mod->ztate_.SetOption(OPT_ENABLE_P_BADGES, has_partner);
+        // Only one partner allowed per reward floor, re-enable them for next.
+        g_Mod->ztate_.SetOption(OPT_ENABLE_PARTNER_REWARD, true);
     }
     // Otherwise, modify Charlieton's stock, using the prior RNG state
     // if continuing from a saved file.

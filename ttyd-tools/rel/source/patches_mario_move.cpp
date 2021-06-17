@@ -131,20 +131,19 @@ const int8_t        kSpCostLevels[] = {
 // Returns the max level of a move badge based on the number of copies equipped.
 int32_t MaxLevelForMoveBadges(int32_t badge_count) {
     int32_t max_level = badge_count;
-    switch (g_Mod->state_.GetOptionValue(
-        StateManager::MAX_BADGE_MOVE_LEVEL)) {
-        case StateManager::MAX_MOVE_LEVEL_1X: {
+    switch (g_Mod->ztate_.GetOptionValue(OPT_BADGE_MOVE_LEVEL)) {
+        case OPTVAL_BADGE_MOVE_1X: {
             break;
         }
-        case StateManager::MAX_MOVE_LEVEL_2X: {
+        case OPTVAL_BADGE_MOVE_2X: {
             max_level *= 2;
             break;
         }
-        case StateManager::MAX_MOVE_LEVEL_RANK: {
+        case OPTVAL_BADGE_MOVE_RANK: {
             if (!badge_count) return 0;
             return ttyd::mario_pouch::pouchGetPtr()->rank + 1;
         }
-        case StateManager::MAX_MOVE_LEVEL_INFINITE: {
+        case OPTVAL_BADGE_MOVE_INFINITE: {
             if (!badge_count) return 0;
             return 99;
         }
@@ -250,8 +249,8 @@ void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
         }
         
         // Handle switch partner cost, if enabled.
-        int32_t switch_fp_cost = g_Mod->state_.GetOptionValue(
-            StateManager::SWITCH_PARTY_COST_FP);
+        int32_t switch_fp_cost =
+            g_Mod->ztate_.GetOptionValue(OPTNUM_SWITCH_PARTY_FP_COST);
         if (strats[0].type == 0 && switch_fp_cost) {
             // Reduce switch partner cost by Flower Savers.
             switch_fp_cost -= unit->badges_equipped.flower_saver;
@@ -626,12 +625,12 @@ int8_t GetToughenUpLevel(bool is_mario) {
 }
 
 bool CanUnlockNextLevel(int32_t star_power) {
-    int32_t current_level = g_Mod->ztate.GetStarPowerLevel(star_power);
+    int32_t current_level = g_Mod->ztate_.GetStarPowerLevel(star_power);
     if (current_level == 3) return false;
     // Get the max SP the player would have without using any Shine Sprites.
     int32_t max_sp = 50;
     for (int32_t i = 0; i < 8; ++i) {
-        max_sp += g_Mod->ztate.GetStarPowerLevel(i) * 50;
+        max_sp += g_Mod->ztate_.GetStarPowerLevel(i) * 50;
     }
     // See if the next level of this star power could be affordable.
     int32_t required_sp = kSpCostLevels[star_power * 3 + current_level];

@@ -13,6 +13,7 @@
 #include <ttyd/battle_damage.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/item_data.h>
+#include <ttyd/mario_pouch.h>
 
 #include <cstdint>
 #include <cstring>
@@ -46,16 +47,16 @@ void ApplyFixedPatches() {
         ttyd::battle_ac::BattleActionCommandCheckDefence,
         [](BattleWorkUnit* unit, BattleWeapon* weapon) {
             // Run normal logic if option turned off.
-            if (!(g_Mod->state_.options_ 
-                    & StateManager::SUPERGUARDS_COST_FP)) {
+            const int32_t sp_cost =
+                g_Mod->ztate_.GetOptionValue(OPTNUM_SUPERGUARD_SP_COST);
+            if (sp_cost <= 0) {
                 return g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
             }
             
             int8_t superguard_frames[7];
             bool restore_superguard_frames = false;
-            // Temporarily disable Superguarding if FP is too low.
-            int32_t fp = ttyd::battle_unit::BtlUnit_GetFp(unit);
-            if (fp < 1) {
+            // Temporarily disable Superguarding if SP is too low.
+            if (ttyd::mario_pouch::pouchGetAP() < sp_cost) {
                 restore_superguard_frames = true;
                 memcpy(superguard_frames, ttyd::battle_ac::superguard_frames, 7);
                 for (int32_t i = 0; i < 7; ++i) {
@@ -64,13 +65,9 @@ void ApplyFixedPatches() {
             }
             const int32_t defense_result =
                 g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
-            // Successful Superguard, subtract FP.
             if (defense_result == 5) {
-                ttyd::battle_unit::BtlUnit_SetFp(unit, fp - 1);
-                // Count towards FP-spending conditions. (Use Mario's FP 
-                // spent always, since no conditions care who spends it).
-                ttyd::battle_actrecord::BtlActRec_AddCount(
-                    &ttyd::battle::g_BattleWork->act_record_work.mario_fp_spent);
+                // Successful Superguard, subtract SP.
+                ttyd::mario_pouch::pouchAddAP(-sp_cost);
             }
             if (restore_superguard_frames) {
                 memcpy(ttyd::battle_ac::superguard_frames, superguard_frames, 7);

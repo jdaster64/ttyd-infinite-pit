@@ -14,6 +14,7 @@
 #include <ttyd/mariost.h>
 
 #include <cstdint>
+#include <cstring>
 
 namespace mod {
 
@@ -43,6 +44,9 @@ Mod::Mod() {}
 void Mod::Init() {
     // Initialize global mod instance variable.
 	g_Mod = this;
+    
+    // Clear the mod's state completely.
+    memset(&ztate_, 0, sizeof(ztate_));
 	
     // Hook the game's main function, so Update runs exactly once per frame.
 	marioStMain_trampoline_ = patch::hookFunction(

@@ -169,7 +169,7 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
     // No held item; pick a random item to steal;
     // 30% chance of item (20% normal, 10% recipe), 10% badge, 60% coin.
     if (!item) {
-        item = PickRandomItem(/* seeded = */ false, 20, 10, 10, 60);
+        item = PickRandomItem(RNG_KISS_THIEF, 20, 10, 10, 60);
         if (!item) item = ItemType::COIN;
     }
     if ((ac_result & 2) == 0 || item == ItemType::GOLD_BAR_X3 ||
@@ -436,8 +436,8 @@ void ApplyFixedPatches() {
 }
 
 EVT_DEFINE_USER_FUNC(InitializePartyMember) {
-    const int32_t starting_rank = g_Mod->state_.GetOptionValue(
-        StateManager::PARTNER_STARTING_RANK);
+    const int32_t starting_rank =
+        g_Mod->ztate_.GetOptionNumericValue(OPT_PARTNER_RANK);
     const int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
     const int16_t starting_hp =
         ttyd::mario_pouch::_party_max_hp_table[idx * 4 + starting_rank];

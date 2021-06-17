@@ -85,10 +85,10 @@ void CheckBattleCondition() {
     NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
 
     // Track the number of turns spent / number of run aways at fight's end.
-    g_Mod->state_.IncrementPlayStat(
-        StateManager::TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
+    g_Mod->ztate_.ChangeOption(
+        STAT_TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
     if (fbat_info->wResult != 1) {
-        g_Mod->state_.IncrementPlayStat(StateManager::TIMES_RAN_AWAY);
+        g_Mod->ztate_.ChangeOption(STAT_TIMES_RAN_AWAY);
     }
     
     // Did not win the fight (e.g. ran away).
@@ -110,10 +110,9 @@ void CheckBattleCondition() {
         }
     }
     
-    // If battle reward mode is ALL_HELD_ITEMS, award items other than the
+    // If battle reward mode is "drop all held", award items other than the
     // natural drop ones until there are no "recovered items" slots left.
-    if (g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE)
-        == StateManager::ALL_HELD_ITEMS) {
+    if (g_Mod->ztate_.CheckOptionValue(OPTVAL_DROP_ALL_HELD)) {
         for (int32_t i = 0; i < 8; ++i) {
             const int32_t held_item = npc_info->wHeldItems[i];
             // If there is a held item, and this isn't the natural drop...
@@ -179,13 +178,15 @@ void GetDropMaterials(FbatBattleInformation* fbat_info) {
         }
     }
     
-    // If using default battle reward mode, select the item drop based on
-    // the previously determined enemy held item index.
-    const int32_t reward_mode =
-        g_Mod->state_.GetOptionValue(StateManager::BATTLE_REWARD_MODE);
-    if (reward_mode == 0 || reward_mode == StateManager::ALL_HELD_ITEMS) {
-        battle_info->wItemDropped = 
-            battle_info->wHeldItems[party_setup->held_item_weight];
+    switch (g_Mod->ztate_.GetOptionValue(OPT_BATTLE_REWARD_MODE)) {
+        // If using default battle drop behavior, select the item drop based on
+        // the previously determined enemy held item index.
+        case OPTVAL_DROP_STANDARD:
+        case OPTVAL_DROP_ALL_HELD: {
+            battle_info->wItemDropped = 
+                battle_info->wHeldItems[party_setup->held_item_weight];
+            break;
+        }
     }
 }
 
