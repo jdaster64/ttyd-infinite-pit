@@ -1016,7 +1016,7 @@ bool StateManager_v2::Load(bool new_save) {
     const char* filename = GetSavefileName();
     for (const char* ch = filename; *ch; ++ch) {
         // If the filename contains a 'heart' character, start w/FX badges.
-        if (*ch == '\xd0') SetOption(OPT_START_WITH_FX);
+        if (*ch == '\xd0') SetOption(OPT_START_WITH_FX, 1);
     }
     if (!strcmp(filename, "random") || !strcmp(filename, "Random") ||
         !strcmp(filename, "RANDOM") || !strcmp(filename, "\xde") ||
@@ -1056,7 +1056,7 @@ bool StateManager_v2::Load(bool new_save) {
 }
 
 void StateManager_v2::Save() {
-    void* saved_state = _GetSavedStateLocation();
+    void* saved_state = GetSavedStateLocation();
     patch::writePatch(saved_state, this, sizeof(StateManager_v2));
 }
 
@@ -1119,7 +1119,7 @@ void StateManager_v2::SetDefaultOptions() {
 void StateManager_v2::ChangeOption(int32_t option, int32_t change) {
     const int32_t type = option >> 28;
     const int32_t max = option & 0xfff;
-    int32_t value = GetOptionValue(option);
+    int32_t value = GetOptionNumericValue(option);
 
     if (type == 1) {
         // For flag values, wrap around, and advance if change is 0.
@@ -1250,8 +1250,8 @@ void StateManager_v2::GetOptionStrings(
         *affects_seeding = false;
         strcpy(name_buf, "");
         strcpy(value_buf, "");
-        if (option == MENU_CHANGE_PAGE) {
-            strcpy(name_buf, "<< Reset all settings to default >>");
+        if (option == MENU_SET_DEFAULT) {
+            strcpy(name_buf, "\xde Reset all settings to default \xde");
         }
         return;
     }
@@ -1281,7 +1281,7 @@ void StateManager_v2::GetOptionStrings(
             strcpy(name_buf, "Max badge move level:");      break;
         }
         case OPT_STARTER_ITEMS: {
-            strcpy(name_buf, "Rewards per chest:");         break;
+            strcpy(name_buf, "Starter item set:");          break;
         }
         case OPT_FLOOR_100_HP_SCALE: {
             strcpy(name_buf, "Post-floor 100 HP gain:");    break;
@@ -1293,7 +1293,7 @@ void StateManager_v2::GetOptionStrings(
             strcpy(name_buf, "Infinite Merlee curses:");    break;
         }
         case OPT_STAGE_RANK: {
-            strcpy(name_buf, "Stage rank-up after:");       break;
+            strcpy(name_buf, "Stage rank-up:");             break;
         }
         case OPT_PERCENT_BASED_DANGER: {
             strcpy(name_buf, "Danger/Peril thresholds:");   break;
@@ -1485,9 +1485,9 @@ const char* StateManager_v2::GetEncodedOptions() const {
     uint64_t numeric_options = GetOptionValue(OPTNUM_ENEMY_HP);
     numeric_options <<= 12;
     numeric_options += GetOptionValue(OPTNUM_ENEMY_ATK);
-    numeric_options <<= 12;
-    numeric_options += GetOptionValue(OPTNUM_SUPERGUARD_SP_COST);
     numeric_options <<= 8;
+    numeric_options += GetOptionValue(OPTNUM_SUPERGUARD_SP_COST);
+    numeric_options <<= 4;
     numeric_options += GetOptionValue(OPTNUM_SWITCH_PARTY_FP_COST);
     // Flip "starting items" flag off to make default options look simpler.
     uint32_t flag_options = option_flags_[0] ^ 0x4000;

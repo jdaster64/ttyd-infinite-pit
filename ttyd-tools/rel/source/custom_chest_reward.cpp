@@ -48,7 +48,9 @@ enum ChestRewardType {
 };
 
 int16_t PickInventoryUpgrade(StateManager_v2& state) {
-    uint16_t weights[5] = { 40, 15, 15, 15, 15 };
+    uint16_t weights[5] = { 15, 15, 15, 15, 15 };
+    // Make Strange Sack way more likely starting on floor 50.
+    if (state.floor_ >= 49) weights[0] = 40;
     for (int32_t i = 0; i < 5; ++i) {
         if (state.reward_flags_ & (1 << i)) weights[i] = 0;
         // Make Ultra Boots/Hammer slightly likelier if Super is unlocked.
@@ -67,7 +69,8 @@ int16_t PickInventoryUpgrade(StateManager_v2& state) {
 }
 
 int16_t PickUniqueBadge(StateManager_v2& state) {
-    uint16_t weights[12] = { 10, 10, 5, 10, 5, 10, 10, 10, 15, 10, 15, 25 };
+    // Second copies of Double Dip slightly less likely, QC + Spike Shield more.
+    uint16_t weights[12] = { 10, 10, 5, 10, 5, 10, 10, 10, 15, 10, 20, 25 };
     for (int32_t i = 0; i < 12; ++i) {
         if (state.reward_flags_ & (1 << (i + 5))) weights[i] = 0;
     }

@@ -262,7 +262,7 @@ static_assert(sizeof(StateManager_v2) <= 0x120);
 enum Options_v2 {
     // Non-cosmetic (menu-visible) flag-based options.
     // How many rewards are obtained per chest (1 to 9, or 0 = random).
-    OPT_CHEST_REWARDS           = 0x1'00'4'8'009,
+    OPT_CHEST_REWARDS           = 0x1'00'4'8'00a,
     OPTVAL_CHEST_REWARDS_RANDOM = 0x2'00'4'8'000,
     // If enabled, Mario starts at level 99 with base HP/FP and 99/Infinite BP.
     OPT_NO_EXP_MODE             = 0x1'04'2'0'003,

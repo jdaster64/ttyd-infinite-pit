@@ -23,7 +23,7 @@ const char kStartRoomName[] = "tik_06";
 // Menu constants.
 const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
-const int32_t kMenuWidth            = 380;
+const int32_t kMenuWidth            = 395;
 const int32_t kMenuPadding          = 15;
 const int32_t kNumOptionPages       = 7;
 const int32_t kOptionsPerPage       = 5;
@@ -106,8 +106,10 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
 }
 
 uint32_t GetActiveColor(int32_t selection, uint8_t alpha) {
-    // Return a bright red if the selection is "reset settings to default".
-    if (selection == MENU_SET_DEFAULT) return 0xff000000U | alpha;
+    // Return a dull grey / bright red if selection is "reset to default".
+    if (GetMenuState(menu_page_, selection) == MENU_SET_DEFAULT) {
+        return (menu_selection_ == selection ? 0xffU << 24 : 0xc0c0c000U) | alpha;
+    }
     // Otherwise, return yellow if the option is selected, and white otherwise.
     return (menu_selection_ == selection ? ~0x12ffffU : ~0xffU) | alpha;
 }
@@ -214,7 +216,7 @@ void MenuManager::Update() {
                     break;
                 }
                 case MENU_SET_DEFAULT: {
-                    if (time_button_held_ == 0) {
+                    if (time_button_held_ == 0 && direction == 0) {
                         state.SetDefaultOptions();
                     }
                     break;
@@ -266,7 +268,7 @@ void MenuManager::Draw() {
     const uint32_t window_color = static_cast<uint8_t>(alpha * 4 / 5);
     
     const uint32_t menu_height = 19 * kOptionsPerPage - 4 + kMenuPadding * 2;
-    const uint32_t menu_width = menu_page_ > 4 ? kMenuWidth + 20 : kMenuWidth;
+    const uint32_t menu_width = kMenuWidth;
     
     DrawWindow(window_color, kMenuX, kMenuY, menu_width, menu_height, 10);
     
@@ -275,7 +277,7 @@ void MenuManager::Draw() {
     int32_t kRowY = kMenuY - kMenuPadding - 8;
     
     char name_buf[128];
-    char value_buf[32];
+    char value_buf[64];
     uint32_t color;
     bool is_default, affects_seeding;
     
@@ -290,7 +292,7 @@ void MenuManager::Draw() {
         // Draw the option's description and current value.
         DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
         // If changed from default, color the value slightly darker and bluer.
-        color -= (is_default ? 0 : 0x40300000U);
+        color -= (is_default ? 0 : 0x60400000U);
         DrawMenuString(value_buf, kValueX, kRowY, color, /* right-center */ 5);
         // Advance to the next row's Y position.
         kRowY -= 19;
@@ -309,7 +311,8 @@ void MenuManager::Draw() {
     
     // Print a warning over selections that change seeding.
     state.GetOptionStrings(
-        menu_selection_, name_buf, value_buf, &is_default, &affects_seeding);
+        GetMenuState(menu_page_, menu_selection_),
+        name_buf, value_buf, &is_default, &affects_seeding);
     if (affects_seeding) {
         sprintf(name_buf, "*Affects seeding");
         DrawText(
