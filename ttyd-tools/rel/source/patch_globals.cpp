@@ -278,6 +278,7 @@ extern const int32_t g_jon_setup_boss_EvtOffset = 0x124c0;
 extern const int32_t g_jon_bero_return_ReturnBeroEntryOffset = 0x12520;
 extern const int32_t g_jon_zonbaba_first_event_EvtOffset = 0x14570;
 extern const int32_t g_jon_btlsetup_jon_tbl_Offset = 0x1d460;
+extern const int32_t g_jon_unit_boss_zonbaba_battle_entry_event = 0x1ebdc;
 extern const int32_t g_jon_BanditAttackEvt_CheckConfusionOffset = 0x2ffa8;
 extern const int32_t g_jon_DarkKoopatrolAttackEvt_NormalAttackReturnLblOffset = 0x51790;
 extern const int32_t g_jon_DarkWizzerdAttackEvt_CheckEnemyNumOffset = 0x535a4;

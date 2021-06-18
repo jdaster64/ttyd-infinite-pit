@@ -999,8 +999,12 @@
 800fdfd4:BattleDamageDirect
 
 // battle_event_cmd.o
+80103e34:btlevtcmd_StatusWindowOnOff
+80104700:btlevtcmd_snd_se
+80105284:btlevtcmd_GetStageSize
 801054e8:btlevtcmd_WeaponAftereffect
 801056f4:btlevtcmd_GetItemRecoverParam
+80106bb8:btlevtcmd_AnimeChangePose
 8010749c:btlevtcmd_AudienceDeclareACResult
 8010a26c:btlevtcmd_StartWaitEvent
 8010a78c:btlevtcmd_CheckDamage
@@ -1008,10 +1012,17 @@
 8010b3d4:btlevtcmd_GetConsumeItem
 8010b490:btlevtcmd_GetSelectNextEnemy
 8010b540:btlevtcmd_GetSelectEnemy
+8010ca74:btlevtcmd_MovePosition
+8010d208:btlevtcmd_JumpPosition
+8010d770:btlevtcmd_SetFallAccel
+8010d860:btlevtcmd_SetMoveSpeed
 8010ddac:btlevtcmd_CheckToken
 8010ef44:btlevtcmd_CheckSpace
 8010ff74:btlevtcmd_SetHp
+801124f8:btlevtcmd_GetHomePos
+80112fcc:btlevtcmd_SetPos
 80113304:btlevtcmd_KillUnit
+80113620:btlevtcmd_GetPos
 
 // battle_event_default.o
 801138d8:_get_flower_suitoru_point
@@ -1146,7 +1157,11 @@
 8012ef20:battleGetUnitMonosiriPtr
 
 // battle_camera.o
+8012b3d0:evt_btl_camera_shake_h
+8012b670:evt_btl_camera_set_moveto
+8012b8cc:evt_btl_camera_set_moveSpeedLv
 8012bfd0:evt_btl_camera_set_mode
+8012c0ac:evt_btl_camera_set_prilimit
 
 // statuswindow.o
 // .text
@@ -1165,6 +1180,7 @@
 80148374:_nozzle_type_init
 
 // evt_snd.o
+8015235c:evt_snd_sfxon
 80152450:evt_snd_bgmoff_f
 8015249c:evt_snd_bgmoff
 80152548:evt_snd_bgmon_f

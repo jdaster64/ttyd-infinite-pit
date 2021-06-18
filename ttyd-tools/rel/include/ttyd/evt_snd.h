@@ -25,7 +25,7 @@ extern "C" {
 // evt_snd_sfxon_3d
 // evt_snd_sfxon_
 // evt_snd_sfxon__
-// evt_snd_sfxon
+EVT_DECLARE_USER_FUNC(evt_snd_sfxon, 2)
 // evt_snd_bgm_scope
 // evt_snd_bgm_freq
 // evt_snd_bgmoff_f

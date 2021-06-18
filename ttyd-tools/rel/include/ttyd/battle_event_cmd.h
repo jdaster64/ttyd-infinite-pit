@@ -11,7 +11,7 @@ extern "C" {
 // btlevtcmd_ftof
 // btlevtcmd_ftomsec
 // btlevtcmd_StageDispellFog
-// btlevtcmd_StatusWindowOnOff
+EVT_DECLARE_USER_FUNC(btlevtcmd_StatusWindowOnOff, 1)
 // btlevtcmd_BtlStageObjGetRotate
 // btlevtcmd_BtlStageObjSetRotate
 // btlevtcmd_BtlStageObjFlagOnOff
@@ -22,7 +22,7 @@ extern "C" {
 // btlevtcmd_EnemyItemUseCheck
 // btlevtcmd_snd_voice
 // btlevtcmd_snd_se_offset
-// btlevtcmd_snd_se
+EVT_DECLARE_USER_FUNC(btlevtcmd_snd_se, 5)
 // _MoveSoundControlEndCore
 // _PartsMoveSoundControlEnd
 // _UnitMoveSoundControlEnd
@@ -40,7 +40,7 @@ extern "C" {
 // btlevtcmd_SetMoveSoundDataWork
 // btlevtcmd_TransStageFloorPosition
 // btlevtcmd_GetStageAudienceAreaSize
-// btlevtcmd_GetStageSize
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetStageSize, 3)
 // btlevtcmd_SortPhaseMoveTable
 // btlevtcmd_InterruptStop
 // btlevtcmd_GetGuardKouraId
@@ -84,7 +84,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetItemRecoverParam, 4)
 // btlevtcmd_AnimeWaitPlayComplete
 // btlevtcmd_AnimeChangePoseDirect
 // btlevtcmd_AnimeChangePoseType
-// btlevtcmd_AnimeChangePose
+EVT_DECLARE_USER_FUNC(btlevtcmd_AnimeChangePose, 3)
 // btlevtcmd_AnimeChangeGroup
 // btlevtcmd_AudienceAppeal
 // btlevtcmd_ACRGetResult
@@ -168,14 +168,14 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_GetSelectEnemy, 2)
 // btlevtcmd_EllipseMovePosition
 // btlevtcmd_DivePosition
 // btlevtcmd_GetMoveFrame
-// btlevtcmd_MovePosition
+EVT_DECLARE_USER_FUNC(btlevtcmd_MovePosition, 7)
 // btlevtcmd_FallPosition
 // btlevtcmd_JumpContinue
-// btlevtcmd_JumpPosition
+EVT_DECLARE_USER_FUNC(btlevtcmd_JumpPosition, 6)
 // btlevtcmd_JumpSetting
-// btlevtcmd_SetFallAccel
+EVT_DECLARE_USER_FUNC(btlevtcmd_SetFallAccel, 2)
 // btlevtcmd_SetJumpSpeed
-// btlevtcmd_SetMoveSpeed
+EVT_DECLARE_USER_FUNC(btlevtcmd_SetMoveSpeed, 2)
 // btlevtcmd_StoreCoin
 // btlevtcmd_GetCoin
 // btlevtcmd_StoreExp
@@ -289,7 +289,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_SetHp, 2)
 // btlevtcmd_SetPartsHomePos
 // btlevtcmd_AddHomePos
 // btlevtcmd_SetHomePos
-// btlevtcmd_GetHomePos
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetHomePos, 4)
 // btlevtcmd_SetTogeOffset
 // btlevtcmd_AddPartsDispOffset
 // btlevtcmd_SetPartsDispOffset
@@ -298,7 +298,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_SetHp, 2)
 // btlevtcmd_SetPartsPos
 // btlevtcmd_GetPartsPos
 // btlevtcmd_AddPos
-// btlevtcmd_SetPos
+EVT_DECLARE_USER_FUNC(btlevtcmd_SetPos, 4)
 // btlevtcmd_ChangeParty
 // btlevtcmd_ReplaceParts
 EVT_DECLARE_USER_FUNC(btlevtcmd_KillUnit, 2)
@@ -306,7 +306,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_KillUnit, 2)
 // btlevtcmd_DrawLots
 // btlevtcmd_GetRandomValue
 // btlevtcmd_GetPosFloat
-// btlevtcmd_GetPos
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetPos, 4)
 // btlevtcmd_CheckPhase
 // btlevtcmd_reset_move_color_lv_all
 // btlevtcmd_reset_turn

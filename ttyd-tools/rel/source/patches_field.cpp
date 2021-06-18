@@ -13,12 +13,15 @@
 #include "patches_core.h"
 #include "patches_partner.h"
 
+#include <ttyd/battle_camera.h>
 #include <ttyd/battle_database_common.h>
+#include <ttyd/battle_event_cmd.h>
 #include <ttyd/evt_badgeshop.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
 #include <ttyd/evt_item.h>
+#include <ttyd/evt_map.h>
 #include <ttyd/evt_mario.h>
 #include <ttyd/evt_mobj.h>
 #include <ttyd/evt_msg.h>
@@ -91,6 +94,7 @@ extern const int32_t g_jon_setup_boss_EvtOffset;
 extern const int32_t g_jon_bero_return_ReturnBeroEntryOffset;
 extern const int32_t g_jon_zonbaba_first_event_EvtOffset;
 extern const int32_t g_jon_btlsetup_jon_tbl_Offset;
+extern const int32_t g_jon_unit_boss_zonbaba_battle_entry_event;
 
 namespace field {
 
@@ -552,9 +556,6 @@ USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
 RETURN()
 EVT_END()
 
-// TODO: Fill out dialogue tree; for now this gives "no messages" text.
-// USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("blah_blah"), 0, PTR("me"))
-
 // Chet Rippo NPC spawning event.
 EVT_BEGIN(ChetRippoSetupEvt)
 // Only spawn on reward floors.
@@ -574,6 +575,76 @@ IF_NOT_EQUAL(LW(0), 100)
 END_IF()
 RETURN()
 EVT_PATCH_END()
+
+// "Mario alone" fight start event for fighting Bonetail with no partner.
+EVT_BEGIN(BonetailMarioAloneEntryEvt)
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_prilimit, 1)
+USER_FUNC(ttyd::evt_map::evt_map_replayanim, 0, PTR("dontyo"))
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_mode, 1, 3)
+USER_FUNC(
+    ttyd::battle_camera::evt_btl_camera_set_moveto, 
+    1, 0, 110, 1080, 0, 93, -2, 1, 0)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetStageSize, 
+    LW(6), EVT_HELPER_POINTER_BASE, EVT_HELPER_POINTER_BASE)
+MUL(LW(6), -1)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetHomePos, -3, LW(0), LW(1), LW(2))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetPos, -3, LW(6), LW(1), LW(2))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetStageSize,
+    EVT_HELPER_POINTER_BASE, LW(3), EVT_HELPER_POINTER_BASE)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetPos, -2, LW(0), LW(1), LW(2))
+ADD(LW(1), LW(3))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetPos, -2, LW(0), LW(1), LW(2))
+WAIT_FRM(60)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetHomePos, -3, LW(0), LW(1), LW(2))
+// USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetStageSize, LW(6), EVT_HELPER_POINTER_BASE, EVT_HELPER_POINTER_BASE)
+// MUL(LW(6), -1)
+// USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetPos, -3, LW(6), LW(1), LW(2))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetMoveSpeed, -3, FLOAT(6.00))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_MovePosition,
+    -3, LW(0), LW(1), LW(2), 0, -1, 0)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_AnimeChangePose, -3, 1, PTR("M_I_Y"))
+WAIT_FRM(2)
+USER_FUNC(
+    ttyd::battle_event_cmd::btlevtcmd_AnimeChangePose, -2, 1, PTR("GNB_F_3"))
+WAIT_FRM(1)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetHomePos, -2, LW(0), LW(1), LW(2))
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetPos, -2, LW(0), LW(1), LW(2))
+WAIT_FRM(10)
+INLINE_EVT()
+    WAIT_FRM(5)
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_AnimeChangePose, -3, 1, PTR("M_I_O"))
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_SetFallAccel, -3, FLOAT(0.30))
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_GetPos, -3, LW(0), LW(1), LW(2))
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_snd_se, -3, 
+        PTR("SFX_VOICE_MARIO_SURPRISED2_2"),
+        EVT_HELPER_POINTER_BASE, 0, EVT_HELPER_POINTER_BASE)
+    USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_JumpPosition,
+        -3, LW(0), LW(1), LW(2), 25, -1)
+END_INLINE()
+USER_FUNC(ttyd::evt_snd::evt_snd_sfxon, PTR("SFX_BOSS_GNB_APPEAR1"), 0)
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_shake_h, 1, 8, 0, 20, 13)
+WAIT_FRM(30)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_AnimeChangePose, -3, 1, PTR("M_I_Y"))
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_mode, 1, 3)
+USER_FUNC(
+    ttyd::battle_camera::evt_btl_camera_set_moveto,
+    1, -233, 45, 452, 56, 125, 37, 60, 0)
+WAIT_FRM(60)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StatusWindowOnOff, 0)
+USER_FUNC(ttyd::evt_msg::evt_msg_print, 2, PTR("tik_boss_12"), 0, -2)
+WAIT_MSEC(300)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StartWaitEvent, -3)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StartWaitEvent, -2)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StatusWindowOnOff, 1)
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_prilimit, 0)
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_mode, 0, 0)
+USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_moveSpeedLv, 0, 3)
+RETURN()
+EVT_END()
 
 // Fetches information required for dynamically spawning an enemy NPC,
 // such as the model name, battle id, and initial position.
@@ -979,7 +1050,7 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
             module_start + g_jon_init_evt_MoverSetupHookOffset),
         reinterpret_cast<int32_t>(ChetRippoSetupEvt));
     
-    // If not reward floor, reset Pit-related flags and save-related status.
+    // If normal fight floor, reset Pit-related flags and save-related status.
     if (state.floor_ % 10 != 9) {
         // Clear "chest open" and "Bonetail beaten" flags.
         for (uint32_t i = 0x13d3; i <= 0x13dd; ++i) {
@@ -1000,10 +1071,25 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         state.SetOption(OPT_ENABLE_P_BADGES, has_partner);
         // Only one partner allowed per reward floor, re-enable them for next.
         state.SetOption(OPT_ENABLE_PARTNER_REWARD, true);
-    }
-    // Otherwise, modify Charlieton's stock, using the prior RNG state
-    // if continuing from a saved file.
-    else {
+    } else if (state.floor_ % 100 == 99) {
+        // If Bonetail floor, patch in the Mario-alone variant of the
+        // battle entry event if partners are not available.
+        const PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        bool has_partner = false;
+        for (int32_t i = 0; i < 8; ++i) {
+            if (pouch.party_data[i].flags & 1) {
+                has_partner = true;
+                break;
+            }
+        }
+        if (!has_partner) {
+            mod::patch::writePatch(
+                reinterpret_cast<void*>(
+                    module_start + g_jon_unit_boss_zonbaba_battle_entry_event),
+                BonetailMarioAloneEntryEvt, sizeof(BonetailMarioAloneEntryEvt));
+        }
+    } else {
+        // Otherwise, modify Charlieton's stock.
         ReplaceCharlietonStock();
     }
 }

@@ -21,14 +21,14 @@ extern "C" {
 // btl_camera_nomove_x_onoff
 // evt_btl_camera_noshake
 // btl_camera_noshake
-// evt_btl_camera_shake_h
+EVT_DECLARE_USER_FUNC(evt_btl_camera_shake_h, 5)
 // btl_camera_shake_h
 // evt_btl_camera_shake_w
 // btl_camera_shake_w
-// evt_btl_camera_set_moveto
+EVT_DECLARE_USER_FUNC(evt_btl_camera_set_moveto, 9)
 // btl_camera_set_moveto
 // evt_btl_camera_set_zoomSpeedLv
-// evt_btl_camera_set_moveSpeedLv
+EVT_DECLARE_USER_FUNC(evt_btl_camera_set_moveSpeedLv, 2)
 // btl_camera_set_zoomSpeedLv
 // btl_camera_set_moveSpeedLv
 // evt_btl_camera_add_zoom
@@ -40,7 +40,7 @@ extern "C" {
 // evt_btl_camera_set_homing_unit
 EVT_DECLARE_USER_FUNC(evt_btl_camera_set_mode, 2)
 // btl_camera_set_mode
-// evt_btl_camera_set_prilimit
+EVT_DECLARE_USER_FUNC(evt_btl_camera_set_prilimit, 1)
 // btl_camera_set_prilimit
 // battleCameraGetPosMoveSpeed
 // battleCameraMoveTo
