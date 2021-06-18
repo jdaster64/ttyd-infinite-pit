@@ -12,6 +12,8 @@ namespace mod {
 bool CheckSeq(ttyd::seqdrv::SeqIndex sequence);
 // Returns true if in normal gameplay (not in title, game over, etc. sequence)
 bool InMainGameModes();
+// Returns true if the player is currently in the pause menu.
+bool InPauseMenu();
 // Returns the name of the current area.
 const char* GetCurrentArea();
 // Returns the name of the current map.

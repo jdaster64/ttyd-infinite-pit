@@ -610,9 +610,8 @@ void OnEnterExitBattle(bool is_start) {
             g_CurMoveBadgeCounts[16 + i] = max_level < 99 ? max_level : 1;
         }
         for (int32_t i = 0; i < 8; ++i) {
-            // TODO: Should only be able to select up to the level unlocked.
-            g_MaxSpecialMoveLvls[i] = 3;
-            g_CurSpecialMoveLvls[i] = 1;
+            g_MaxSpecialMoveLvls[i] = g_Mod->ztate_.GetStarPowerLevel(i);
+            g_CurSpecialMoveLvls[i] = g_MaxSpecialMoveLvls[i];
         }
         g_InBattle = true;
     } else {

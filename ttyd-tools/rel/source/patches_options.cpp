@@ -319,14 +319,6 @@ void ApplySettingBasedPatches() {
     
     // Increase some move badge BP costs if playing with larger max move levels.
     if (g_Mod->ztate_.CheckOptionValue(OPTVAL_BADGE_MOVE_1X)) {
-        itemDataTable[ItemType::POWER_JUMP].bp_cost = 2;
-        itemDataTable[ItemType::POWER_SMASH].bp_cost = 2;
-        itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 3;
-        itemDataTable[ItemType::QUAKE_HAMMER].bp_cost = 3;
-        itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 3;
-        itemDataTable[ItemType::CHARGE].bp_cost = 2;
-        itemDataTable[ItemType::CHARGE_P].bp_cost = 2;
-    } else {
         itemDataTable[ItemType::POWER_JUMP].bp_cost = 1;
         itemDataTable[ItemType::POWER_SMASH].bp_cost = 1;
         itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 1;
@@ -334,6 +326,14 @@ void ApplySettingBasedPatches() {
         itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 2;
         itemDataTable[ItemType::CHARGE].bp_cost = 1;
         itemDataTable[ItemType::CHARGE_P].bp_cost = 1;
+    } else {
+        itemDataTable[ItemType::POWER_JUMP].bp_cost = 2;
+        itemDataTable[ItemType::POWER_SMASH].bp_cost = 2;
+        itemDataTable[ItemType::MULTIBOUNCE].bp_cost = 3;
+        itemDataTable[ItemType::QUAKE_HAMMER].bp_cost = 3;
+        itemDataTable[ItemType::FIRE_DRIVE].bp_cost = 3;
+        itemDataTable[ItemType::CHARGE].bp_cost = 2;
+        itemDataTable[ItemType::CHARGE_P].bp_cost = 2;
     }
     
     // Increase badge BP cost and shop prices if HP/FP Drains heal per hit.
@@ -361,7 +361,7 @@ void ApplySettingBasedPatches() {
 }
 
 void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {
-    int32_t switch_fp_cost = 
+    int32_t switch_fp_cost =
         g_Mod->ztate_.GetOptionValue(OPTNUM_SWITCH_PARTY_FP_COST);
     if (switch_fp_cost > 0) {
         switch_fp_cost -= unit->badges_equipped.flower_saver;

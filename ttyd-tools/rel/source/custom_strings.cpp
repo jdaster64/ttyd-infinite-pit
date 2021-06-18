@@ -1,11 +1,14 @@
 #include "custom_strings.h"
 
+#include "common_functions.h"
 #include "mod.h"
 #include "mod_state.h"
 #include "custom_enemy.h"
 
+#include <ttyd/battle_mario.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/mariost.h>
+#include <ttyd/msgdrv.h>
 
 #include <cinttypes>
 #include <cstdio>
@@ -41,6 +44,7 @@ namespace MsgKey {
         MENU_TSURANUKI_NAGURI,
         MSG_2BAI_DAMAGE,
         MSG_CAKE,
+        MSG_CRYSTAL_STAR,
         MSG_CUSTOM_SUPER_BOOTS,
         MSG_CUSTOM_SUPER_HAMMER,
         MSG_CUSTOM_ULTRA_BOOTS,
@@ -48,6 +52,10 @@ namespace MsgKey {
         MSG_DAMAGE_FLOWER,
         MSG_DAMAGE_FLOWER_P,
         MSG_DAMAGE_GAESHI,
+        MSG_DIAMOND_STAR,
+        MSG_EMERALD_STAR,
+        MSG_GARNET_STAR,
+        MSG_GOLD_STAR,
         MSG_ICE_CANDY,
         MSG_JON_KANBAN_1,
         MSG_JON_KANBAN_2,
@@ -62,9 +70,13 @@ namespace MsgKey {
         MSG_PTR_MEROMERO_KISS,
         MSG_PWD_KUMOGAKURE,
         MSG_PYS_NOMIKOMI,
+        MSG_RUBY_STAR,
+        MSG_SAPPHIRE_STAR,
         MSG_SHIKAESHI_NO_KONA,
         MSG_SUPER_COIN,
+        MSG_SUPER_GENKI,
         MSG_TEKI_KYOUKA,
+        MSG_TREASURE_MAP,
         MSG_TOUGHEN_UP,
         MSG_TOUGHEN_UP_MENU,
         MSG_TOUGHEN_UP_P,
@@ -129,6 +141,7 @@ constexpr const char* kKeyLookups[] = {
     "menu_tsuranuki_naguri",
     "msg_2bai_damage",
     "msg_cake",
+    "msg_crystal_star",
     "msg_custom_super_boots",
     "msg_custom_super_hammer",
     "msg_custom_ultra_boots",
@@ -136,6 +149,10 @@ constexpr const char* kKeyLookups[] = {
     "msg_damage_flower",
     "msg_damage_flower_p",
     "msg_damage_gaeshi",
+    "msg_diamond_star",
+    "msg_emerald_star",
+    "msg_garnet_star",
+    "msg_gold_star",
     "msg_ice_candy",
     "msg_jon_kanban_1",
     "msg_jon_kanban_2",
@@ -150,9 +167,13 @@ constexpr const char* kKeyLookups[] = {
     "msg_ptr_meromero_kiss",
     "msg_pwd_kumogakure",
     "msg_pys_nomikomi",
+    "msg_ruby_star",
+    "msg_sapphire_star",
     "msg_shikaeshi_no_kona",
     "msg_super_coin",
+    "msg_super_genki",
     "msg_teki_kyouka",
+    "msg_treasure_map",
     "msg_toughen_up",
     "msg_toughen_up_menu",
     "msg_toughen_up_p",
@@ -196,6 +217,16 @@ const char* GetYoshiTextColor() {
     } else {
         return kYoshiColorStrings[ttyd::mario_pouch::pouchGetPartyColor(4)];
     }
+}
+
+const char* GetStarPowerItemDescription(char* buf, int32_t index) {
+    int32_t level = g_Mod->ztate_.GetStarPowerLevel(index);
+    if (!InPauseMenu()) ++level;
+    const char* name_msg = ttyd::battle_mario::superActionTable[index]->name;
+    sprintf(buf,
+        "Allows Mario to use level %" PRId32 "\n"
+        "of the move %s.", level, ttyd::msgdrv::msgSearch(name_msg));
+    return buf;
 }
 
 }
@@ -450,6 +481,25 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                        "when your ally is in Danger.";
             }
             return nullptr;
+        case MsgKey::MSG_SUPER_GENKI:
+            return "Restores Mario and his ally's\n"
+                   "HP and FP over 5 turns.";
+        case MsgKey::MSG_TREASURE_MAP:
+            return GetStarPowerItemDescription(buf, 0);
+        case MsgKey::MSG_DIAMOND_STAR:
+            return GetStarPowerItemDescription(buf, 1);
+        case MsgKey::MSG_EMERALD_STAR:
+            return GetStarPowerItemDescription(buf, 2);
+        case MsgKey::MSG_GOLD_STAR:
+            return GetStarPowerItemDescription(buf, 3);
+        case MsgKey::MSG_RUBY_STAR:
+            return GetStarPowerItemDescription(buf, 4);
+        case MsgKey::MSG_SAPPHIRE_STAR:
+            return GetStarPowerItemDescription(buf, 5);
+        case MsgKey::MSG_GARNET_STAR:
+            return GetStarPowerItemDescription(buf, 6);
+        case MsgKey::MSG_CRYSTAL_STAR:
+            return GetStarPowerItemDescription(buf, 7);
         case MsgKey::RIPPO_CONFIRM_BP:
             return "<p>\nI'll give you 25 coins for 3 BP.\n"
                    "<wait 350>You won't be able to get it back,\n"

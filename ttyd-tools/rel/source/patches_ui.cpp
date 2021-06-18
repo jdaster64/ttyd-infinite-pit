@@ -12,18 +12,23 @@
 #include <ttyd/gx/GXAttr.h>
 #include <ttyd/gx/GXTexture.h>
 #include <ttyd/gx/GXTransform.h>
+#include <ttyd/battle_database_common.h>
+#include <ttyd/battle_mario.h>
 #include <ttyd/battle_seq_end.h>
 #include <ttyd/eff_updown.h>
+#include <ttyd/fontmgr.h>
 #include <ttyd/icondrv.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_party.h>
 #include <ttyd/mario_pouch.h>
+#include <ttyd/msgdrv.h>
 #include <ttyd/sound.h>
 #include <ttyd/statuswindow.h>
 #include <ttyd/win_main.h>
 #include <ttyd/win_party.h>
 
-#include <cstdint>
+#include <cinttypes>
+#include <cstdio>
 #include <cstring>
 
 // Assembly patch functions.
@@ -31,11 +36,11 @@ extern "C" {
     // eff_updown_disp_patches.s
     void StartDispUpdownNumberIcons();
     void BranchBackDispUpdownNumberIcons();
-    // status_window_patches.s
-    void StartPreventDpadShortcutsOutsidePit();
-    void ConditionalBranchPreventDpadShortcutsOutsidePit();
-    void BranchBackPreventDpadShortcutsOutsidePit();
-    // win_item_patches.s
+    // menu_patches.s
+    void StartStarPowerLevelMenuDisp();
+    void BranchBackStarPowerLevelMenuDisp();
+    void StartStarPowerGetMenuDescriptionMsg();
+    void BranchBackStarPowerGetMenuDescriptionMsg();
     void StartFixItemWinPartyDispOrder();
     void BranchBackFixItemWinPartyDispOrder();
     void StartFixItemWinPartySelectOrder();
@@ -45,6 +50,10 @@ extern "C" {
     void BranchBackCheckForUnusableItemInMenu();
     void StartUseSpecialItems();
     void BranchBackUseSpecialItems();
+    // status_window_patches.s
+    void StartPreventDpadShortcutsOutsidePit();
+    void ConditionalBranchPreventDpadShortcutsOutsidePit();
+    void BranchBackPreventDpadShortcutsOutsidePit();
   
     void dispUpdownNumberIcons(
         int32_t number, void* tex_obj, gc::mtx34* icon_mtx, gc::mtx34* view_mtx,
@@ -54,7 +63,7 @@ extern "C" {
     }
     bool checkOutsidePit() {
         return strcmp("jon", mod::GetCurrentArea()) != 0;
-    }
+    } 
     void getPartyMemberMenuOrder(ttyd::win_party::WinPartyData** party_data) {
         mod::infinite_pit::ui::GetPartyMemberMenuOrder(party_data);
     }
@@ -64,12 +73,19 @@ extern "C" {
     void useSpecialItems(ttyd::win_party::WinPartyData** party_data) {
         mod::infinite_pit::ui::UseSpecialItemsInMenu(party_data);
     }
+    void starPowerMenuDisp() {
+        mod::infinite_pit::ui::StarPowerMenuDisp();
+    }
+    void getStarPowerMenuDescriptionMsg(int32_t idx) {
+         mod::infinite_pit::ui::GetStarPowerMenuDescriptionMsg(idx);
+    }
 }
 
 namespace mod::infinite_pit {
 
 namespace {
     
+using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::win_party::WinPartyData;
 
@@ -96,6 +112,10 @@ extern const int32_t g_winItemMain_CheckInvalidTarget_EH;
 extern const int32_t g_winItemMain_CheckInvalidTarget_CH1;
 extern const int32_t g_winItemMain_UseSpecialItems_BH;
 extern const int32_t g_winItemMain_Patch_AlwaysUseItemsInMenu;
+extern const int32_t g_winMarioDisp_StarPowerMenu_BH;
+extern const int32_t g_winMarioDisp_StarPowerMenu_EH;
+extern const int32_t g_winMarioMain_StarPowerDescription_BH;
+extern const int32_t g_winMarioMain_StarPowerDescription_EH;
 extern const int32_t g__btlcmd_MakeSelectWeaponTable_Patch_GetNameFromItem;
 
 namespace ui {
@@ -240,6 +260,22 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(
             g__btlcmd_MakeSelectWeaponTable_Patch_GetNameFromItem),
         0x807b0004U /* r3, 0x4 (r27) */);
+        
+    // Apply patch to Mario menu code to display the max levels of all
+    // currently unlocked Special Move.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_winMarioDisp_StarPowerMenu_BH),
+        reinterpret_cast<void*>(g_winMarioDisp_StarPowerMenu_EH),
+        reinterpret_cast<void*>(StartStarPowerLevelMenuDisp),
+        reinterpret_cast<void*>(BranchBackStarPowerLevelMenuDisp));
+        
+    // Apply patch to Mario menu code to show the right description
+    // of the currently selected Special Move.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_winMarioMain_StarPowerDescription_BH),
+        reinterpret_cast<void*>(g_winMarioMain_StarPowerDescription_EH),
+        reinterpret_cast<void*>(StartStarPowerGetMenuDescriptionMsg),
+        reinterpret_cast<void*>(BranchBackStarPowerGetMenuDescriptionMsg));
 }
 
 void DisplayUpDownNumberIcons(
@@ -288,6 +324,65 @@ void DisplayUpDownNumberIcons(
     ttyd::gx::GXTransform::GXLoadPosMtxImm(&temp_mtx, 0);
     ttyd::eff_updown::polygon(
         -8.0, 16.0, 16.0, 16.0, 1.0, 1.0, 0, unk0);
+}
+
+void StarPowerMenuDisp() {
+    // Constants for menu code.
+    gc::vec3    header_position         = { -50.0, 155.0, 0.0 };
+    gc::vec3    header_scale            = { 0.8, 0.8, 0.8 };
+    gc::vec3    sac_name_position       = { -250.0f, 130.0f, 0.0f };
+    gc::vec3    sac_name_scale          = { 1.0f, 1.0f, 1.0f };
+    gc::vec3    sac_max_lvl_position    = { -22.0f, 130.0f, 0.0f };
+    gc::vec3    sac_max_lvl_scale       = { 1.0f, 1.0f, 1.0f };
+    gc::vec3    sac_lvl_icon_position   = { -56.0f, 120.0f, 0.0f };
+    gc::vec3    sac_lvl_icon_scale      = { 0.5f, 0.5f, 0.5f };
+    char        level_str_buf[3]        = { 0, 0, 0 };
+    uint32_t    header_color            = 0xffffffffU;
+    uint32_t    sac_color               = 0xffU;
+
+    // Print "Lvl." string on header in place of "SP".
+    ttyd::win_main::winFontSetEdge(
+        &header_position, &header_scale, &header_color, "Lvl.");
+
+    for (int32_t i = 0; i < 8; ++i) {
+        // Get maximum level of attack; if not unlocked, skip.
+        const int32_t max_level = g_Mod->ztate_.GetStarPowerLevel(i);
+        if (max_level < 1) continue;
+        
+        // Print attack name.
+        const BattleWeapon* sac = ttyd::battle_mario::superActionTable[i];
+        const char* name = ttyd::msgdrv::msgSearch(sac->name);
+        ttyd::win_main::winFontSetPitch(
+            180.0, &sac_name_position, &sac_name_scale, &sac_color, name);
+        
+        // Print mini "Lvl." string.
+        ttyd::win_main::winFontSet(
+            &sac_lvl_icon_position, &sac_lvl_icon_scale, &sac_color, "Lvl.");
+        // Print max level (in a centered position).
+        sprintf(level_str_buf, "%" PRId32, max_level);
+        const uint32_t max_level_width =
+            ttyd::fontmgr::FontGetMessageWidth(level_str_buf) / 2;
+        sac_max_lvl_position.x = -21.0f - max_level_width / 2.0f;
+        ttyd::win_main::winFontSet(
+            &sac_max_lvl_position, &sac_max_lvl_scale, &sac_color, level_str_buf);
+            
+        // Move to next row of table.
+        sac_name_position.y     -= 26.0;
+        sac_max_lvl_position.y  -= 26.0;
+        sac_lvl_icon_position.y -= 26.0;
+    }
+}
+
+const char* GetStarPowerMenuDescriptionMsg(int32_t cursor_pos) {
+    int32_t current_pos = -1;
+    for (int32_t i = 0; i < 8; ++i) {
+        if (g_Mod->ztate_.GetStarPowerLevel(i) > 0) ++current_pos;
+        if (current_pos == cursor_pos) {
+            return ttyd::battle_mario::superActionTable[i]->description;
+        }
+    }
+    // Should not be reachable.
+    return "";
 }
 
 void GetPartyMemberMenuOrder(WinPartyData** out_party_data) {

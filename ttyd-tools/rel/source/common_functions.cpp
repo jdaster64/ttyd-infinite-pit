@@ -32,6 +32,10 @@ bool InMainGameModes() {
            !next_map_demo && !next_map_title;
 }
 
+bool InPauseMenu() {
+    return ttyd::mariost::marioStGetSystemLevel() == 15U;
+}
+
 const char* GetCurrentArea() {
     return ttyd::mariost::g_MarioSt->currentAreaName;
 }

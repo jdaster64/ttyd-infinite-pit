@@ -1,3 +1,7 @@
+.global StartStarPowerLevelMenuDisp
+.global BranchBackStarPowerLevelMenuDisp
+.global StartStarPowerGetMenuDescriptionMsg
+.global BranchBackStarPowerGetMenuDescriptionMsg
 .global StartFixItemWinPartyDispOrder
 .global BranchBackFixItemWinPartyDispOrder
 .global StartFixItemWinPartySelectOrder
@@ -7,6 +11,35 @@
 .global BranchBackCheckForUnusableItemInMenu
 .global StartUseSpecialItems
 .global BranchBackUseSpecialItems
+
+StartStarPowerLevelMenuDisp:
+bl starPowerMenuDisp
+
+BranchBackStarPowerLevelMenuDisp:
+b 0
+
+StartStarPowerGetMenuDescriptionMsg:
+# Save registers.
+stwu %sp, -0x18 (%sp)
+stw %r3, 0xc (%sp)
+stw %r4, 0x10 (%sp)
+stw %r6, 0x14 (%sp)
+# Get the correct Star Power description, given the cursor position in the menu.
+mr %r3, %r0
+mflr %r0
+stw %r0, 0x1c (%sp)
+bl getStarPowerMenuDescriptionMsg
+mr %r5, %r3
+# Load registers.
+lwz %r3, 0xc (%sp)
+lwz %r4, 0x10 (%sp)
+lwz %r6, 0x14 (%sp)
+lwz %r0, 0x1c (%sp)
+mtlr %r0
+addi %sp, %sp, 0x18
+
+BranchBackStarPowerGetMenuDescriptionMsg:
+b 0
 
 StartFixItemWinPartyDispOrder:
 mr %r3, %r5

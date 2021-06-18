@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gc/types.h>
+
 #include <cstdint>
 
 namespace ttyd::win_main {
@@ -22,10 +24,14 @@ extern "C" {
 // winTexInit
 // winFontSetLabel
 // unk_US_EU_11_8017d10c
-// winFontSetEdge
+void winFontSetEdge(
+    gc::vec3* pos, gc::vec3* scale, uint32_t* color, const char* str);
 // winFontSetR
-// winFontSetPitch
-// winFontSet
+void winFontSetPitch(
+    double length, gc::vec3* pos, gc::vec3* scale, uint32_t* color,
+    const char* str);
+void winFontSet(
+    gc::vec3* pos, gc::vec3* scale, uint32_t* color, const char* str);
 // winFontInit
 // winGhostDiaryChk
 // cam_r
