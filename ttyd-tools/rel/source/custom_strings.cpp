@@ -212,7 +212,7 @@ const char* GetYoshiTextColor() {
         "00c100", "e50000", "0000e5", "d07000",
         "e080d0", "404040", "90b0c0", "000000",
     };
-    if (!g_Mod->ztate_.GetOptionNumericValue(OPT_YOSHI_COLOR_SELECT)) {
+    if (!g_Mod->state_.GetOptionNumericValue(OPT_YOSHI_COLOR_SELECT)) {
         return kYoshiColorStrings[7];
     } else {
         return kYoshiColorStrings[ttyd::mario_pouch::pouchGetPartyColor(4)];
@@ -220,7 +220,7 @@ const char* GetYoshiTextColor() {
 }
 
 const char* GetStarPowerItemDescription(char* buf, int32_t index) {
-    int32_t level = g_Mod->ztate_.GetStarPowerLevel(index);
+    int32_t level = g_Mod->state_.GetStarPowerLevel(index);
     if (!InPauseMenu()) ++level;
     const char* name_msg = ttyd::battle_mario::superActionTable[index]->name;
     sprintf(buf,
@@ -282,11 +282,11 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
             return "<system>\n<p>\nYou haven't claimed your\nreward!\n<k>";
         case MsgKey::MSG_JON_KANBAN_1: {
             sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
-                    g_Mod->ztate_.floor_ + 1);
+                    g_Mod->state_.floor_ + 1);
             return buf;
         }
         case MsgKey::MSG_JON_KANBAN_2: {
-            if (g_Mod->ztate_.GetPlayStatsString(buf)) return buf;
+            if (g_Mod->state_.GetPlayStatsString(buf)) return buf;
             return "<kanban>\n"
                    "Start a new file to see some\n"
                    "of your play stats here!\n<k>";
@@ -296,7 +296,7 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                 "Currently selected options:\n<col 0000ffff>%s\n</col><k>",
                 GetYoshiTextColor(),
                 ttyd::mariost::g_MarioSt->saveFileName, 
-                g_Mod->ztate_.GetEncodedOptions());
+                g_Mod->state_.GetEncodedOptions());
             return buf;
         }
         case MsgKey::TIK_06_02: {
@@ -455,28 +455,28 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                    "partner receives damage.";
         case MsgKey::MSG_KIKEN_DE_POWER:
         case MsgKey::MENU_KIKEN_DE_POWER:
-            if (g_Mod->ztate_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 2\n"
                        "when Mario is in Peril.";
             }
             return nullptr;
         case MsgKey::MSG_KIKEN_DE_POWER_P:
         case MsgKey::MENU_KIKEN_DE_POWER_P:
-            if (g_Mod->ztate_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 2\n"
                        "when your partner is in Peril.";
             }
             return nullptr;
         case MsgKey::MSG_PINCH_DE_GANBARU:
         case MsgKey::MENU_PINCH_DE_GANBARU:
-            if (g_Mod->ztate_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 1\n"
                        "when Mario is in Danger.";
             }
             return nullptr;
         case MsgKey::MSG_PINCH_DE_GANBARU_P:
         case MsgKey::MENU_PINCH_DE_GANBARU_P:
-            if (g_Mod->ztate_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
+            if (g_Mod->state_.GetOptionNumericValue(OPT_WEAKER_RUSH_BADGES)) {
                 return "Increase Attack power by 1\n"
                        "when your ally is in Danger.";
             }
@@ -565,7 +565,7 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                    "that already! <wait 250>Perhaps\n"
                    "something else?\n<o>";
         case MsgKey::RIPPO_TOP_MENU: {
-            if (g_Mod->ztate_.GetOptionNumericValue(OPT_NO_EXP_MODE)) {
+            if (g_Mod->state_.GetOptionNumericValue(OPT_NO_EXP_MODE)) {
                 return "<select 0 3 0 40>\nItems\nBadges";
             }
             return "<select 0 3 0 40>\nItems\nBadges\nLevel-ups";

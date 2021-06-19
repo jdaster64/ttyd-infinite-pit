@@ -56,7 +56,7 @@ EVT_END()
 
 // Initializes all selected options on initially entering the Pit.
 EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
-    StateManager_v2& state = g_Mod->ztate_;
+    StateManager_v2& state = g_Mod->state_;
     PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
     
     // Initialize number of upgrades per partner.
@@ -138,7 +138,7 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     pouch.max_sp = 150;
     pouch.current_sp = 150;
     pouch.star_powers_obtained |= 3;
-    g_Mod->ztate_.star_power_levels_ = 0b0101;
+    g_Mod->state_.star_power_levels_ = 0b0101;
     
     options::ApplySettingBasedPatches();
     // Save the timestamp you entered the Pit.
@@ -150,7 +150,7 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
 
 // Increments the randomly selected Yoshi color & marks it as manually changed.
 EVT_DEFINE_USER_FUNC(IncrementYoshiColor) {
-    g_Mod->ztate_.SetOption(OPT_YOSHI_COLOR_SELECT, true);
+    g_Mod->state_.SetOption(OPT_YOSHI_COLOR_SELECT, true);
     int32_t color = ttyd::mario_pouch::pouchGetPartyColor(4);
     ttyd::mario_pouch::pouchSetPartyColor(4, (color + 1) % 7);
     return 2;

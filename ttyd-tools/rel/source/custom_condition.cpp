@@ -69,7 +69,7 @@ static constexpr const BattleCondition kBattleConditions[] = {
 char g_ConditionTextBuf[64];
 
 void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
-    StateManager_v2& state = g_Mod->ztate_;
+    StateManager_v2& state = g_Mod->state_;
     // No conditions on Bonetail fights (or reward floors).
     if (state.floor_ % 10 == 9) return;
     
@@ -197,7 +197,7 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     
     // If the held item drop is contingent on the condition, override the item
     // with a random one of the held items.
-    if (reward_mode == StateManager::CONDITION_DROPS_HELD) {
+    if (reward_mode == OPTVAL_DROP_HELD_FROM_BONUS) {
         int32_t enemy_index = npc_info->pConfiguration->held_item_weight;
         *item_reward = npc_info->wHeldItems[enemy_index];
     }
@@ -221,7 +221,7 @@ void GetBattleConditionString(char* out_buf) {
         ttyd::item_data::itemDataTable[item_reward].name);
     
     // If held item drop is contingent on condition, don't say which will drop.
-    if (g_Mod->ztate_.CheckOptionValue(OPTVAL_DROP_HELD_FROM_BONUS)) {
+    if (g_Mod->state_.CheckOptionValue(OPTVAL_DROP_HELD_FROM_BONUS)) {
         sprintf(out_buf, "Reward challenge:\n%s", g_ConditionTextBuf);
     } else {
         sprintf(out_buf, "Bonus reward (%s):\n%s", item_name, g_ConditionTextBuf);

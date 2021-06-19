@@ -189,7 +189,7 @@ void MenuManager::Update() {
     }
         
     menu_state_ = GetMenuState(menu_page_, menu_selection_);
-    StateManager_v2& state = g_Mod->ztate_;
+    StateManager_v2& state = g_Mod->state_;
     
     if (time_button_held_ < 0) return;
     switch (last_command_) {
@@ -281,7 +281,7 @@ void MenuManager::Draw() {
     uint32_t color;
     bool is_default, affects_seeding;
     
-    const StateManager_v2& state = g_Mod->ztate_;
+    const StateManager_v2& state = g_Mod->state_;
     
     for (int32_t selection = 1; selection < kOptionsPerPage; ++selection) {
         // Get text strings / info and color for current option.

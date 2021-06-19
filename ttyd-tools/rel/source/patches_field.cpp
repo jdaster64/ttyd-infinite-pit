@@ -195,7 +195,7 @@ DO(0)
         USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
         USER_FUNC(ttyd::evt_item::evt_item_get_item, LW(14))
         // If the item was a Crystal Star / Magical Map, unlock its Star Power.
-        // TODO: The pause menu does not properly display SP moves out of order.
+        // TODO: The journal displays wrong SP moves if unlocked out-of-order.
         USER_FUNC(AddItemStarPower, LW(1))
     END_IF()
 WHILE()
@@ -650,11 +650,11 @@ EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
     ttyd::npcdrv::NpcSetupInfo* npc_setup_info;
     int32_t lead_enemy_type;
     BuildBattle(
-        core::GetPitModulePtr(), g_Mod->ztate_.floor_, &npc_tribe_description, 
+        core::GetPitModulePtr(), g_Mod->state_.floor_, &npc_tribe_description, 
         &npc_setup_info, &lead_enemy_type);
     int8_t* enemy_100 = reinterpret_cast<int8_t*>(
         core::GetPitModulePtr() + g_jon_enemy_100_Offset);
-    int8_t battle_setup_idx = enemy_100[g_Mod->ztate_.floor_ % 100];
+    int8_t battle_setup_idx = enemy_100[g_Mod->state_.floor_ % 100];
     const int32_t x_sign = ttyd::system::irand(2) ? 1 : -1;
     const int32_t x_pos = ttyd::system::irand(50) + 80;
     const int32_t z_pos = ttyd::system::irand(200) - 100;
@@ -740,7 +740,7 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 
     // Set the enemies' held items, if they get any.
     const int32_t reward_mode =
-        g_Mod->ztate_.GetOptionValue(OPT_BATTLE_REWARD_MODE);
+        g_Mod->state_.GetOptionValue(OPT_BATTLE_REWARD_MODE);
     NpcBattleInfo* battle_info = &npc->battleInfo;
     if (reward_mode == OPTVAL_DROP_NO_HELD_W_BONUS) {
         for (int32_t i = 0; i < battle_info->pConfiguration->num_enemies; ++i) {
@@ -750,7 +750,7 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
         // If item drops only come from conditions, spawn Shine Sprites
         // as held items occasionally after floor 30.
         int32_t shine_rate = 0;
-        if (g_Mod->ztate_.floor_ >= 30 &&
+        if (g_Mod->state_.floor_ >= 30 &&
             reward_mode == OPTVAL_DROP_HELD_FROM_BONUS) {
             shine_rate = 13;
         }
@@ -769,13 +769,13 @@ EVT_DEFINE_USER_FUNC(SetEnemyNpcBattleInfo) {
 
 // Returns the number of chest rewards to spawn based on the floor number.
 EVT_DEFINE_USER_FUNC(GetNumChestRewards) {
-    int32_t num_rewards = g_Mod->ztate_.GetOptionNumericValue(OPT_CHEST_REWARDS);
+    int32_t num_rewards = g_Mod->state_.GetOptionNumericValue(OPT_CHEST_REWARDS);
     if (num_rewards > 0) {
         // Add a bonus reward for beating a boss (Atomic Boo or Bonetail).
-        if (g_Mod->ztate_.floor_ % 50 == 49) ++num_rewards;
+        if (g_Mod->state_.floor_ % 50 == 49) ++num_rewards;
     } else {
         // Pick a number of rewards randomly from 1 ~ 7.
-        num_rewards = g_Mod->ztate_.Rand(7, RNG_CHEST) + 1;
+        num_rewards = g_Mod->state_.Rand(7, RNG_CHEST) + 1;
     }
     evtSetValue(evt, evt->evtArguments[0], num_rewards);
     return 2;
@@ -801,8 +801,8 @@ EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
 EVT_DEFINE_USER_FUNC(CheckPromptSave) {
     evtSetValue(evt, evt->evtArguments[0], core::GetShouldPromptSave());
     if (core::GetShouldPromptSave()) {
-        g_Mod->ztate_.SaveCurrentTime();
-        g_Mod->ztate_.Save();
+        g_Mod->state_.SaveCurrentTime();
+        g_Mod->state_.Save();
         core::SetShouldPromptSave(false);
     }
     return 2;
@@ -810,7 +810,7 @@ EVT_DEFINE_USER_FUNC(CheckPromptSave) {
 
 // Increments the actual current Pit floor, and the corresponding GSW value.
 EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
-    int32_t actual_floor = ++g_Mod->ztate_.floor_;
+    int32_t actual_floor = ++g_Mod->state_.floor_;
     // Update the floor number used by the game.
     // Floors 101+ are treated as looping 81-90 nine times + 91-100.
     int32_t gsw_floor = actual_floor;
@@ -824,7 +824,7 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         case 30:
         case 60:
         case 90: {
-            if (g_Mod->ztate_.CheckOptionValue(OPTVAL_STAGE_RANK_30_FLOORS)) {
+            if (g_Mod->state_.CheckOptionValue(OPTVAL_STAGE_RANK_30_FLOORS)) {
                 ttyd::mario_pouch::pouchGetPtr()->rank++;
             }
             break;
@@ -860,15 +860,15 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
         int32_t star_power_type =
             item == ItemType::MAGICAL_MAP ? 0 : item - ItemType::DIAMOND_STAR + 1;
         pouch.star_powers_obtained |= (1 << star_power_type);
-        g_Mod->ztate_.star_power_levels_ += (1 << (2 * star_power_type));
+        g_Mod->state_.star_power_levels_ += (1 << (2 * star_power_type));
     }
     return 2;
 }
 
 EVT_DEFINE_USER_FUNC(CheckChetRippoSpawn) {
-    const int32_t floor = g_Mod->ztate_.floor_;
+    const int32_t floor = g_Mod->state_.floor_;
     bool can_spawn = false;
-    switch (g_Mod->ztate_.GetOptionValue(OPT_CHET_RIPPO_APPEARANCE)) {
+    switch (g_Mod->state_.GetOptionValue(OPT_CHET_RIPPO_APPEARANCE)) {
         case OPTVAL_CHET_RIPPO_10_ONWARD: {
             can_spawn = floor % 10 == 9 && floor % 100 != 99;
             break;
@@ -885,7 +885,7 @@ EVT_DEFINE_USER_FUNC(CheckChetRippoSpawn) {
 // Returns whether any stat upgrades can be sold.
 EVT_DEFINE_USER_FUNC(CheckAnyStatsDowngradeable) {
     bool can_downgrade = ttyd::mario_pouch::pouchGetPtr()->level > 1 &&
-        !g_Mod->ztate_.GetOptionNumericValue(OPT_NO_EXP_MODE);
+        !g_Mod->state_.GetOptionNumericValue(OPT_NO_EXP_MODE);
     evtSetValue(evt, evt->evtArguments[0], can_downgrade);
     return 2;
 }
@@ -941,9 +941,9 @@ EVT_DEFINE_USER_FUNC(DowngradeStat) {
 // Tracks item / badge / level sold actions in play stats.
 EVT_DEFINE_USER_FUNC(TrackChetRippoSellActionType) {
     switch (evtGetValue(evt, evt->evtArguments[0])) {
-        case 0:     g_Mod->ztate_.ChangeOption(STAT_ITEMS_SOLD);    break;
-        case 1:     g_Mod->ztate_.ChangeOption(STAT_BADGES_SOLD);   break;
-        case 2:     g_Mod->ztate_.ChangeOption(STAT_LEVELS_SOLD);   break;
+        case 0:     g_Mod->state_.ChangeOption(STAT_ITEMS_SOLD);    break;
+        case 1:     g_Mod->state_.ChangeOption(STAT_BADGES_SOLD);   break;
+        case 2:     g_Mod->state_.ChangeOption(STAT_LEVELS_SOLD);   break;
     }
     return 2;
 }
@@ -999,7 +999,7 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
     const uint32_t module_start = reinterpret_cast<uint32_t>(module_ptr);
     
     // Reset RNG states that reset every floor.
-    StateManager_v2& state = g_Mod->ztate_;
+    StateManager_v2& state = g_Mod->state_;
     state.rng_sequences_[RNG_CHEST] = 0;
     state.rng_sequences_[RNG_ENEMY] = 0;
     state.rng_sequences_[RNG_ITEM] = 0;

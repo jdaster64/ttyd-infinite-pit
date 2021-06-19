@@ -46,7 +46,7 @@ void Mod::Init() {
 	g_Mod = this;
     
     // Clear the mod's state completely.
-    memset(&ztate_, 0, sizeof(ztate_));
+    memset(&state_, 0, sizeof(state_));
 	
     // Hook the game's main function, so Update runs exactly once per frame.
 	marioStMain_trampoline_ = patch::hookFunction(

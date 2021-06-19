@@ -142,7 +142,7 @@ int32_t AlterDamageCalculation(
     
     // Randomize damage dealt, if option enabled.
     const int32_t damage_scale =
-        g_Mod->ztate_.GetOptionNumericValue(OPT_RANDOM_DAMAGE);
+        g_Mod->state_.GetOptionNumericValue(OPT_RANDOM_DAMAGE);
     if (damage_scale != 0) {
         // Generate a number from -25 to 25 in increments of 5.
         int32_t scale = (ttyd::system::irand(11) - 5) * 5;
@@ -182,12 +182,12 @@ int32_t AlterFpDamageCalculation(
     
     // Randomize damage dealt, if option enabled.
     const int32_t damage_scale =
-        g_Mod->ztate_.GetOptionNumericValue(OPT_RANDOM_DAMAGE);
+        g_Mod->state_.GetOptionNumericValue(OPT_RANDOM_DAMAGE);
     if (damage_scale != 0) {
         // Generate a number from -25 to 25 in increments of 5.
         int32_t scale = (ttyd::system::irand(11) - 5) * 5;
         // Scale by 1x or 2x based on the setting.
-        scale *= (damage_scale / StateManager::DAMAGE_RANGE_25);
+        scale *= damage_scale;
         // Round damage modifier away from 0, based on the sign of the scale.
         damage += (damage * scale + (scale > 0 ? 50 : -50)) / 100;
     }

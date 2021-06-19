@@ -437,7 +437,7 @@ void ApplyFixedPatches() {
 
 EVT_DEFINE_USER_FUNC(InitializePartyMember) {
     const int32_t starting_rank =
-        g_Mod->ztate_.GetOptionNumericValue(OPT_PARTNER_RANK);
+        g_Mod->state_.GetOptionNumericValue(OPT_PARTNER_RANK);
     const int32_t idx = evtGetValue(evt, evt->evtArguments[0]);
     const int16_t starting_hp =
         ttyd::mario_pouch::_party_max_hp_table[idx * 4 + starting_rank];

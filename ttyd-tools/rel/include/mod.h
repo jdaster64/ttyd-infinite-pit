@@ -17,8 +17,8 @@ public:
     // Code that runs drawing-related code every frame.
     void Draw();
     
-    // TODO: Rename back to "state_" once migration to StateManager_v2 is done.
-    StateManager_v2 ztate_;
+    // Holds state specific to the Infinite Pit mod.
+    StateManager_v2 state_;
 };
 
 extern Mod* g_Mod;

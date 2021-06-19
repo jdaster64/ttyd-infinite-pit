@@ -36,13 +36,13 @@ extern "C" {
     
     int32_t getDangerStrength(int32_t num_badges) {
         bool weaker_rush_badges =
-            mod::infinite_pit::g_Mod->ztate_.GetOptionNumericValue(
+            mod::infinite_pit::g_Mod->state_.GetOptionNumericValue(
                 mod::infinite_pit::OPT_WEAKER_RUSH_BADGES);
         return num_badges * (weaker_rush_badges ? 1 : 2);
     }
     int32_t getPerilStrength(int32_t num_badges) {
         bool weaker_rush_badges =
-            mod::infinite_pit::g_Mod->ztate_.GetOptionNumericValue(
+            mod::infinite_pit::g_Mod->state_.GetOptionNumericValue(
                 mod::infinite_pit::OPT_WEAKER_RUSH_BADGES);
         return num_badges * (weaker_rush_badges ? 2 : 5);
     }
@@ -140,7 +140,7 @@ int32_t GetDrainRestoration(EvtEntry* evt, bool hp_drain) {
         } else {
             num_badges = unit->badges_equipped.fp_drain;
         }
-        if (g_Mod->ztate_.GetOptionNumericValue(OPT_64_STYLE_HP_FP_DRAIN)) {
+        if (g_Mod->state_.GetOptionNumericValue(OPT_64_STYLE_HP_FP_DRAIN)) {
             // 1 point per damaging hit x num badges, max of 5.
             drain = unit->total_damage_dealt_this_attack * num_badges;
             if (drain > 5) drain = 5;
@@ -510,7 +510,7 @@ void ApplyFixedPatches() {
 }
 
 bool CheckEvasionBadges(BattleWorkUnit* unit) {
-    if (g_Mod->ztate_.GetOptionNumericValue(OPT_EVASION_BADGES_CAP)) {
+    if (g_Mod->state_.GetOptionNumericValue(OPT_EVASION_BADGES_CAP)) {
         float hit_chance = 100.f;
         for (int32_t i = 0; i < unit->badges_equipped.pretty_lucky; ++i) {
             hit_chance *= 0.90f;

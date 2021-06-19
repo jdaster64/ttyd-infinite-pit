@@ -564,7 +564,7 @@ void SelectEnemies(int32_t floor) {
     }
     
     const auto& pouch = *ttyd::mario_pouch::pouchGetPtr();
-    auto& state = g_Mod->ztate_;
+    auto& state = g_Mod->state_;
     
     // If floor > 50, determine whether to use one of the preset loadouts.
     if (floor >= 50 && state.Rand(100, RNG_ENEMY) < 10) {
@@ -754,7 +754,7 @@ void BuildBattle(
     // Return early if this is a Bonetail fight, since it needs no changes.
     if (floor % 100 == 99) return;
     
-    auto& state = g_Mod->ztate_;
+    auto& state = g_Mod->state_;
     
     for (int32_t i = 0; i < 12; ++i) g_CustomAudienceWeights[i] = 2;
     // Make Toads slightly likelier since they're never boosted.
@@ -845,10 +845,10 @@ bool GetEnemyStats(
         // No stats to pull from; just use the original message.
         return false;
     }
-    const StateManager_v2& state = g_Mod->ztate_;
+    const StateManager_v2& state = g_Mod->state_;
     const EnemyTypeInfo& ei = kEnemyInfo[unit_type];
     
-    int32_t floor_group = g_Mod->ztate_.floor_ / 10;
+    int32_t floor_group = g_Mod->state_.floor_ / 10;
     
     int32_t hp_scale =
         state.GetOptionNumericValue(OPT_FLOOR_100_HP_SCALE) ? 10 : 5;

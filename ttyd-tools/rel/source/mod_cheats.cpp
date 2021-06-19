@@ -69,8 +69,8 @@ void CheatsManager::Update() {
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions3) {
         code_history = 0;
         // Toggle on/off background music from playing or starting.
-        g_Mod->ztate_.ChangeOption(OPT_BGM_DISABLED);
-        if (g_Mod->ztate_.GetOptionNumericValue(OPT_BGM_DISABLED)) {
+        g_Mod->state_.ChangeOption(OPT_BGM_DISABLED);
+        if (g_Mod->state_.GetOptionNumericValue(OPT_BGM_DISABLED)) {
             ttyd::pmario_sound::psndStopAllFadeOut();
         }
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
@@ -100,7 +100,7 @@ void CheatsManager::Draw() {
     if (InMainGameModes() && g_DrawRtaTimer) {
         // Print the current RTA timer to the screen.
         char buf[32];
-        sprintf(buf, "%s", g_Mod->ztate_.GetCurrentTimeString());
+        sprintf(buf, "%s", g_Mod->state_.GetCurrentTimeString());
         DrawText(buf, -260, -195, 0xFF, true, ~0U, 0.75f, /* center-left */ 3);
     }
 }

@@ -16,7 +16,7 @@ namespace {
 int32_t PickRandomItem(
     int32_t sequence, int32_t normal_item_weight, int32_t recipe_item_weight,
     int32_t badge_weight, int32_t no_item_weight) {
-    StateManager_v2& state = g_Mod->ztate_;
+    StateManager_v2& state = g_Mod->state_;
     
     // Bitfields of whether each item is included in the pool or not;
     // item X is enabled if kItemPool[X / 16 - offset] & (1 << (X % 16)) != 0.
