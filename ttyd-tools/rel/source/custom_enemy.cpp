@@ -586,6 +586,16 @@ void SelectEnemies(int32_t floor) {
                 base_wt = kBaseWeights[floor_group][ei.level_offset - 2];
             }
             
+            // Halve base rate for all Yux types since they're so centralizing.
+            switch (i) {
+                case BattleUnitType::YUX:
+                case BattleUnitType::Z_YUX:
+                case BattleUnitType::X_YUX: {
+                    base_wt /= 2;
+                    break;
+                }
+            }
+            
             // The 6th slot is used for reference as an unchanging base weight.
             for (int32_t slot = 0; slot < 6; ++slot) weights[slot][i] = base_wt;
             // Disable selecting enemies with no overworld behavior for slot 0.

@@ -50,7 +50,13 @@ void ApplyFixedPatches() {
             const int32_t sp_cost =
                 g_Mod->ztate_.GetOptionValue(OPTNUM_SUPERGUARD_SP_COST);
             if (sp_cost <= 0) {
-                return g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
+                const int32_t defense_result =
+                    g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
+                if (defense_result == 5) {
+                    // Successful Superguard, track in play stats.
+                    g_Mod->ztate_.ChangeOption(STAT_SUPERGUARDS);
+                }
+                return defense_result;
             }
             
             int8_t superguard_frames[7];
@@ -66,8 +72,9 @@ void ApplyFixedPatches() {
             const int32_t defense_result =
                 g_BattleActionCommandCheckDefence_trampoline(unit, weapon);
             if (defense_result == 5) {
-                // Successful Superguard, subtract SP.
+                // Successful Superguard, subtract SP and track in play stats.
                 ttyd::mario_pouch::pouchAddAP(-sp_cost);
+                g_Mod->ztate_.ChangeOption(STAT_SUPERGUARDS);
             }
             if (restore_superguard_frames) {
                 memcpy(ttyd::battle_ac::superguard_frames, superguard_frames, 7);

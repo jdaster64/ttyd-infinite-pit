@@ -96,6 +96,9 @@ void (*g_DrawWeaponWin_trampoline)() = nullptr;
 uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*) = nullptr;
 // battle_seq.o  8011c350
 void (*g__rule_disp_trampoline)(void) = nullptr;
+// battle_unit.o  80126840
+void (*g_BtlUnit_PayWeaponCost_trampoline)(
+    BattleWorkUnit*, BattleWeapon*) = nullptr;
 // battle_unit.o  80126968
 int32_t (*g_BtlUnit_GetWeaponCost_trampoline)(
     BattleWorkUnit*, BattleWeapon*) = nullptr;

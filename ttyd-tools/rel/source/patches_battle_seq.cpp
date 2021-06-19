@@ -85,10 +85,20 @@ void CheckBattleCondition() {
     NpcBattleInfo* npc_info = fbat_info->wBattleInfo;
 
     // Track the number of turns spent / number of run aways at fight's end.
-    g_Mod->ztate_.ChangeOption(
+    StateManager_v2& state = g_Mod->ztate_;
+    state.ChangeOption(
         STAT_TURNS_SPENT, ttyd::battle::g_BattleWork->turn_count);
+    state.ChangeOption(
+        STAT_MOST_TURNS_CURRENT, ttyd::battle::g_BattleWork->turn_count);
+    if (state.GetOptionValue(STAT_MOST_TURNS_CURRENT) >
+        state.GetOptionValue(STAT_MOST_TURNS_RECORD)) {
+        // Update max turn count record (use 1-indexed floor count).
+        state.SetOption(STAT_MOST_TURNS_RECORD,
+            state.GetOptionValue(STAT_MOST_TURNS_CURRENT));
+        state.SetOption(STAT_MOST_TURNS_FLOOR, state.floor_ + 1);
+    }
     if (fbat_info->wResult != 1) {
-        g_Mod->ztate_.ChangeOption(STAT_TIMES_RAN_AWAY);
+        state.ChangeOption(STAT_TIMES_RAN_AWAY);
     }
     
     // Did not win the fight (e.g. ran away).

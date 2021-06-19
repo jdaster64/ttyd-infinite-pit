@@ -349,7 +349,8 @@ extern "C" {
 // BtlUnit_LoadSeMode
 // BtlUnit_ResetMoveStatus
 // BtlUnit_GetGuardKouraPtr
-// BtlUnit_PayWeaponCost
+void BtlUnit_PayWeaponCost(
+    BattleWorkUnit* unit, battle_database_common::BattleWeapon* weapon);
 // BtlUnit_CheckWeaponCost
 int32_t BtlUnit_GetWeaponCost(
     BattleWorkUnit* unit, battle_database_common::BattleWeapon* weapon);

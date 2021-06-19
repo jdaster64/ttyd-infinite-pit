@@ -18,6 +18,7 @@ namespace mod::infinite_pit {
 
 namespace {
 
+using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::battle_unit::BattleWorkUnitPart;
 
@@ -30,6 +31,8 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 extern void (*g_BattleDamageDirect_trampoline)(
     int32_t, BattleWorkUnit*, BattleWorkUnitPart*, int32_t, int32_t,
     uint32_t, uint32_t, uint32_t);
+extern void (*g_BtlUnit_PayWeaponCost_trampoline)(
+    BattleWorkUnit*, BattleWeapon*);
 extern uint32_t (*g_pouchGetItem_trampoline)(int32_t);
 extern int32_t (*g_pouchAddCoin_trampoline)(int16_t);
 extern void (*g_BtlActRec_AddCount_trampoline)(uint8_t*);
@@ -57,6 +60,17 @@ void ApplyFixedPatches() {
             g_BattleDamageDirect_trampoline(
                 unit_idx, target, part, damage, fp_damage, 
                 unk0, damage_pattern, unk1);
+        });
+        
+    g_BtlUnit_PayWeaponCost_trampoline = mod::patch::hookFunction(
+        ttyd::battle_unit::BtlUnit_PayWeaponCost, [](
+            BattleWorkUnit* unit, BattleWeapon* weapon) {
+            // Track FP / SP spent.
+            const int32_t fp_cost = BtlUnit_GetWeaponCost(unit, weapon);
+            g_Mod->ztate_.ChangeOption(STAT_FP_SPENT, fp_cost);
+            g_Mod->ztate_.ChangeOption(STAT_SP_SPENT, weapon->base_sp_cost);
+            // Run normal pay-weapon-cost logic.
+            g_BtlUnit_PayWeaponCost_trampoline(unit, weapon);
         });
 
     g_pouchGetItem_trampoline = mod::patch::hookFunction(

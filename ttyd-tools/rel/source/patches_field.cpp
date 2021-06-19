@@ -126,9 +126,11 @@ EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
 EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
+EVT_DECLARE_USER_FUNC(CheckChetRippoSpawn, 1)
 EVT_DECLARE_USER_FUNC(CheckAnyStatsDowngradeable, 1)
 EVT_DECLARE_USER_FUNC(CheckStatDowngradeable, 2)
 EVT_DECLARE_USER_FUNC(DowngradeStat, 1)
+EVT_DECLARE_USER_FUNC(TrackChetRippoSellActionType, 1)
 
 // Event that plays "get partner" fanfare.
 EVT_BEGIN(PartnerFanfareEvt)
@@ -406,6 +408,7 @@ IF_EQUAL(LW(0), 1)
 END_IF()
 USER_FUNC(ttyd::evt_pouch::N_evt_pouch_remove_item_index, LW(1), LW(4), LW(0))
 USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
+USER_FUNC(TrackChetRippoSellActionType, 0)
 USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(8))
 WAIT_MSEC(200)
 USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
@@ -453,6 +456,7 @@ IF_EQUAL(LW(0), 1)
 END_IF()
 USER_FUNC(ttyd::evt_pouch::N_evt_pouch_remove_item_index, LW(1), LW(4), LW(0))
 USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(3))
+USER_FUNC(TrackChetRippoSellActionType, 1)
 USER_FUNC(ttyd::evt_window::evt_win_coin_wait, LW(8))
 WAIT_MSEC(200)
 USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
@@ -508,6 +512,7 @@ END_SWITCH()
 SET(LW(2), LW(0))
 USER_FUNC(ttyd::evt_window::evt_win_coin_on, 0, LW(8))
 USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, LW(1))
+USER_FUNC(TrackChetRippoSellActionType, 2)
 USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("rippo_yes_no"))
 IF_EQUAL(LW(0), 1)
     USER_FUNC(ttyd::evt_window::evt_win_coin_off, LW(8))
@@ -558,20 +563,15 @@ EVT_END()
 
 // Chet Rippo NPC spawning event.
 EVT_BEGIN(ChetRippoSetupEvt)
-// Only spawn on reward floors.
-SET(LW(0), GSW(1321))
-ADD(LW(0), 1)
-IF_NOT_EQUAL(LW(0), 100)
-    MOD(LW(0), 10)
-    IF_EQUAL(LW(0), 0)
-        USER_FUNC(
-            ttyd::evt_npc::evt_npc_entry, PTR(kChetRippoName), PTR("c_levela"))
-        USER_FUNC(ttyd::evt_npc::evt_npc_set_tribe,
-            PTR(kChetRippoName), PTR(kChetRippoName))
-        USER_FUNC(ttyd::evt_npc::evt_npc_setup, PTR(&g_ChetRippoNpcSetupInfo))
-        USER_FUNC(ttyd::evt_npc::evt_npc_set_position,
-            PTR(kChetRippoName), -160, 0, 110)
-    END_IF()
+USER_FUNC(CheckChetRippoSpawn, LW(0))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(
+        ttyd::evt_npc::evt_npc_entry, PTR(kChetRippoName), PTR("c_levela"))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_tribe,
+        PTR(kChetRippoName), PTR(kChetRippoName))
+    USER_FUNC(ttyd::evt_npc::evt_npc_setup, PTR(&g_ChetRippoNpcSetupInfo))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_position,
+        PTR(kChetRippoName), -160, 0, 110)
 END_IF()
 RETURN()
 EVT_PATCH_END()
@@ -596,9 +596,6 @@ ADD(LW(1), LW(3))
 USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetPos, -2, LW(0), LW(1), LW(2))
 WAIT_FRM(60)
 USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetHomePos, -3, LW(0), LW(1), LW(2))
-// USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetStageSize, LW(6), EVT_HELPER_POINTER_BASE, EVT_HELPER_POINTER_BASE)
-// MUL(LW(6), -1)
-// USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetPos, -3, LW(6), LW(1), LW(2))
 USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_SetMoveSpeed, -3, FLOAT(6.00))
 USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_MovePosition,
     -3, LW(0), LW(1), LW(2), 0, -1, 0)
@@ -868,6 +865,23 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
     return 2;
 }
 
+EVT_DEFINE_USER_FUNC(CheckChetRippoSpawn) {
+    const int32_t floor = g_Mod->ztate_.floor_;
+    bool can_spawn = false;
+    switch (g_Mod->ztate_.GetOptionValue(OPT_CHET_RIPPO_APPEARANCE)) {
+        case OPTVAL_CHET_RIPPO_10_ONWARD: {
+            can_spawn = floor % 10 == 9 && floor % 100 != 99;
+            break;
+        }
+        case OPTVAL_CHET_RIPPO_50_ONWARD: {
+            can_spawn = floor % 10 == 9 && floor % 100 != 99 && floor >= 49;
+            break;
+        }
+    }
+    evtSetValue(evt, evt->evtArguments[0], can_spawn);
+    return 2;
+}
+
 // Returns whether any stat upgrades can be sold.
 EVT_DEFINE_USER_FUNC(CheckAnyStatsDowngradeable) {
     bool can_downgrade = ttyd::mario_pouch::pouchGetPtr()->level > 1 &&
@@ -921,6 +935,16 @@ EVT_DEFINE_USER_FUNC(DowngradeStat) {
     }
     pouch.level -= 1;
     ttyd::mario_pouch::pouchReviseMarioParam();
+    return 2;
+}
+
+// Tracks item / badge / level sold actions in play stats.
+EVT_DEFINE_USER_FUNC(TrackChetRippoSellActionType) {
+    switch (evtGetValue(evt, evt->evtArguments[0])) {
+        case 0:     g_Mod->ztate_.ChangeOption(STAT_ITEMS_SOLD);    break;
+        case 1:     g_Mod->ztate_.ChangeOption(STAT_BADGES_SOLD);   break;
+        case 2:     g_Mod->ztate_.ChangeOption(STAT_LEVELS_SOLD);   break;
+    }
     return 2;
 }
 
@@ -1071,6 +1095,9 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         state.SetOption(OPT_ENABLE_P_BADGES, has_partner);
         // Only one partner allowed per reward floor, re-enable them for next.
         state.SetOption(OPT_ENABLE_PARTNER_REWARD, true);
+        
+        // Clear current floor turn count.
+        state.SetOption(STAT_MOST_TURNS_CURRENT, 0);
     } else if (state.floor_ % 100 == 99) {
         // If Bonetail floor, patch in the Mario-alone variant of the
         // battle entry event if partners are not available.

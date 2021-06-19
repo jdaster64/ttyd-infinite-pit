@@ -1145,6 +1145,7 @@
 801253ec:BattleTransID
 
 // battle_unit.o
+80126840:BtlUnit_PayWeaponCost
 80126968:BtlUnit_GetWeaponCost
 80126c10:BtlUnit_SetFp
 80126c64:BtlUnit_GetFp
