@@ -213,6 +213,9 @@ void ApplyFixedPatches() {
                 mapName = reinterpret_cast<const char*>(1);
                 beroName = 0;
                 g_CueGameOver = false;
+                // Reset RTA timer variables so they don't carry across files.
+                g_Mod->state_.pit_start_time_ = 0;
+                g_Mod->state_.last_save_time_ = 0;
             } else if (
                 seq == SeqIndex::kMapChange && !strcmp(mapName, "aaa_00") && 
                 !strcmp(beroName, "prologue")) {
