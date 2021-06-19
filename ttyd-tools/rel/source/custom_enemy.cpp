@@ -126,12 +126,12 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { -1, ModuleId::INVALID_MODULE, 230, 0x0b, 8, 6, 5, 3, 0, 6, 7, 1, 0 },
     { 0x181e0, ModuleId::JON, 282, 0x07, 18, 7, 2, 3, 0, 6, 8, 0, 0 },
     { 0x49440, ModuleId::CUSTOM, 291, 0x08, 18, 7, 2, 3, 0, 7, 8, 0, 0 },
-    { 0x494a0, ModuleId::CUSTOM, 314, -1, 15, 7, 0, 4, 0, 7, 3, 0, 3 },
-    { -1, ModuleId::INVALID_MODULE, -1, -1, 15, 7, 0, 4, 0, 7, 3, 0, 3 },
-    { 0x494d0, ModuleId::CUSTOM, 315, -1, 15, 7, 0, 4, 0, 7, 3, 0, 3 },
-    { -1, ModuleId::INVALID_MODULE, -1, -1, 15, 7, 0, 4, 0, 7, 3, 0, 3 },
-    { 0x49500, ModuleId::CUSTOM, 316, -1, 15, 7, 0, 4, 0, 7, 3, 0, 3 },
-    { -1, ModuleId::INVALID_MODULE, -1, -1, 15, 7, 0, 4, 0, 7, 3, 0, 3 },
+    { 0x494a0, ModuleId::CUSTOM, 314, -1, 15, 7, 0, 3, 1, 8, 3, 0, 3 },
+    { -1, ModuleId::INVALID_MODULE, -1, -1, 15, 7, 0, 3, 1, 8, 3, 0, 3 },
+    { 0x494d0, ModuleId::CUSTOM, 315, -1, 18, 7, 0, 4, 0, 8, 3, 0, 3 },
+    { -1, ModuleId::INVALID_MODULE, -1, -1, 18, 7, 0, 4, 0, 8, 3, 0, 3 },
+    { 0x49500, ModuleId::CUSTOM, 316, -1, 15, 7, 1, 4, 0, 8, 3, 0, 3 },
+    { -1, ModuleId::INVALID_MODULE, -1, -1, 15, 7, 1, 4, 0, 8, 3, 0, 3 },
     { 0x1a430, ModuleId::JON, 308, 0x04, 20, 9, 0, 6, 0, 8, -1, 3, 0 },
     { 0x49530, ModuleId::CUSTOM, 206, 0x2b, 16, 6, 2, 3, 1, 9, 3, 2, 1 },
     { 0x49590, ModuleId::CUSTOM, 294, 0x04, 16, 4, 2, 2, 0, 9, 3, 2, 1 },
@@ -165,7 +165,7 @@ const EnemyTypeInfo kEnemyInfo[] = {
     { 0x18ab0, ModuleId::JON, 302, 0x24, 10, 6, 0, 3, 1, 6, 2, 0, 1 },
     { 0x37728, ModuleId::CUSTOM, 249, 0x10, 13, 6, 0, 2, 1, 4, -1, 0, 0 },
     { 0x18420, ModuleId::JON, 250, 0x10, 13, 6, 0, 2, 1, 6, -1, 0, 2 },
-    { 0x37758, ModuleId::CUSTOM, 262, 0x1c, 14, 6, 0, 2, 1, 5, 11, 0, 2 },
+    { 0x37758, ModuleId::CUSTOM, 262, 0x1c, 14, 6, 0, 2, 1, 6, 11, 0, 2 },
     { 0x17fa0, ModuleId::JON, 228, 0x0d, 8, 6, 5, 3, 0, 5, 7, 1, 0 },
     { -1, ModuleId::INVALID_MODULE, 254, 0x12, 10, 0, 3, 0, 0, 6, 9, 1, 0 },
     { -1, ModuleId::INVALID_MODULE, 255, -1, 4, 7, 1, 4, 0, 0, 9, 0, 0 },
@@ -1009,7 +1009,8 @@ bool IsEligibleLoadoutEnemy(int32_t unit_type) {
 
 bool IsEligibleFrontEnemy(int32_t unit_type) {
     if (unit_type > BattleUnitType::BONETAIL || unit_type < 0) return false;
-    return kEnemyInfo[unit_type].ai_type_idx >= 0;
+    return kEnemyInfo[unit_type].ai_type_idx >= 0 &&
+        kEnemyInfo[unit_type].battle_unit_setup_offset >= 0;
 }
 
 }

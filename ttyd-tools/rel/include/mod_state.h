@@ -241,7 +241,7 @@ enum RngSequence {
     
     // Not mangled w/ floor number; order should stay completely consistent,
     // independent of all seeding options (unless partners are disabled).
-    RNG_INVENTORY_UPGRADE   = 5,    // Super/Ultra Boots, Hammer, Strange Sack.    
+    RNG_INVENTORY_UPGRADE   = 5,    // Boots and Hammer upgrades.
     RNG_CHEST_BADGE_FIXED   = 6,    // Chest one-time badges' order.
     RNG_PARTNER             = 7,    // Partners' obtained order.
     RNG_STAR_POWER          = 8,    // Star powers' obtained order.

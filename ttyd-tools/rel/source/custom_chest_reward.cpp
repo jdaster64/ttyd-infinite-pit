@@ -52,15 +52,30 @@ int16_t PickInventoryUpgrade(StateManager_v2& state) {
     // Make Strange Sack way more likely starting on floor 50.
     if (state.floor_ >= 49) weights[0] = 50;
     for (int32_t i = 0; i < 5; ++i) {
-        if (state.reward_flags_ & (1 << i)) weights[i] = 0;
-        // Make Ultra Boots/Hammer possible if Super Boots/Hammer is unlocked.
-        if (i == 1 || i == 3) weights[i + 1] = 20;
+        if (state.reward_flags_ & (1 << i)) {
+            weights[i] = 0;
+            // Make Ultra Boots/Hammer possible if Super variant is unlocked.
+            if (i == 1 || i == 3) weights[i + 1] = 20;
+        }
     }
     
     int32_t sum_weights = 0;
     for (const auto& weight : weights) sum_weights += weight;
     
-    int32_t weight = state.Rand(sum_weights, RNG_INVENTORY_UPGRADE);
+    // Check for Strange Sack using the CHEST rng sequence; since its weight
+    // changes based on progression it can't use the INVENTORY_UPGRADE sequence.
+    int32_t weight = state.Rand(sum_weights, RNG_CHEST);
+    if (weight < weights[0]) {
+        state.reward_flags_ |= (1 << 0);
+        return kRewards[0];
+    }
+    
+    // Not chosen; pick boots/hammer using the INVENTORY_UPGRADE sequence.
+    weights[0] = 0;
+    sum_weights = 0;
+    for (const auto& weight : weights) sum_weights += weight;
+    
+    weight = state.Rand(sum_weights, RNG_INVENTORY_UPGRADE);
     int32_t reward_idx = 0;
     for (; (weight -= weights[reward_idx]) >= 0; ++reward_idx);
     

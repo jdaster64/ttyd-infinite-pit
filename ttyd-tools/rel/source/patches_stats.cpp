@@ -45,6 +45,8 @@ void ApplyFixedPatches() {
             int32_t unit_idx, BattleWorkUnit* target, BattleWorkUnitPart* part,
             int32_t damage, int32_t fp_damage, uint32_t unk0, 
             uint32_t damage_pattern, uint32_t unk1) {
+            // Save original damage so elemental healing still works.
+            const int32_t original_damage = damage;
             // Track damage taken, if target is player/enemy and damage > 0.
             if (target->current_kind == BattleUnitType::MARIO ||
                 target->current_kind >= BattleUnitType::GOOMBELLA) {
@@ -58,7 +60,7 @@ void ApplyFixedPatches() {
             }
             // Run normal damage logic.
             g_BattleDamageDirect_trampoline(
-                unit_idx, target, part, damage, fp_damage, 
+                unit_idx, target, part, original_damage, fp_damage, 
                 unk0, damage_pattern, unk1);
         });
         
