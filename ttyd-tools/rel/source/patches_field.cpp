@@ -819,18 +819,17 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
         gsw_floor += ((actual_floor / 10) % 10 == 9) ? 90 : 80;
     }
     ttyd::swdrv::swByteSet(1321, gsw_floor);
-    // Increase stage rank if entering floor 31/61/91, depending on settings.
-    switch (actual_floor) {
-        case 30:
-        case 60:
-        case 90: {
-            if (g_Mod->state_.CheckOptionValue(OPTVAL_STAGE_RANK_30_FLOORS)) {
-                ttyd::mario_pouch::pouchGetPtr()->rank++;
-            }
-            break;
+    if (g_Mod->state_.CheckOptionValue(OPTVAL_STAGE_RANK_30_FLOORS)) {
+        // Set stage rank based on passing floors 30, 60, 90.
+        int32_t rank = 0;
+        if (actual_floor >= 90) {
+            rank = 3;
+        } else if (actual_floor >= 60) {
+            rank = 2;
+        } else if (actual_floor >= 30) {
+            rank = 1;
         }
-        default:
-            break;
+        ttyd::mario_pouch::pouchGetPtr()->rank = rank;
     }
     return 2;
 }

@@ -1528,6 +1528,9 @@
 // .data
 80418560:icon_id
 
+// battle_audience.o
+801a5a0c:BattleAudienceSetThrowItemMax
+
 // battle_enemy_item.o
 801f8dd0:_check_status_recover_item
 801f8fa8:_check_status_support_item

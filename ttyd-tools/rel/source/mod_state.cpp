@@ -526,7 +526,7 @@ void StateManager_v2::GetOptionStrings(
             strcpy(value_buf, "No Fog");                return;
         }
         case OPTVAL_STAGE_HAZARDS_OFF: {
-            strcpy(value_buf, "Off");                   return;
+            strcpy(value_buf, "None");                  return;
         }
         case OPTVAL_RANDOM_DAMAGE_25: {
             strcpy(value_buf, "+/-25%");                return;

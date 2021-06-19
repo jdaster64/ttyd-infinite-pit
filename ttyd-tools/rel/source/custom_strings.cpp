@@ -76,11 +76,11 @@ namespace MsgKey {
         MSG_SUPER_COIN,
         MSG_SUPER_GENKI,
         MSG_TEKI_KYOUKA,
-        MSG_TREASURE_MAP,
         MSG_TOUGHEN_UP,
         MSG_TOUGHEN_UP_MENU,
         MSG_TOUGHEN_UP_P,
         MSG_TOUGHEN_UP_P_MENU,
+        MSG_TREASURE_MAP,
         PIT_CHARLIETON_FULL_INV,
         PIT_CHEST_UNCLAIMED,
         PIT_DISABLED_RETURN,
@@ -173,11 +173,11 @@ constexpr const char* kKeyLookups[] = {
     "msg_super_coin",
     "msg_super_genki",
     "msg_teki_kyouka",
-    "msg_treasure_map",
     "msg_toughen_up",
     "msg_toughen_up_menu",
     "msg_toughen_up_p",
     "msg_toughen_up_p_menu",
+    "msg_treasure_map",
     "pit_charlieton_full_inv",
     "pit_chest_unclaimed",
     "pit_disabled_return",
@@ -385,8 +385,8 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
             return "Spit the front enemy into all\n"
                    "ground-bound enemies behind it.";
         case MsgKey::MSG_SUPER_COIN:
-            return "A mysterious, powerful object.\n"
-                   "Use it to power up your partner!";
+            return "A powerful object that raises\n"
+                   "max SP, or ranks up a partner.";
         case MsgKey::MSG_CUSTOM_SUPER_BOOTS:
             return "A stronger pair of boots.";
         case MsgKey::MSG_CUSTOM_ULTRA_BOOTS:

@@ -8,6 +8,7 @@
 
 #include <ttyd/battle.h>
 #include <ttyd/battle_actrecord.h>
+#include <ttyd/battle_audience.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_event_cmd.h>
 #include <ttyd/battle_mario.h>
@@ -106,6 +107,7 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 // Function hooks.
 extern void (*g_pouchReviseMarioParam_trampoline)();
 extern int32_t (*g_btlevtcmd_WeaponAftereffect_trampoline)(EvtEntry*, bool);
+extern void (*g_BattleAudienceSetThrowItemMax_trampoline)();
 // Patch addresses.
 extern const int32_t g__btlcmd_SetAttackEvent_SwitchPartnerCost_BH;
 extern const int32_t g_BtlUnit_CheckPinchStatus_DangerThreshold_BH;
@@ -200,6 +202,21 @@ void ApplyFixedPatches() {
             memcpy(&weapon.bg_a1_a2_fall_weight, stage_hazard_chances, 12);
             
             return 2;
+        });
+        
+    // Guarantee that 1 item can be thrown every turn if randomized audience
+    // items are enabled.
+    g_BattleAudienceSetThrowItemMax_trampoline = mod::patch::hookFunction(
+        ttyd::battle_audience::BattleAudienceSetThrowItemMax, [](){
+            g_BattleAudienceSetThrowItemMax_trampoline();
+            if (g_Mod->state_.GetOptionNumericValue(
+                OPT_AUDIENCE_RANDOM_THROWS)) {
+                // Always set 'max thrown items' value to 1.
+                uintptr_t audience_work_base =
+                    reinterpret_cast<uintptr_t>(
+                        ttyd::battle::g_BattleWork->audience_work);
+                *reinterpret_cast<int32_t*>(audience_work_base + 0x137f4) = 1;
+            }
         });
     
     // Apply patch to give the player infinite BP if enabled.
@@ -404,7 +421,7 @@ int32_t GetRandomAudienceItem(int32_t item_type) {
         item_type = PickRandomItem(RNG_AUDIENCE_ITEM, 20, 10, 5, 15);
         if (item_type <= 0) {
             // Pick a coin, heart, flower, or random bad item if "none" selected.
-            switch (ttyd::system::irand(10)) {
+            switch (g_Mod->state_.Rand(10, RNG_AUDIENCE_ITEM)) {
                 case 0:  return ItemType::AUDIENCE_CAN;
                 case 1:  return ItemType::AUDIENCE_ROCK;
                 case 2:  return ItemType::AUDIENCE_BONE;
