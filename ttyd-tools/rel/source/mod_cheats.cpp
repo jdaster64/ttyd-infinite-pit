@@ -10,6 +10,7 @@
 
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
+#include <ttyd/pmario_sound.h>
 #include <ttyd/sound.h>
 #include <ttyd/swdrv.h>
 #include <ttyd/system.h>
@@ -49,23 +50,29 @@ void CheatsManager::Update() {
     if (code) code_history = (code_history << 3) | code;
     if ((code_history & 0xFFFFFF) == secretCode_RtaTimer) {
         code_history = 0;
+        // Display the RTA time since the current Pit run was started.
         g_DrawRtaTimer = true;
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions1) {
         code_history = 0;
+        // Unlock the first page of bonus options.
         MenuManager::SetMenuPageVisibility(5, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions2) {
         code_history = 0;
+        // Unlock the second page of bonus options.
         MenuManager::SetMenuPageVisibility(6, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions3) {
         code_history = 0;
-        // TODO: Implement toggling BGM on/off.
-        // MenuManager::SetMenuPageVisibility(7, true);
+        // Toggle on/off background music from playing or starting.
+        g_Mod->ztate_.ChangeOption(OPT_BGM_DISABLED);
+        if (g_Mod->ztate_.GetOptionNumericValue(OPT_BGM_DISABLED)) {
+            ttyd::pmario_sound::psndStopAllFadeOut();
+        }
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_UnlockFxBadges) {

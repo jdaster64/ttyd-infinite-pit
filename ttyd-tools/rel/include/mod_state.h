@@ -171,7 +171,7 @@ public:
     uint8_t     padding_[2];
     // RNG state.
     uint32_t    filename_seed_;
-    uint16_t    rng_sequences_[24];
+    uint16_t    rng_sequences_[28];
     // Game timers.
     uint64_t    pit_start_time_;
     uint64_t    last_save_time_;
@@ -278,8 +278,8 @@ enum Options_v2 {
     // How partners are obtained.
     OPT_PARTNERS_OBTAINED       = 0x1'08'2'8'004,
     OPTVAL_PARTNERS_ALL_REWARDS = 0x2'08'2'8'000,   // all from chest rewards
-    OPTVAL_PARTNERS_ALL_START   = 0x2'08'2'8'001,   // all at start
-    OPTVAL_PARTNERS_ONE_START   = 0x2'08'2'8'002,   // one at start, rest later
+    OPTVAL_PARTNERS_ONE_START   = 0x2'08'2'8'001,   // one at start, rest later
+    OPTVAL_PARTNERS_ALL_START   = 0x2'08'2'8'002,   // all at start
     OPTVAL_PARTNERS_NEVER       = 0x2'08'2'8'003,   // no partners at all
     // Which rank partners start at.
     OPT_PARTNER_RANK            = 0x1'0a'2'0'003,
@@ -335,7 +335,7 @@ enum Options_v2 {
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
     OPT_YOSHI_COLOR_SELECT      = 0x1'61'1'0'002,
     OPT_START_WITH_FX           = 0x1'62'1'0'002,
-    OPT_BGM_ENABLED             = 0x1'63'1'0'002,
+    OPT_BGM_DISABLED            = 0x1'63'1'0'002,
     OPT_ENABLE_P_BADGES         = 0x1'64'1'0'002,
     OPT_ENABLE_PARTNER_REWARD   = 0x1'65'1'0'002,
     

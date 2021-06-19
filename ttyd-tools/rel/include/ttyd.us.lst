@@ -706,6 +706,10 @@
 // .data
 80315380:_party_max_hp_table
 
+// pmario_sound.o
+800daf24:psndBGMOn_f_d
+800dc214:psndStopAllFadeOut
+
 // sound.o
 800e0ca0:SoundEfxPlayEx
 

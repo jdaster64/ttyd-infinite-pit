@@ -25,6 +25,7 @@
 #include <ttyd/mariost.h>
 #include <ttyd/memory.h>
 #include <ttyd/msgdrv.h>
+#include <ttyd/pmario_sound.h>
 #include <ttyd/seq_mapchange.h>
 #include <ttyd/seqdrv.h>
 #include <ttyd/statuswindow.h>
@@ -65,6 +66,8 @@ extern void (*g_cardCopy2Main_trampoline)(int32_t);
 extern bool (*g_OSLink_trampoline)(OSModuleInfo*, void*);
 extern const char* (*g_msgSearch_trampoline)(const char*);
 extern void (*g_seqSetSeq_trampoline)(SeqIndex, const char*, const char*);
+extern uint32_t (*g_psndBGMOn_f_d_trampoline)(
+    uint32_t, const char*, uint32_t, uint16_t);
 // Patch addresses.
 extern const int32_t g_seq_mapChangeMain_MapLoad_BH;
 extern const int32_t g_seq_mapChangeMain_MapLoad_EH;
@@ -225,6 +228,17 @@ void ApplyFixedPatches() {
             const char* replacement = StringsManager::LookupReplacement(msg_key);
             if (replacement) return replacement;
             return g_msgSearch_trampoline(msg_key);
+        });
+    
+    // Don't play BGM tunes if the BGM option is currently toggled off.
+    g_psndBGMOn_f_d_trampoline = patch::hookFunction(
+        ttyd::pmario_sound::psndBGMOn_f_d, [](
+            uint32_t unk0, const char* name, uint32_t fadein_time,
+            uint16_t unk1) {
+            if (g_Mod->ztate_.GetOptionNumericValue(OPT_BGM_DISABLED)) {
+                return 0U;
+            }
+            return g_psndBGMOn_f_d_trampoline(unk0, name, fadein_time, unk1);
         });
     
     // Apply patches to seq_mapChangeMain code to run additional logic when

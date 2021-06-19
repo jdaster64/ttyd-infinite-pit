@@ -46,6 +46,9 @@ void (*g_pouchReviseMarioParam_trampoline)() = nullptr;
 int32_t (*g_pouchAddCoin_trampoline)(int16_t) = nullptr;
 // mario_pouch.o 800d50cc
 uint32_t (*g_pouchGetItem_trampoline)(int32_t) = nullptr;
+// pmario_sound.o  800daf24
+uint32_t (*g_psndBGMOn_f_d_trampoline)(
+    uint32_t, const char*, uint32_t, uint16_t) = nullptr;
 // event.o  800ee688
 void (*g_stg0_00_init_trampoline)(void) = nullptr;
 // battle_ac.o  800fa1b8
