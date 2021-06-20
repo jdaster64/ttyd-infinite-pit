@@ -159,7 +159,7 @@ int16_t PickChestReward() {
     if (int32_t num_upgrades_remaining =
         5 - CountSetBits(GetBitMask(0, 4) & state.reward_flags_);
         num_upgrades_remaining) {
-        weights[REWARD_INVENTORY_UPGRADE] = 30 + 10 * num_upgrades_remaining;
+        weights[REWARD_INVENTORY_UPGRADE] = 25 + 15 * num_upgrades_remaining;
     }
     if (int32_t num_unique_badges_remaining =
         12 - CountSetBits(GetBitMask(5, 16) & state.reward_flags_);
@@ -178,7 +178,11 @@ int16_t PickChestReward() {
     weights[REWARD_RANDOM_BADGE] = state.floor_ < 99 ? 15 : 25;
     weights[REWARD_SHINE_SPRITE] =
         state.floor_ > 30 ? (state.floor_ < 99 ? 25 : 15) : 0;
+        
+    // Make Shine Sprites and Jump/Hammer/Strange Sack upgrades less likely
+    // if playing with over 5 chest rewards.
     if (state.GetOptionNumericValue(OPT_CHEST_REWARDS) > 5) {
+        weights[REWARD_INVENTORY_UPGRADE] /= 2;
         weights[REWARD_SHINE_SPRITE] /= 2;
     }
     
