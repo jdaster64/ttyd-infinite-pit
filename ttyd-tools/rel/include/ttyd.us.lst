@@ -1191,6 +1191,12 @@
 80152548:evt_snd_bgmon_f
 801525a4:evt_snd_bgmon
 
+// win_root.o
+// .text
+// 80152f00:winMailDisp
+// .data
+80377218:enemy_monoshiri_sort_table
+
 // win_party.o
 // .text
 // 80167848:winPartyInit

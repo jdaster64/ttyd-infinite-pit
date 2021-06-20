@@ -6,6 +6,7 @@ namespace ttyd::win_root {
 
 extern "C" {
 
+// .text
 // winMailDisp
 // winZClear
 // winKageGX
@@ -69,6 +70,9 @@ extern "C" {
 // winBgMain
 // winRootDisp
 // winRootMain
+
+// .data
+extern uint8_t enemy_monoshiri_sort_table[0xe7];
 
 }
 

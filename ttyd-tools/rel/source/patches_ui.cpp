@@ -2,6 +2,7 @@
 
 #include "common_functions.h"
 #include "common_types.h"
+#include "custom_enemy.h"
 #include "mod.h"
 #include "mod_state.h"
 #include "patch.h"
@@ -14,6 +15,7 @@
 #include <ttyd/gx/GXTransform.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_mario.h>
+#include <ttyd/battle_monosiri.h>
 #include <ttyd/battle_seq_end.h>
 #include <ttyd/eff_updown.h>
 #include <ttyd/fontmgr.h>
@@ -26,6 +28,7 @@
 #include <ttyd/statuswindow.h>
 #include <ttyd/win_main.h>
 #include <ttyd/win_party.h>
+#include <ttyd/win_root.h>
 
 #include <cinttypes>
 #include <cstdio>
@@ -50,6 +53,8 @@ extern "C" {
     void BranchBackCheckForUnusableItemInMenu();
     void StartUseSpecialItems();
     void BranchBackUseSpecialItems();
+    void StartInitTattleLog();
+    void BranchBackInitTattleLog();
     // status_window_patches.s
     void StartPreventDpadShortcutsOutsidePit();
     void ConditionalBranchPreventDpadShortcutsOutsidePit();
@@ -77,7 +82,10 @@ extern "C" {
         mod::infinite_pit::ui::StarPowerMenuDisp();
     }
     void getStarPowerMenuDescriptionMsg(int32_t idx) {
-         mod::infinite_pit::ui::GetStarPowerMenuDescriptionMsg(idx);
+        mod::infinite_pit::ui::GetStarPowerMenuDescriptionMsg(idx);
+    }
+    void initTattleLog(void* win_log_ptr) {
+        mod::infinite_pit::ui::InitializeTattleLog(win_log_ptr);
     }
 }
 
@@ -89,6 +97,7 @@ using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::mario_pouch::PouchData;
 using ::ttyd::win_party::WinPartyData;
 
+namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
 
 }
@@ -116,6 +125,8 @@ extern const int32_t g_winMarioDisp_StarPowerMenu_BH;
 extern const int32_t g_winMarioDisp_StarPowerMenu_EH;
 extern const int32_t g_winMarioMain_StarPowerDescription_BH;
 extern const int32_t g_winMarioMain_StarPowerDescription_EH;
+extern const int32_t g_winLogInit_Patch_DisableCrystalStarLog;
+extern const int32_t g_winLogInit_InitTattleLog_BH;
 extern const int32_t g__btlcmd_MakeSelectWeaponTable_Patch_GetNameFromItem;
 
 namespace ui {
@@ -259,7 +270,7 @@ void ApplyFixedPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(
             g__btlcmd_MakeSelectWeaponTable_Patch_GetNameFromItem),
-        0x807b0004U /* r3, 0x4 (r27) */);
+        0x807b0004U /* lwz r3, 0x4 (r27) */);
         
     // Apply patch to Mario menu code to display the max levels of all
     // currently unlocked Special Move.
@@ -276,6 +287,28 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(g_winMarioMain_StarPowerDescription_EH),
         reinterpret_cast<void*>(StartStarPowerGetMenuDescriptionMsg),
         reinterpret_cast<void*>(BranchBackStarPowerGetMenuDescriptionMsg));
+        
+    // Apply patch to only include Infinite Pit enemies in the Tattle Log.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_winLogInit_InitTattleLog_BH),
+        reinterpret_cast<void*>(StartInitTattleLog),
+        reinterpret_cast<void*>(BranchBackInitTattleLog));
+        
+    // Disable the "Crystal Stars" page of the Journal (Special Moves are
+    // already listed on the "Mario" page).
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_winLogInit_Patch_DisableCrystalStarLog),
+        0x2c0303e7U /* cmpwi r3, (sequence position) 999 */);
+        
+    // Override the default "Type" order used for the Tattle log.
+    int32_t kNumEnemyTypes = BattleUnitType::BONETAIL + 1;
+    uint8_t custom_tattle_order[kNumEnemyTypes];
+    for (int32_t i = 0; i <= kNumEnemyTypes; ++i) {
+        custom_tattle_order[i] = static_cast<uint8_t>(GetCustomTattleIndex(i));
+    }
+    mod::patch::writePatch(
+        ttyd::win_root::enemy_monoshiri_sort_table,
+        custom_tattle_order, sizeof(custom_tattle_order));
 }
 
 void DisplayUpDownNumberIcons(
@@ -519,6 +552,31 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
     g_Mod->state_.ChangeOption(STAT_ITEMS_USED);
     
     // Run normal logic to add HP, FP, and SP afterwards...
+}
+
+void InitializeTattleLog(void* win_log_ptr) {
+    uintptr_t win_log_base = reinterpret_cast<uintptr_t>(win_log_ptr);
+    uint16_t* enemy_info = reinterpret_cast<uint16_t*>(win_log_base + 0x1058);
+    int32_t num_enemies = 0;
+    // Fill in only the enemy info for enemies appearing in Infinite Pit.
+    for (int32_t i = 0; i <= BattleUnitType::BONETAIL; ++i) {
+        const int32_t tattle_idx = GetCustomTattleIndex(i);
+        if (tattle_idx < 0) continue;
+        enemy_info[num_enemies] =
+            (static_cast<uint8_t>(tattle_idx) << 8) | static_cast<uint8_t>(i);
+        ++num_enemies;
+    }
+    // Initialize the number of enemies.
+    *reinterpret_cast<int32_t*>(win_log_base + 0x1040) = num_enemies;
+    // Sort initially by type sort index.
+    for (int32_t i = 1; i < num_enemies; ++i) {
+        const int16_t x = enemy_info[i];
+        int32_t j = i - 1;
+        for (; j >= 0 && enemy_info[j] > x; --j) {
+            enemy_info[j + 1] = enemy_info[j];
+        }
+        enemy_info[j + 1] = x;
+    }
 }
 
 }  // namespace ui

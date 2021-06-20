@@ -27,5 +27,7 @@ bool CheckForUnusableItemInMenu();
 // Ranks up and fully heals the selected party member when using a Shine Sprite,
 // or restores random HP/FP if using a Strawberry Cake.
 void UseSpecialItemsInMenu(ttyd::win_party::WinPartyData** party_data);
+// Initializes the Tattle log Journal page with only Infinite Pit's enemies.
+void InitializeTattleLog(void* win_log_ptr);
 
 }

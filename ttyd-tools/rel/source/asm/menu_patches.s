@@ -11,6 +11,8 @@
 .global BranchBackCheckForUnusableItemInMenu
 .global StartUseSpecialItems
 .global BranchBackUseSpecialItems
+.global StartInitTattleLog
+.global BranchBackInitTattleLog
 
 StartStarPowerLevelMenuDisp:
 bl starPowerMenuDisp
@@ -75,4 +77,13 @@ bl useSpecialItems
 # Restore existing opcode.
 lwz %r0, 0x2dc(%r28)
 BranchBackUseSpecialItems:
+b 0
+
+StartInitTattleLog:
+# Move win_log struct pointer into first parameter slot.
+mr %r3, %r28
+bl initTattleLog
+# Restore existing opcode.
+lmw	%r27, 0x4c (%sp)
+BranchBackInitTattleLog:
 b 0
