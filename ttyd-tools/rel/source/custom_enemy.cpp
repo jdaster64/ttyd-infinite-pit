@@ -492,8 +492,12 @@ void PopulateDebugEnemyLoadout(int32_t* debug_enemies) {
     g_NumEnemies = 0;
     for (int32_t i = 0; i < 5; ++i) {
         g_Enemies[i] = debug_enemies[i];
-        if (g_Enemies[i] > 0) ++g_NumEnemies;
+        if (g_Enemies[i] < 0) break;
+        ++g_NumEnemies;
     }
+    for (int32_t i = g_NumEnemies; i < 5; ++i) g_Enemies[i] = -1;
+    // Reset debug enemies.
+    for (int32_t i = 0; i < 5; ++i) debug_enemies[i] = -1;
 }
 
 // Selects one of the "preset" loadouts of related enemies.

@@ -87,6 +87,7 @@ extern const int32_t g_custom_EliteXNautAttackEvt_JumpAttackReturnLblOffset;
 extern const int32_t g_custom_ZYux_PrimaryKindPartOffset;
 extern const int32_t g_custom_XYux_PrimaryKindPartOffset;
 extern const int32_t g_custom_Yux_PrimaryKindPartOffset;
+extern const int32_t g_custom_GrnMagikoopa_DefenseOffset;
 
 namespace enemy_fix {
 
@@ -412,6 +413,12 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         z_yux->attribute_flags  &= ~0x600000;
         x_yux->attribute_flags  &= ~0x600000;
         yux->attribute_flags    &= ~0x600000;
+        // Give Green Magikoopas nonzero DEF so they can have 1 DEF in the mod.
+        const int8_t kDefenseArr[5] = { 1, 1, 1, 1, 1 };
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_start + g_custom_GrnMagikoopa_DefenseOffset),
+            kDefenseArr, sizeof(kDefenseArr));
     }
 }
 

@@ -317,6 +317,7 @@ extern const int32_t g_custom_KoopatrolAttackEvt_NormalAttackReturnLblOffset = 0
 extern const int32_t g_custom_BoomerangBrosAttackEvt_CheckHpOffset = 0x4ace4;
 extern const int32_t g_custom_FireBrosAttackEvt_CheckHpOffset = 0x4e86c;
 extern const int32_t g_custom_HammerBrosAttackEvt_CheckHpOffset = 0x508dc;
+extern const int32_t g_custom_GrnMagikoopa_DefenseOffset = 0x59b70;
 extern const int32_t g_custom_GrnMagikoopaGaleForceDeathEvt_PatchOffset = 0x5ad00;
 extern const int32_t g_custom_GrnMagikoopaAttackEvt_CheckEnemyNumOffset = 0x5b194;
 extern const int32_t g_custom_RedMagikoopaGaleForceDeathEvt_PatchOffset = 0x5e628;
