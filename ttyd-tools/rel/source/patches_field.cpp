@@ -114,7 +114,7 @@ const char kBonetailName[] = "\x83\x5d\x83\x93\x83\x6f\x83\x6f";
 const char kChetRippoName[] =
     "\x83\x70\x83\x8f\x81\x5b\x83\x5f\x83\x45\x83\x93\x89\xae";
 
-ttyd::npcdrv::NpcSetupInfo g_ChetRippoNpcSetupInfo;
+ttyd::npcdrv::NpcSetupInfo g_ChetRippoNpcSetupInfo[2];
     
 // Declarations for USER_FUNCs.
 EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
@@ -569,7 +569,7 @@ IF_EQUAL(LW(0), 1)
         ttyd::evt_npc::evt_npc_entry, PTR(kChetRippoName), PTR("c_levela"))
     USER_FUNC(ttyd::evt_npc::evt_npc_set_tribe,
         PTR(kChetRippoName), PTR(kChetRippoName))
-    USER_FUNC(ttyd::evt_npc::evt_npc_setup, PTR(&g_ChetRippoNpcSetupInfo))
+    USER_FUNC(ttyd::evt_npc::evt_npc_setup, PTR(g_ChetRippoNpcSetupInfo))
     USER_FUNC(ttyd::evt_npc::evt_npc_set_position,
         PTR(kChetRippoName), -160, 0, 110)
 END_IF()
@@ -1063,10 +1063,11 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
             
     // Spawn Chet Rippo NPC.
     memset(&g_ChetRippoNpcSetupInfo, 0, sizeof(g_ChetRippoNpcSetupInfo));
-    g_ChetRippoNpcSetupInfo.nameJp = kChetRippoName;
-    g_ChetRippoNpcSetupInfo.flags = 0x10000600;
-    g_ChetRippoNpcSetupInfo.regularEvtCode = nullptr;
-    g_ChetRippoNpcSetupInfo.talkEvtCode = const_cast<int32_t*>(ChetRippoTalkEvt);
+    g_ChetRippoNpcSetupInfo[0].nameJp = kChetRippoName;
+    g_ChetRippoNpcSetupInfo[0].flags = 0x10000600;
+    g_ChetRippoNpcSetupInfo[0].regularEvtCode = nullptr;
+    g_ChetRippoNpcSetupInfo[0].talkEvtCode =
+        const_cast<int32_t*>(ChetRippoTalkEvt);
     // Hook Chet Rippo setup function in place of Mover event call.
     mod::patch::writePatch(
         reinterpret_cast<void*>(

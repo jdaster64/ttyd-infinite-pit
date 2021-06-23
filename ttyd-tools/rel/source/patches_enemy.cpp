@@ -63,8 +63,6 @@ int32_t g_EnemyItem = 0;
 void AlterUnitKindParams(BattleUnitKind* unit) {
     // If not an enemy, nothing to change.
     if (unit->unit_type > BattleUnitType::BONETAIL) return;
-    // Used as a sentinel to see if stats have already changed for this enemy.
-    if (unit->run_rate & 1) return;
     
     int32_t hp, level, coinlvl;
     if (!GetEnemyStats(
@@ -91,9 +89,6 @@ void AlterUnitKindParams(BattleUnitKind* unit) {
     
     // Additional global changes for enemies in this mod.
     unit->itemsteal_param = 20;
-    
-    // Set sentinel bit so enemy's stats aren't changed again until next floor.
-    unit->run_rate |= 1;
 }
 
 int32_t AlterDamageCalculation(

@@ -730,6 +730,8 @@ void BuildBattle(
         ttyd::npc_data::npcTribe + enemy_info[0]->npc_tribe_idx;
     NpcAiTypeTable* npc_ai =
         ttyd::npc_data::npc_ai_type_table + enemy_info[0]->ai_type_idx;
+        
+    memset(g_CustomNpc, 0, sizeof(g_CustomNpc));
     g_CustomNpc[0].nameJp           = "\x93\x47";  // enemy
     g_CustomNpc[0].flags            = 0x1000000a;
     g_CustomNpc[0].reactionFlags    = 0;
