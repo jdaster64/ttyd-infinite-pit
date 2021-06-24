@@ -18,6 +18,17 @@
 #include <cstdint>
 #include <cstring>
 
+// Assembly patch functions.
+extern "C" {
+    // audience_level_patches.s
+    void StartSetTargetAudienceCount();
+    void BranchBackSetTargetAudienceCount();
+    
+    void setTargetAudienceCount() {
+        mod::infinite_pit::battle::SetTargetAudienceAmount();
+    }
+}
+
 namespace mod::infinite_pit {
 
 namespace {
@@ -39,6 +50,7 @@ extern void (*g__getSickStatusParam_trampoline)(
 extern const int32_t g_BattleCheckDamage_Patch_PaybackDivisor;
 extern const int32_t g_BattleCheckDamage_Patch_HoldFastDivisor;
 extern const int32_t g_BattleCheckDamage_Patch_ReturnPostageDivisor;
+extern const int32_t g_BattleAudience_SetTargetAmount_BH;
 
 namespace battle {
     
@@ -131,6 +143,26 @@ void ApplyFixedPatches() {
     mod::patch::writePatch(
         ttyd::battle_ac::superguard_frames, kSuperguardFrames, 
         sizeof(kSuperguardFrames));
+        
+    // Override the default target audience size.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_BattleAudience_SetTargetAmount_BH),
+        reinterpret_cast<void*>(StartSetTargetAudienceCount),
+        reinterpret_cast<void*>(BranchBackSetTargetAudienceCount));
+}
+
+void SetTargetAudienceAmount() {
+    uintptr_t audience_work_base =
+        reinterpret_cast<uintptr_t>(
+            ttyd::battle::g_BattleWork->audience_work);
+    float target_amount = 200.0f;
+    // If set to rank up by progression, make the target audience follow suit;
+    // otherwise, keep the target fixed at max capacity.
+    if (g_Mod->state_.GetOptionValue(OPTVAL_STAGE_RANK_30_FLOORS)) {
+        const int32_t floor = g_Mod->state_.floor_;
+        target_amount = floor >= 195 ? 200.0f : floor + 5.0f;
+    }
+    *reinterpret_cast<float*>(audience_work_base + 0x13778) = target_amount;
 }
 
 }  // namespace battle

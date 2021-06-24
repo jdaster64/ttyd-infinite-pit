@@ -219,6 +219,7 @@ extern const int32_t g_BattleAudienceSettingAudience_EnableAlways_BH = 0x801a61a
 extern const int32_t g__object_fall_attack_AudienceEnableAlways_BH = 0x801469e4;
 extern const int32_t g_effUpdownDisp_TwoDigitSupport_BH = 0x80193aec;
 extern const int32_t g_effUpdownDisp_TwoDigitSupport_EH = 0x80193cd4;
+extern const int32_t g_BattleAudience_SetTargetAmount_BH = 0x801a61ec;
 extern const int32_t g_BattleAudience_End_SaveAmountAlways_BH = 0x801a6b68;
 extern const int32_t g_BattleAudience_Disp_EnableAlways_BH = 0x801a6cb0;
 extern const int32_t g_getBadgeBottakuru100TableMaxCount_Patch_ShopSize = 0x801fae60;
