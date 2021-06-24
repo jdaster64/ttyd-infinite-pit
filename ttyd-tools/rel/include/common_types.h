@@ -23,6 +23,20 @@ namespace ButtonId {
     };
 }
 
+// Gamepad directional inputs (used in keyGetDirTrg, etc.)
+namespace DirectionInputId {
+    enum e {
+        CSTICK_UP   = 0x100,
+        CSTICK_DOWN = 0x200,
+        CSTICK_LEFT = 0x400,
+        CSTICK_RIGHT = 0x800,
+        ANALOG_UP   = 0x1000,
+        ANALOG_DOWN = 0x2000,
+        ANALOG_LEFT = 0x4000,
+        ANALOG_RIGHT = 0x8000,
+    };
+};
+
 // Relocatable module ids.
 namespace ModuleId {
     enum e {

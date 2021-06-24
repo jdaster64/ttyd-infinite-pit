@@ -44,12 +44,42 @@ int32_t g_DebugMode = DEBUG_OFF;
 int32_t g_CursorPos = 0;
 int32_t g_DebugEnemies[5] = { -1, -1, -1, -1, -1 };
 
+// Gets all buttons pressed the current frame, converting stick inputs into
+// the respective D-Pad directions.
+uint32_t GetPressedButtons() {
+    const uint32_t dir_trg = ttyd::system::keyGetDirTrg(0);
+    uint32_t button_trg = ttyd::system::keyGetButtonTrg(0);
+    switch (dir_trg) {
+        case DirectionInputId::CSTICK_UP: 
+        case DirectionInputId::ANALOG_UP: {
+            button_trg |= ButtonId::DPAD_UP;
+            break;
+        }
+        case DirectionInputId::CSTICK_DOWN: 
+        case DirectionInputId::ANALOG_DOWN: {
+            button_trg |= ButtonId::DPAD_DOWN;
+            break;
+        }
+        case DirectionInputId::CSTICK_LEFT: 
+        case DirectionInputId::ANALOG_LEFT: {
+            button_trg |= ButtonId::DPAD_LEFT;
+            break;
+        }
+        case DirectionInputId::CSTICK_RIGHT: 
+        case DirectionInputId::ANALOG_RIGHT: {
+            button_trg |= ButtonId::DPAD_RIGHT;
+            break;
+        }
+    }
+    return button_trg;
+}
+
 }
 
 void DebugManager::Update() {
     if (g_DebugMode == DEBUG_OFF) return;
     const uint32_t buttons = ttyd::system::keyGetButton(0);
-    const uint32_t button_trg = ttyd::system::keyGetButtonTrg(0);
+    const uint32_t button_trg = GetPressedButtons();
     
     if (g_DebugMode == DEBUG_MAIN) {
         if (button_trg & (ButtonId::DPAD_UP | ButtonId::DPAD_RIGHT)) {

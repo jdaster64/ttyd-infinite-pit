@@ -305,7 +305,7 @@ void ApplyFixedPatches() {
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
     // Set Shine Sprite sell price.
-    itemDataTable[ItemType::GOLD_BAR_X3].sell_price = 20;
+    itemDataTable[ItemType::GOLD_BAR_X3].sell_price = 25;
     
     // Base HP and FP restored by Strawberry Cake; extra logic is run
     // in the menu / in battle to make it restore random extra HP / FP.

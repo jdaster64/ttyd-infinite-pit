@@ -503,15 +503,15 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
         case MsgKey::MSG_CRYSTAL_STAR:
             return GetStarPowerItemDescription(buf, 7);
         case MsgKey::RIPPO_CONFIRM_BP:
-            return "<p>\nI'll give you 25 coins for 3 BP.\n"
+            return "<p>\nI'll give you 39 coins for 3 BP.\n"
                    "<wait 350>You won't be able to get it back,\n"
                    "so are you absolutely sure?\n<o>";
         case MsgKey::RIPPO_CONFIRM_FP:
-            return "<p>\nI'll give you 25 coins for 5 FP.\n"
+            return "<p>\nI'll give you 39 coins for 5 FP.\n"
                    "<wait 350>You won't be able to get it back,\n"
                    "so are you absolutely sure?\n<o>";
         case MsgKey::RIPPO_CONFIRM_HP:
-            return "<p>\nI'll give you 25 coins for 5 HP.\n"
+            return "<p>\nI'll give you 39 coins for 5 HP.\n"
                    "<wait 350>You won't be able to get it back,\n"
                    "so are you absolutely sure?\n<o>";
         case MsgKey::RIPPO_EXIT:
