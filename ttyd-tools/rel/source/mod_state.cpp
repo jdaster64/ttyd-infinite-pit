@@ -610,7 +610,10 @@ const char* StateManager_v2::GetEncodedOptions() const {
     return enc_options;
 }
 
-bool StateManager_v2::GetPlayStatsString(char* out_buf) const {
+bool StateManager_v2::GetPlayStatsString(char* out_buf) {
+    // Check to make sure the file's timer is valid.
+    GetCurrentTimeString();
+    
     const auto* mariost = ttyd::mariost::g_MarioSt;
     const uint64_t current_time = gc::OSTime::OSGetTime();
     const int64_t last_save_diff = current_time - last_save_time_;
@@ -695,9 +698,11 @@ const char* StateManager_v2::GetCurrentTimeString() {
     const uint64_t current_time = gc::OSTime::OSGetTime();
     const int64_t start_diff = current_time - pit_start_time_;
     const int64_t last_save_diff = current_time - last_save_time_;
-    // If the time since the last save is negative or the time was never set,
+    // If debug mode was used on this file, the time since the last save
+    // is negative (implying the time was rolled back), or time was never set,
     // return the empty string and clear the timebases previously set.
-    if (last_save_diff < 0 || !pit_start_time_) {
+    if (last_save_diff < 0 || !pit_start_time_ ||
+        g_Mod->state_.GetOptionNumericValue(OPT_DEBUG_MODE_USED)) {
         pit_start_time_ = 0;
         last_save_time_ = 0;
         return "";

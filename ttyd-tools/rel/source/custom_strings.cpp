@@ -108,6 +108,7 @@ namespace MsgKey {
         RIPPO_WHICH_STAT,
         RIPPO_YES_NO,
         TIK_06_02,
+        x83x70x83x8f_CHET_RIPPO_TATTLE,
     };
 }
     
@@ -205,6 +206,7 @@ constexpr const char* kKeyLookups[] = {
     "rippo_which_stat",
     "rippo_yes_no",
     "tik_06_02",
+    "\x83\x70\x83\x8f\x81\x5b\x83\x5f\x83\x45\x83\x93\x89\xae",  // Chet Rippo
 };
 
 const char* GetYoshiTextColor() {
@@ -576,6 +578,16 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
             return "<p>\nWhaddya want to sell?\n<o>";
         case MsgKey::RIPPO_YES_NO:
             return "<select 0 1 0 40>\nYes\nNo";
+        case MsgKey::x83x70x83x8f_CHET_RIPPO_TATTLE:
+            return "<keyxon>\nThat's Chet Rippo, the\n"
+                   "adjuster.<dkey><wait 300></dkey> Seems he's found a\n"
+                   "new niche here in the Pit.\n<k>\n<p>\n"
+                   "He'll take your unwanted\n"
+                   "items, badges, and level-ups\n"
+                   "in exchange for a few coins.\n<k>\n<p>\n"
+                   "Me, <wait 200>I wouldn't trust this guy\n"
+                   "personally, Mario, but I guess\n"
+                   "if you're desperate...\n<k>";
     }
     // Should not be reached.
     return nullptr;

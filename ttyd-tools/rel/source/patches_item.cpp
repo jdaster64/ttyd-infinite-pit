@@ -196,8 +196,6 @@ void ApplyFixedPatches() {
             }
             if (item.sell_price < 1) item.sell_price = 1;
         }
-        // Set Shine Sprite sell price.
-        itemDataTable[ItemType::GOLD_BAR_X3].sell_price = 20;
         
         if (i < ItemType::POWER_JUMP) {
             // For all items that restore HP or FP, assign the "cooked item"
@@ -306,6 +304,8 @@ void ApplyFixedPatches() {
            &itemDataTable[ItemType::SHINE_SPRITE], sizeof(ItemData));
     itemDataTable[ItemType::GOLD_BAR_X3].usable_locations 
         |= ItemUseLocation::kField;
+    // Set Shine Sprite sell price.
+    itemDataTable[ItemType::GOLD_BAR_X3].sell_price = 20;
     
     // Base HP and FP restored by Strawberry Cake; extra logic is run
     // in the menu / in battle to make it restore random extra HP / FP.

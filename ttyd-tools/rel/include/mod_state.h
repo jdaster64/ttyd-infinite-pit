@@ -70,7 +70,7 @@ public:
     const char* GetEncodedOptions() const;
     // Gets a string containing all the saved gameplay stats on this save file.
     // Returns false if no play stats are present on this save file.
-    bool GetPlayStatsString(char* out_buf) const;
+    bool GetPlayStatsString(char* out_buf);
     
     // Saves the current clock time (used for calculating RTA time since start).
     void SaveCurrentTime(bool pit_start = false);
@@ -186,6 +186,7 @@ enum Options_v2 {
     OPT_BGM_DISABLED            = 0x1'63'1'0'002,
     OPT_ENABLE_P_BADGES         = 0x1'64'1'0'002,
     OPT_ENABLE_PARTNER_REWARD   = 0x1'65'1'0'002,
+    OPT_DEBUG_MODE_USED         = 0x1'66'1'0'002,
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).
