@@ -179,7 +179,8 @@ uint32_t StateManager_v2::Rand(uint32_t range, int32_t sequence) {
             case RNG_ENEMY:
             case RNG_ITEM:
             case RNG_CONDITION:
-            case RNG_CONDITION_ITEM: {
+            case RNG_CONDITION_ITEM:
+            case RNG_CHET_RIPPO: {
                 data[1] = floor_;
                 break;
             }
@@ -416,7 +417,7 @@ void StateManager_v2::GetOptionStrings(
             strcpy(name_buf, "Random audience items:");     break;
         }
         case OPT_CHET_RIPPO_APPEARANCE: {
-            strcpy(name_buf, "Chet Rippo appearance:");     break;
+            strcpy(name_buf, "Chet Rippo appear %:");       break;
         }
         case OPTNUM_ENEMY_HP: {
             strcpy(name_buf, "Enemy HP multiplier:");       break;
@@ -534,11 +535,11 @@ void StateManager_v2::GetOptionStrings(
         case OPTVAL_RANDOM_DAMAGE_50: {
             strcpy(value_buf, "+/-50%");                return;
         }
-        case OPTVAL_CHET_RIPPO_50_ONWARD: {
-            strcpy(value_buf, "Floor 50+");             return;
+        case OPTVAL_CHET_RIPPO_RANDOM: {
+            strcpy(value_buf, "Floor-based");           return;
         }
-        case OPTVAL_CHET_RIPPO_10_ONWARD: {
-            strcpy(value_buf, "Floor 10+");              return;
+        case OPTVAL_CHET_RIPPO_GUARANTEE: {
+            strcpy(value_buf, "Guaranteed");            return;
         }
     }
     // Options with special formatting.

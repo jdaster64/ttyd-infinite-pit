@@ -865,15 +865,17 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
 }
 
 EVT_DEFINE_USER_FUNC(CheckChetRippoSpawn) {
-    const int32_t floor = g_Mod->state_.floor_;
+    const uint32_t floor = g_Mod->state_.floor_ + 1;
     bool can_spawn = false;
     switch (g_Mod->state_.GetOptionValue(OPT_CHET_RIPPO_APPEARANCE)) {
-        case OPTVAL_CHET_RIPPO_10_ONWARD: {
-            can_spawn = floor % 10 == 9 && floor % 100 != 99;
+        case OPTVAL_CHET_RIPPO_GUARANTEE: {
+            can_spawn = floor % 10 == 0 && floor % 100 != 0;
             break;
         }
-        case OPTVAL_CHET_RIPPO_50_ONWARD: {
-            can_spawn = floor % 10 == 9 && floor % 100 != 99 && floor >= 49;
+        case OPTVAL_CHET_RIPPO_RANDOM: {
+            can_spawn =
+                floor % 10 == 0 && floor % 100 != 0 &&
+                g_Mod->state_.Rand(100, RNG_CHET_RIPPO) < floor;
             break;
         }
     }
@@ -1004,6 +1006,7 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
     state.rng_sequences_[RNG_ITEM] = 0;
     state.rng_sequences_[RNG_CONDITION] = 0;
     state.rng_sequences_[RNG_CONDITION_ITEM] = 0;
+    state.rng_sequences_[RNG_CHET_RIPPO] = 0;
     
     // Apply custom logic to box opening event to allow spawning partners.
     mod::patch::writePatch(

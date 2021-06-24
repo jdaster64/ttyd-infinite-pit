@@ -176,8 +176,8 @@ enum Options_v2 {
     OPT_AUDIENCE_RANDOM_THROWS  = 0x1'1d'1'0'002,
     // Whether Chet Rippo should appear early.
     OPT_CHET_RIPPO_APPEARANCE   = 0x1'1e'1'0'002,
-    OPTVAL_CHET_RIPPO_50_ONWARD = 0x2'1e'1'0'000,
-    OPTVAL_CHET_RIPPO_10_ONWARD = 0x2'1e'1'0'001,
+    OPTVAL_CHET_RIPPO_RANDOM    = 0x2'1e'1'0'000,
+    OPTVAL_CHET_RIPPO_GUARANTEE = 0x2'1e'1'0'001,
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -240,6 +240,9 @@ enum RngSequence {
     RNG_CONDITION           = 3,    // Bonus challenge condition.
     RNG_CONDITION_ITEM      = 4,    // Bonus challenge reward.
     
+    // Mangled w/floor number; completely consistent per filename.
+    RNG_CHET_RIPPO          = 13,   // Chet Rippo appearance chance.
+    
     // Not mangled w/ floor number; order should stay completely consistent,
     // independent of all seeding options (unless partners are disabled).
     RNG_INVENTORY_UPGRADE   = 5,    // Boots and Hammer upgrades.
@@ -256,7 +259,7 @@ enum RngSequence {
     // Used for picking random filenames; should NOT be used for anything else.
     RNG_FILENAME            = 12,
     
-    RNG_SEQUENCE_MAX,
+    RNG_SEQUENCE_MAX        = 14,
 };
 
 }
