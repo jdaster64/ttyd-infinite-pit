@@ -25,7 +25,7 @@
 
 namespace third_party {
     
-inline uint32_t mix(uint64_t h) {
+inline uint64_t mix(uint64_t h) {
     // Compression function for Merkle-Damgard construction.
     // This function is generated using the framework provided.
     h ^= h >> 23;
