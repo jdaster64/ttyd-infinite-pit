@@ -79,6 +79,7 @@ void Mod::Draw() {
     RegisterDrawCallback(DebugManager::Draw,        CameraId::kDebug3d);
     RegisterDrawCallback(LoadingManager::Draw,      CameraId::kDebug3d);
     RegisterDrawCallback(CheatsManager::Draw,       CameraId::kDebug3d);
+    RegisterDrawCallback(AchievementsManager::Draw, CameraId::kDebug3d);
     RegisterDrawCallback(TitleScreenManager::Draw,  CameraId::k2d);
     RegisterDrawCallback(MenuManager::Draw,         CameraId::k2d);
 }
