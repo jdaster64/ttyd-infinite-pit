@@ -88,7 +88,7 @@ static_assert(sizeof(StateManager_v2) <= 0x120);
 //  - OPT_BLAH:     Flag option type    (0x1 XX Y W ZZZ);
 //      Represents the range of bits [XX, XX+Y) and having ZZZ possible values.
 //      Bits used for a single option should not cross a word boundary.
-//  - OPTVAL_BLAH:  Flag option value   (0x1 XX Y W ZZZ);
+//  - OPTVAL_BLAH:  Flag option value   (0x2 XX Y W ZZZ);
 //      Represents the range of bits [XX, XX+Y) being set to the value ZZZ.
 //  - OPTNUM_BLAH:  Bytes option value  (0x3 XX Y W ZZZ);
 //      Represents the range of option_bytes_ from offset [XX, XX+Y).
