@@ -81,6 +81,9 @@ void DebugManager::Update() {
     const uint32_t buttons = ttyd::system::keyGetButton(0);
     const uint32_t button_trg = GetPressedButtons();
     
+    // Continuously set the "used debug mode" flag on if in use.
+    g_Mod->state_.SetOption(OPT_DEBUG_MODE_USED, 1);
+    
     if (g_DebugMode == DEBUG_MAIN) {
         if (button_trg & (ButtonId::DPAD_UP | ButtonId::DPAD_RIGHT)) {
             ++g_CursorPos;

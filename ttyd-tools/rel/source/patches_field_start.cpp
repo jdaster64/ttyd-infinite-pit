@@ -2,6 +2,7 @@
 
 #include "common_types.h"
 #include "custom_chest_reward.h"
+#include "custom_item.h"
 #include "evt_cmd.h"
 #include "mod.h"
 #include "mod_state.h"
@@ -102,11 +103,31 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     
     // Set up starting item inventory.
     switch (state.GetOptionValue(OPT_STARTER_ITEMS)) {
-        case OPTVAL_STARTER_ITEMS_NORMAL: {
+        case OPTVAL_STARTER_ITEMS_BASIC: {
             ttyd::mario_pouch::pouchGetItem(ItemType::THUNDER_BOLT);
             ttyd::mario_pouch::pouchGetItem(ItemType::FIRE_FLOWER);
             ttyd::mario_pouch::pouchGetItem(ItemType::HONEY_SYRUP);
             ttyd::mario_pouch::pouchGetItem(ItemType::MUSHROOM);
+            break;
+        }
+        case OPTVAL_STARTER_ITEMS_STRONG: {
+            ttyd::mario_pouch::pouchGetItem(ItemType::LIFE_SHROOM);
+            ttyd::mario_pouch::pouchGetItem(ItemType::CAKE);
+            ttyd::mario_pouch::pouchGetItem(ItemType::THUNDER_RAGE);
+            ttyd::mario_pouch::pouchGetItem(ItemType::SHOOTING_STAR);
+            ttyd::mario_pouch::pouchGetItem(ItemType::MAPLE_SYRUP);
+            ttyd::mario_pouch::pouchGetItem(ItemType::SUPER_SHROOM);
+            break;
+        }
+        case OPTVAL_STARTER_ITEMS_RANDOM: {
+            // Set sequence forward so the items won't be the same as floor 1's.
+            state.rng_sequences_[RNG_ITEM] = 100;
+            // Give 4 to 6 random items, based on the seed.
+            int32_t num_items = state.Rand(3, RNG_ITEM) + 4;
+            for (int32_t i = 0; i < num_items; ++i) {
+                int32_t item_type = PickRandomItem(RNG_ITEM, 10, 5, 0, 0);
+                ttyd::mario_pouch::pouchGetItem(item_type);
+            }
             break;
         }
     }

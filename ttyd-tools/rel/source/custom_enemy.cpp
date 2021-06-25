@@ -857,31 +857,49 @@ bool GetEnemyStats(
     const EnemyTypeInfo& ei = kEnemyInfo[unit_type];
     
     int32_t floor_group = g_Mod->state_.floor_ / 10;
-    
-    int32_t hp_scale =
-        state.GetOptionNumericValue(OPT_FLOOR_100_HP_SCALE) ? 10 : 5;
-    int32_t atk_scale =
-        state.GetOptionNumericValue(OPT_FLOOR_100_ATK_SCALE) ? 10 : 5;
+    int32_t hp_atk_scale =
+        state.GetOptionNumericValue(OPT_FLOOR_100_SCALING) ? 10 : 5;
         
     int32_t base_hp_pct = 
         floor_group > 9 ?
-            100 + (floor_group - 9) * hp_scale : kStatPercents[floor_group];
+            100 + (floor_group - 9) * hp_atk_scale : kStatPercents[floor_group];
     int32_t base_atk_pct = 
         floor_group > 9 ?
-            100 + (floor_group - 9) * atk_scale : kStatPercents[floor_group];
+            100 + (floor_group - 9) * hp_atk_scale : kStatPercents[floor_group];
     int32_t base_def_pct = 
         floor_group > 9 ?
             100 + (floor_group - 9) * 5 : kStatPercents[floor_group];
+    
+    int32_t boss_scale_factor = 4;
+    if (unit_type == BattleUnitType::ATOMIC_BOO ||
+        unit_type == BattleUnitType::BONETAIL) {
+        switch (g_Mod->state_.GetOptionValue(OPT_BOSS_SCALING)) {
+            case OPTVAL_BOSS_SCALING_1_25X: {
+                boss_scale_factor = 5;
+                break;
+            }
+            case OPTVAL_BOSS_SCALING_1_50X: {
+                boss_scale_factor = 6;
+                break;
+            }
+            case OPTVAL_BOSS_SCALING_2_00X: {
+                boss_scale_factor = 8;
+                break;
+            }
+        }
+    }
             
     if (out_hp) {
         int32_t hp = Min(ei.hp_scale * base_hp_pct, 1000000);
         hp *= state.GetOptionValue(OPTNUM_ENEMY_HP);
+        hp = hp * boss_scale_factor / 4;
         *out_hp = Clamp((hp + 5000) / 10000, 1, 9999);
     }
     if (out_atk) {
         int32_t atk = Min(ei.atk_scale * base_atk_pct, 1000000);
         atk += (base_attack_power - ei.atk_base) * 100;
         atk *= state.GetOptionValue(OPTNUM_ENEMY_ATK);
+        atk = atk * boss_scale_factor / 4;
         *out_atk = Clamp((atk + 5000) / 10000, 1, 99);
     }
     if (out_def) {

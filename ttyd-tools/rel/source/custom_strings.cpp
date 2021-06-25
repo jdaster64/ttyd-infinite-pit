@@ -23,6 +23,9 @@ namespace MsgKey {
         CUSTOM_TATTLE_BATTLE,
         CUSTOM_TATTLE_MENU,
         IN_2BAI_DAMAGE,
+        IN_ACH_1,
+        IN_ACH_2,
+        IN_ACH_3,
         IN_CAKE,
         IN_TOUGHEN_UP,
         IN_TOUGHEN_UP_P,
@@ -43,6 +46,9 @@ namespace MsgKey {
         MENU_TAMATSUKI_JUMP,
         MENU_TSURANUKI_NAGURI,
         MSG_2BAI_DAMAGE,
+        MSG_ACH_1,
+        MSG_ACH_2,
+        MSG_ACH_3,
         MSG_CAKE,
         MSG_CRYSTAL_STAR,
         MSG_CUSTOM_SUPER_BOOTS,
@@ -121,6 +127,9 @@ constexpr const char* kKeyLookups[] = {
     "custom_tattle_battle",
     "custom_tattle_menu",
     "in_2bai_damage",
+    "in_ach_1",
+    "in_ach_2",
+    "in_ach_3",
     "in_cake",
     "in_toughen_up",
     "in_toughen_up_p",
@@ -141,6 +150,9 @@ constexpr const char* kKeyLookups[] = {
     "menu_tamatsuki_jump",
     "menu_tsuranuki_naguri",
     "msg_2bai_damage",
+    "msg_ach_1",
+    "msg_ach_2",
+    "msg_ach_3",
     "msg_cake",
     "msg_crystal_star",
     "msg_custom_super_boots",
@@ -502,6 +514,21 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
             return GetStarPowerItemDescription(buf, 6);
         case MsgKey::MSG_CRYSTAL_STAR:
             return GetStarPowerItemDescription(buf, 7);
+        case MsgKey::IN_ACH_1:
+            return "Chest Collector";
+        case MsgKey::IN_ACH_2:
+            return "Badge Buff";
+        case MsgKey::IN_ACH_3:
+            return "Tattletale";
+        case MsgKey::MSG_ACH_1:
+            return "Commemorates those that have\n"
+                   "collected all unique rewards.";
+        case MsgKey::MSG_ACH_2:
+            return "Commemorates those that have\n"
+                   "collected one of every badge.";
+        case MsgKey::MSG_ACH_3:
+            return "Commemorates those that have\n"
+                   "Tattled every kind of enemy.";
         case MsgKey::RIPPO_CONFIRM_BP:
             return "<p>\nI'll give you 39 coins for 3 BP.\n"
                    "<wait 350>You won't be able to get it back,\n"

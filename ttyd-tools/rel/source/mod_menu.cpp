@@ -83,8 +83,8 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         
         case 301: return OPTNUM_ENEMY_HP;
         case 302: return OPTNUM_ENEMY_ATK;
-        case 303: return OPT_FLOOR_100_HP_SCALE;
-        case 304: return OPT_FLOOR_100_ATK_SCALE;
+        case 303: return OPT_BOSS_SCALING;
+        case 304: return OPT_FLOOR_100_SCALING;
         
         case 401: return OPTNUM_SUPERGUARD_SP_COST;
         case 402: return OPTNUM_SWITCH_PARTY_FP_COST;

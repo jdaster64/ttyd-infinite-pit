@@ -101,6 +101,9 @@ bool StateManager_v2::Load(bool new_save) {
     option_flags_[3] = cosmetic_options;
     InitPartyMaxHpTable(partner_upgrades_);
     
+    // Turn off Debug Mode flag, so it won't carry over from previous files.
+    SetOption(OPT_DEBUG_MODE_USED, 0);
+    
     // Start new files with Lv. 1 Sweet Treat and Earth Tremor.
     star_power_levels_ = 0b00'00'00'00'00'00'01'01;
     
@@ -141,11 +144,7 @@ bool StateManager_v2::Load(bool new_save) {
     }
     
     // Save the filename's hash as a seed for part of the RNG function.
-    uint32_t hash = 0;
-    for (const char* c = filename; *c != 0; ++c) {
-        hash = 37 * hash + *c;
-    }
-    filename_seed_ = hash;
+    filename_seed_ = third_party::fasthash64(filename, 8, /* seed */ 417);
     return true;
 }
 
@@ -211,7 +210,7 @@ void StateManager_v2::SetDefaultOptions() {
     memset(option_bytes_, 0, 6);
     // Set non-zero default values to their proper values.
     SetOption(OPT_CHEST_REWARDS, 3);
-    SetOption(OPTVAL_STARTER_ITEMS_NORMAL);
+    SetOption(OPTVAL_STARTER_ITEMS_BASIC);
     SetOption(OPTNUM_ENEMY_HP, 100);
     SetOption(OPTNUM_ENEMY_ATK, 100);
 }
@@ -383,11 +382,11 @@ void StateManager_v2::GetOptionStrings(
         case OPT_STARTER_ITEMS: {
             strcpy(name_buf, "Starter item set:");          break;
         }
-        case OPT_FLOOR_100_HP_SCALE: {
-            strcpy(name_buf, "Post-floor 100 HP gain:");    break;
+        case OPT_FLOOR_100_SCALING: {
+            strcpy(name_buf, "Floor 100+ stat scaling:");   break;
         }
-        case OPT_FLOOR_100_ATK_SCALE: {
-            strcpy(name_buf, "Post-floor 100 ATK gain:");   break;
+        case OPT_BOSS_SCALING: {
+            strcpy(name_buf, "Boss HP/ATK stat scaling:");  break;
         }
         case OPT_MERLEE_CURSE: {
             strcpy(name_buf, "Infinite Merlee curses:");    break;
@@ -439,7 +438,7 @@ void StateManager_v2::GetOptionStrings(
     } else if (option == OPT_CHEST_REWARDS) {
         *is_default = num_value == 3;
     } else if (option == OPT_STARTER_ITEMS) {
-        *is_default = value == OPTVAL_STARTER_ITEMS_NORMAL;
+        *is_default = value == OPTVAL_STARTER_ITEMS_BASIC;
     } else {
         *is_default = num_value == 0;
     }
@@ -505,8 +504,26 @@ void StateManager_v2::GetOptionStrings(
         case OPTVAL_BADGE_MOVE_INFINITE: {
             strcpy(value_buf, "Always 99");             return;
         }
-        case OPTVAL_STARTER_ITEMS_NORMAL: {
-            strcpy(value_buf, "On");                    return;
+        case OPTVAL_STARTER_ITEMS_BASIC: {
+            strcpy(value_buf, "Basic");                 return;
+        }
+        case OPTVAL_STARTER_ITEMS_STRONG: {
+            strcpy(value_buf, "Strong");                return;
+        }
+        case OPTVAL_STARTER_ITEMS_RANDOM: {
+            strcpy(value_buf, "Random");                return;
+        }
+        case OPTVAL_BOSS_SCALING_NORMAL: {
+            strcpy(value_buf, "Default");               return;
+        }
+        case OPTVAL_BOSS_SCALING_1_25X: {
+            strcpy(value_buf, "x1.25");                 return;
+        }
+        case OPTVAL_BOSS_SCALING_1_50X: {
+            strcpy(value_buf, "x1.5");                  return;
+        }
+        case OPTVAL_BOSS_SCALING_2_00X: {
+            strcpy(value_buf, "x2.0");                  return;
         }
         case OPTVAL_STAGE_RANK_30_FLOORS: {
             strcpy(value_buf, "Floor 30/60/90");        return;
@@ -548,8 +565,7 @@ void StateManager_v2::GetOptionStrings(
             sprintf(value_buf, "%" PRId32, num_value);
             return;
         }
-        case OPT_FLOOR_100_HP_SCALE: 
-        case OPT_FLOOR_100_ATK_SCALE: {
+        case OPT_FLOOR_100_SCALING: {
             strcpy(value_buf, num_value ? "+10% / set" : "+5% / set");
             return;
         }

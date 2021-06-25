@@ -123,8 +123,8 @@ int32_t pouchAddCoin(int16_t coins);
 // comp_aiueo
 // unk051[US|JP] zz_800d48b0_
 // pouchRemoveItemIndex
-// pouchRemoveItem
-// pouchCheckItem
+int32_t pouchRemoveItem(int32_t item_type);
+int32_t pouchCheckItem(int32_t item_type);
 uint32_t pouchGetItem(int32_t item_type);
 // pouchGetEmptyKeepItemCnt
 // pouchGetEmptyHaveItemCnt

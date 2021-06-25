@@ -140,17 +140,20 @@ enum Options_v2 {
     OPTVAL_BADGE_MOVE_2X        = 0x2'0c'2'0'001,   // up to 2x badges equipped
     OPTVAL_BADGE_MOVE_RANK      = 0x2'0c'2'0'002,   // up to Mario's rank + 1
     OPTVAL_BADGE_MOVE_INFINITE  = 0x2'0c'2'0'003,   // up to lv. 99 always
-    // Which items the player starts the pit with.
-    OPT_STARTER_ITEMS           = 0x1'0e'2'0'002,
+    // Which set of items the player starts the pit with.
+    OPT_STARTER_ITEMS           = 0x1'0e'2'0'004,
     OPTVAL_STARTER_ITEMS_OFF    = 0x2'0e'2'0'000,
-    OPTVAL_STARTER_ITEMS_NORMAL = 0x2'0e'2'0'001,
-    OPTVAL_STARTER_ITEMS_SET_2  = 0x2'0e'2'0'002,   // Reserved for future use?
-    OPTVAL_STARTER_ITEMS_SET_3  = 0x2'0e'2'0'003,   // Reserved for future use?
-    // Whether to use faster enemy stat scaling after floor 100.
-    OPT_FLOOR_100_HP_SCALE      = 0x1'10'1'0'002,
-    OPT_FLOOR_100_ATK_SCALE     = 0x1'11'1'0'002,
-    // Merlee's curse enabled.
-    OPT_MERLEE_CURSE            = 0x1'12'1'0'002,
+    OPTVAL_STARTER_ITEMS_BASIC  = 0x2'0e'2'0'001,
+    OPTVAL_STARTER_ITEMS_STRONG = 0x2'0e'2'0'002,
+    OPTVAL_STARTER_ITEMS_RANDOM = 0x2'0e'2'0'003,
+    // Whether to use faster enemy HP/ATK scaling after floor 100.
+    OPT_FLOOR_100_SCALING       = 0x1'10'1'0'002,
+    // Whether to increase bosses' HP/ATK stats by 25% / 50% / 100%.
+    OPT_BOSS_SCALING            = 0x1'11'2'0'004,
+    OPTVAL_BOSS_SCALING_NORMAL  = 0x2'11'2'0'000,
+    OPTVAL_BOSS_SCALING_1_25X   = 0x2'11'2'0'001,
+    OPTVAL_BOSS_SCALING_1_50X   = 0x2'11'2'0'002,
+    OPTVAL_BOSS_SCALING_2_00X   = 0x2'11'2'0'003,
     // How the stage's rank increases.
     OPT_STAGE_RANK              = 0x1'13'1'0'002,
     OPTVAL_STAGE_RANK_30_FLOORS = 0x2'13'1'0'000,
@@ -178,6 +181,8 @@ enum Options_v2 {
     OPT_CHET_RIPPO_APPEARANCE   = 0x1'1e'1'0'002,
     OPTVAL_CHET_RIPPO_RANDOM    = 0x2'1e'1'0'000,
     OPTVAL_CHET_RIPPO_GUARANTEE = 0x2'1e'1'0'001,
+    // Whether Merlee's curse should be enabled.
+    OPT_MERLEE_CURSE            = 0x1'1f'1'0'002,
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -187,6 +192,7 @@ enum Options_v2 {
     OPT_ENABLE_P_BADGES         = 0x1'64'1'0'002,
     OPT_ENABLE_PARTNER_REWARD   = 0x1'65'1'0'002,
     OPT_DEBUG_MODE_USED         = 0x1'66'1'0'002,
+    OPT_ENABLE_UPGRADE_REWARD   = 0x1'67'1'0'002,   // Boots, Hammer, S. Sack
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).

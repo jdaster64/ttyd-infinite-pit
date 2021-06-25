@@ -1,6 +1,7 @@
 #include "mod.h"
 
 #include "common_ui.h"
+#include "mod_achievements.h"
 #include "mod_cheats.h"
 #include "mod_debug.h"
 #include "mod_loading.h"
@@ -67,18 +68,19 @@ void Mod::Init() {
 
 void Mod::Update() {
     DebugManager::Update();
-    TitleScreenManager::Update();
     LoadingManager::Update();
     CheatsManager::Update();
+    AchievementsManager::Update();
+    TitleScreenManager::Update();
     MenuManager::Update();
 }
 
 void Mod::Draw() {
-    RegisterDrawCallback(DebugManager::Draw, CameraId::kDebug3d);
-    RegisterDrawCallback(TitleScreenManager::Draw, CameraId::k2d);
-    RegisterDrawCallback(LoadingManager::Draw, CameraId::kDebug3d);
-    RegisterDrawCallback(CheatsManager::Draw, CameraId::kDebug3d);
-    RegisterDrawCallback(MenuManager::Draw, CameraId::k2d);
+    RegisterDrawCallback(DebugManager::Draw,        CameraId::kDebug3d);
+    RegisterDrawCallback(LoadingManager::Draw,      CameraId::kDebug3d);
+    RegisterDrawCallback(CheatsManager::Draw,       CameraId::kDebug3d);
+    RegisterDrawCallback(TitleScreenManager::Draw,  CameraId::k2d);
+    RegisterDrawCallback(MenuManager::Draw,         CameraId::k2d);
 }
 
 }

@@ -67,6 +67,8 @@ int16_t PickInventoryUpgrade(StateManager_v2& state) {
     int32_t weight = state.Rand(sum_weights, RNG_CHEST);
     if (weight < weights[0]) {
         state.reward_flags_ |= (1 << 0);
+        // Disable getting upgrade rewards until the next reward floor.
+        state.SetOption(OPT_ENABLE_UPGRADE_REWARD, 0);
         return kRewards[0];
     }
     
@@ -80,6 +82,8 @@ int16_t PickInventoryUpgrade(StateManager_v2& state) {
     for (; (weight -= weights[reward_idx]) >= 0; ++reward_idx);
     
     state.reward_flags_ |= (1 << reward_idx);
+    // Disable getting upgrade rewards until the next reward floor.
+    state.SetOption(OPT_ENABLE_UPGRADE_REWARD, 0);
     return kRewards[reward_idx];
 }
 
@@ -123,9 +127,11 @@ int16_t PickStarPower(StateManager_v2& state) {
 
 int16_t PickChestReward() {
     StateManager_v2& state = g_Mod->state_;
-    bool partners_enabled  =
+    const bool partners_enabled  =
         !state.CheckOptionValue(OPTVAL_PARTNERS_NEVER) &&
         state.GetOptionNumericValue(OPT_ENABLE_PARTNER_REWARD);
+    const bool upgrades_enabled =
+        state.GetOptionNumericValue(OPT_ENABLE_UPGRADE_REWARD);
 
     uint16_t weights[REWARD_TYPE_MAX];
     for (auto& weight : weights) weight = 0;
@@ -156,10 +162,12 @@ int16_t PickChestReward() {
             weights[REWARD_PARTNER] = partner_weight * num_partners_remaining;
         }
     }
-    if (int32_t num_upgrades_remaining =
-        5 - CountSetBits(GetBitMask(0, 4) & state.reward_flags_);
-        num_upgrades_remaining) {
-        weights[REWARD_INVENTORY_UPGRADE] = 25 + 15 * num_upgrades_remaining;
+    if (upgrades_enabled) {
+        if (int32_t num_upgrades_remaining =
+            5 - CountSetBits(GetBitMask(0, 4) & state.reward_flags_);
+            num_upgrades_remaining) {
+            weights[REWARD_INVENTORY_UPGRADE] = 25 + 15 * num_upgrades_remaining;
+        }
     }
     if (int32_t num_unique_badges_remaining =
         12 - CountSetBits(GetBitMask(5, 16) & state.reward_flags_);
@@ -179,11 +187,15 @@ int16_t PickChestReward() {
     weights[REWARD_SHINE_SPRITE] =
         state.floor_ > 30 ? (state.floor_ < 99 ? 25 : 15) : 0;
         
-    // Make Shine Sprites and Jump/Hammer/Strange Sack upgrades less likely
-    // if playing with over 5 chest rewards.
+    // Make Shine Sprites and Jump/Hammer/Strange Sack upgrades less frequent
+    // if playing with 4-5 or 6-9 chest rewards.
     if (state.GetOptionNumericValue(OPT_CHEST_REWARDS) > 5) {
         weights[REWARD_INVENTORY_UPGRADE] /= 2;
         weights[REWARD_SHINE_SPRITE] /= 2;
+    } else if (state.GetOptionNumericValue(OPT_CHEST_REWARDS) > 3) {
+        weights[REWARD_INVENTORY_UPGRADE] =
+            weights[REWARD_INVENTORY_UPGRADE] * 3/4;
+        weights[REWARD_SHINE_SPRITE] = weights[REWARD_SHINE_SPRITE] * 3/4;
     }
     
     int32_t sum_weights = 0;

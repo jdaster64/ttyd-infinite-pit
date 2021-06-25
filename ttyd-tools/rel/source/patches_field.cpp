@@ -865,17 +865,19 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
 }
 
 EVT_DEFINE_USER_FUNC(CheckChetRippoSpawn) {
-    const uint32_t floor = g_Mod->state_.floor_ + 1;
-    bool can_spawn = false;
+    uint32_t floor = g_Mod->state_.floor_ + 1;
+    bool can_spawn = floor % 10 == 0 && floor % 100 != 0;
     switch (g_Mod->state_.GetOptionValue(OPT_CHET_RIPPO_APPEARANCE)) {
         case OPTVAL_CHET_RIPPO_GUARANTEE: {
-            can_spawn = floor % 10 == 0 && floor % 100 != 0;
             break;
         }
         case OPTVAL_CHET_RIPPO_RANDOM: {
-            can_spawn =
-                floor % 10 == 0 && floor % 100 != 0 &&
-                g_Mod->state_.Rand(100, RNG_CHET_RIPPO) < floor;
+            // Chance of spawning is higher the farther you progress into the
+            // Pit, capping at 75% per reward floor.
+            if (can_spawn) {
+                if (floor > 75) floor = 75;
+                can_spawn = g_Mod->state_.Rand(100, RNG_CHET_RIPPO) < floor;
+            }
             break;
         }
     }
@@ -1007,6 +1009,9 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
     state.rng_sequences_[RNG_CONDITION] = 0;
     state.rng_sequences_[RNG_CONDITION_ITEM] = 0;
     state.rng_sequences_[RNG_CHET_RIPPO] = 0;
+        
+    // Clear current floor turn count.
+    state.SetOption(STAT_MOST_TURNS_CURRENT, 0);
     
     // Apply custom logic to box opening event to allow spawning partners.
     mod::patch::writePatch(
@@ -1096,11 +1101,10 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
         }
         // Enable "P" badges only after obtaining the first one.
         state.SetOption(OPT_ENABLE_P_BADGES, has_partner);
-        // Only one partner allowed per reward floor, re-enable them for next.
+        // Only one partner / upgrade reward each allowed per reward floor,
+        // re-enable them for the next reward floor.
+        state.SetOption(OPT_ENABLE_UPGRADE_REWARD, true);
         state.SetOption(OPT_ENABLE_PARTNER_REWARD, true);
-        
-        // Clear current floor turn count.
-        state.SetOption(STAT_MOST_TURNS_CURRENT, 0);
     } else if (state.floor_ % 100 == 99) {
         // If Bonetail floor, patch in the Mario-alone variant of the
         // battle entry event if partners are not available.

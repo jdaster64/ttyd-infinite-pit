@@ -125,7 +125,7 @@ const char*         kSpecialMoveAbbreviations[8] = {
 };
 const int8_t        kSpCostLevels[] = {
     1, 3, 5,    1, 2, 3,    2, 3, 5,    3, 4, 6,
-    3, 5, 7,    4, 6, 8,    2, 4, 6,    5, 7, 9,
+    4, 5, 7,    3, 4, 6,    2, 4, 6,    6, 8, 9,
 };
 
 // Returns the max level of a move badge based on the number of copies equipped.
@@ -575,14 +575,15 @@ void ApplyFixedPatches() {
             return 2;
         });
     
-    // Change attack power of Supernova to 3x-5x based on power level.  
+    // Change attack power of Supernova to 3x-5x, based on power level + 1.
     g_weaponGetPower_ZubaStar_trampoline = patch::hookFunction(
         ttyd::sac_zubastar::weaponGetPower_ZubaStar, [](
             BattleWorkUnit*, BattleWeapon*, 
             BattleWorkUnit*, BattleWorkUnitPart*) {
             intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
             int32_t level = *reinterpret_cast<int32_t*>(sac_work_addr + 0x10);
-            return static_cast<uint32_t>(level * (g_CurSpecialMoveLvls[7] + 2));
+            return static_cast<uint32_t>(
+                (level + 1) * (g_CurSpecialMoveLvls[7] + 2));
         });
 }
 
