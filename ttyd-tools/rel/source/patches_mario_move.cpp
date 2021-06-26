@@ -125,7 +125,7 @@ const char*         kSpecialMoveAbbreviations[8] = {
 };
 const int8_t        kSpCostLevels[] = {
     1, 3, 5,    1, 2, 3,    2, 3, 5,    3, 4, 6,
-    4, 5, 7,    3, 4, 6,    2, 4, 6,    6, 8, 9,
+    4, 5, 7,    3, 4, 6,    2, 4, 6,    7, 8, 9,
 };
 
 // Returns the max level of a move badge based on the number of copies equipped.

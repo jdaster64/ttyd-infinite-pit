@@ -504,9 +504,9 @@ void UseSpecialItemsInMenu(WinPartyData** party_data) {
                 item::GetBonusCakeRestoration());
         } else if (item == ItemType::GOLD_BAR_X3) {
             if (selected_party_id == 0) {
-                // Mario selected; add +0.5 max SP (up to 20) and restore SP.
+                // Mario selected; add +0.5 max SP (up to 10) and restore SP.
                 PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-                if (pouch.max_sp < 2000) pouch.max_sp += 50;
+                if (pouch.max_sp < 1000) pouch.max_sp += 50;
                 pouch.current_sp = pouch.max_sp;
             } else {
                 ttyd::mario_pouch::PouchPartyData* pouch_data =

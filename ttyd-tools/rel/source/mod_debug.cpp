@@ -108,8 +108,8 @@ void DebugManager::Update() {
                 case DEBUG_UNLOCK_SPECIAL_MOVES: {
                     PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
                     pouch.star_powers_obtained = 0xff;
-                    pouch.max_sp = 1250;
-                    pouch.current_sp = 1250;
+                    pouch.max_sp = 1000;
+                    pouch.current_sp = 1000;
                     g_Mod->state_.star_power_levels_ = 0xffff;
                     break;
                 }

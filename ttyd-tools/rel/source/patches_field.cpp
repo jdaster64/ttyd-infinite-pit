@@ -846,14 +846,14 @@ EVT_DEFINE_USER_FUNC(GetUniqueItemName) {
     return 2;
 }
 
-// If the item is a Crystal Star, gives the player +0.50 max SP (to a max of 20)
+// If the item is a Crystal Star, gives the player +0.50 max SP (to a max of 10)
 // and enable / level-up the item's respective Star Power.
 EVT_DEFINE_USER_FUNC(AddItemStarPower) {
     int16_t item = evtGetValue(evt, evt->evtArguments[0]);
     if (item == ItemType::MAGICAL_MAP ||
         (item >= ItemType::DIAMOND_STAR && item <= ItemType::CRYSTAL_STAR)) {
         PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
-        if (pouch.max_sp < 2000) pouch.max_sp += 50;
+        if (pouch.max_sp < 1000) pouch.max_sp += 50;
         pouch.current_sp = pouch.max_sp;
         
         int32_t star_power_type =

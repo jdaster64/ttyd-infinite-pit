@@ -197,6 +197,10 @@ int16_t PickChestReward() {
             weights[REWARD_INVENTORY_UPGRADE] * 3/4;
         weights[REWARD_SHINE_SPRITE] = weights[REWARD_SHINE_SPRITE] * 3/4;
     }
+    // If playing a Mario Alone run, reduce the weight for Shine Sprites.
+    if (state.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) {
+        weights[REWARD_SHINE_SPRITE] /= 2;
+    }
     
     int32_t sum_weights = 0;
     for (const auto& weight : weights) sum_weights += weight;
