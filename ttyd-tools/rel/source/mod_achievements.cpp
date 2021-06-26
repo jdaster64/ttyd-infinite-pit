@@ -85,7 +85,7 @@ void AchievementsManager::Update() {
     if (num_tattles == 94) GetAchievement(kTattleLogItem);
 }
 
-void AchievementsManager::Draw() {
+void AchievementsManager::Draw() {    
     if (InMainGameModes() && g_DisplayFrameCount > 0) {
         uint32_t alpha = 0xffU;
         if (g_DisplayFrameCount < kDisplayItemFadeoutStart) {
@@ -99,6 +99,10 @@ void AchievementsManager::Draw() {
         DrawText(buf, -260, -176, alpha, true, ~0U, 0.75f, /* center-left */ 3);
         
         --g_DisplayFrameCount;
+    }
+    // Start fadeout early if pause menu is opened.
+    if (InPauseMenu() && g_DisplayFrameCount > kDisplayItemFadeoutStart) {
+        g_DisplayFrameCount = kDisplayItemFadeoutStart;
     }
 }
 
