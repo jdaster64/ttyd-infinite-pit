@@ -575,15 +575,19 @@ void ApplyFixedPatches() {
             return 2;
         });
     
-    // Change attack power of Supernova to 3x-5x, based on power level + 1.
+    // Change attack power of Supernova to 3/5/10x bars + 1, based on level.
     g_weaponGetPower_ZubaStar_trampoline = patch::hookFunction(
         ttyd::sac_zubastar::weaponGetPower_ZubaStar, [](
             BattleWorkUnit*, BattleWeapon*, 
             BattleWorkUnit*, BattleWorkUnitPart*) {
             intptr_t sac_work_addr = reinterpret_cast<intptr_t>(GetSacWorkPtr());
             int32_t level = *reinterpret_cast<int32_t*>(sac_work_addr + 0x10);
-            return static_cast<uint32_t>(
-                (level + 1) * (g_CurSpecialMoveLvls[7] + 2));
+            int32_t multiplier = 3;
+            switch (g_CurSpecialMoveLvls[7]) {
+                case 2: multiplier = 5;     break;
+                case 3: multiplier = 10;    break;
+            }
+            return static_cast<uint32_t>((level + 1) * multiplier);
         });
 }
 
