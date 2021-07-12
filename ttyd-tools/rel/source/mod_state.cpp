@@ -3,6 +3,7 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "mod.h"
+#include "mod_achievements.h"
 #include "patch.h"
 
 #include <gc/OSTime.h>
@@ -61,6 +62,11 @@ bool LoadFromPreviousVersion(StateManager_v2* state) {
     // Force version to current.
     state->version_ = 4;
     InitPartyMaxHpTable(state->partner_upgrades_);
+    
+    // If playing Mario-alone, make sure all "P" variants of collected Mario
+    // badges are marked off in the badge log.
+    AchievementsManager::UpdatePartnerVariantBadgesCollected();
+    
     return true;
 }
 
@@ -85,6 +91,19 @@ char GetBase64EncodingChar(int32_t sextet) {
     } else {
         return '?';
     }
+}
+
+// Appends a completion percentage in the form "X/Y (ZZ.Z%)" to a string.
+// Returns the number of characters printed.
+int32_t PrintCompletionPercentage(char* buf, int32_t completed, int32_t total) {
+    char* cur = buf;
+    cur += IntegerToFmtString(completed, cur);
+    cur += sprintf(cur, "/");
+    cur += IntegerToFmtString(total, cur);
+    // Prevents "nan" from showing up if 0/0.
+    if (total == 0) total = 1;
+    cur += sprintf(cur, " (%.1f%%)", 100.f * completed / total);
+    return cur - buf;
 }
 
 }
@@ -668,7 +687,7 @@ bool StateManager_v2::GetPlayStatsString(char* out_buf) {
     out_buf += sprintf(out_buf, "\n<k><p>Total turns: ");
     out_buf += IntegerToFmtString(turn_total, out_buf);
     out_buf += sprintf(
-        out_buf, "\nMax turns: %d (Floor %d)", 
+        out_buf, "\nMax turns: %" PRId32 " (Floor %" PRId32 ")", 
         GetOptionValue(STAT_MOST_TURNS_RECORD),
         GetOptionValue(STAT_MOST_TURNS_FLOOR));
     out_buf += sprintf(out_buf, "\nTimes ran away: ");
@@ -682,21 +701,50 @@ bool StateManager_v2::GetPlayStatsString(char* out_buf) {
     out_buf += sprintf(out_buf, "\nSuperguards hit: ");
     out_buf += IntegerToFmtString(GetOptionValue(STAT_SUPERGUARDS), out_buf);
     
-    // Page 5: FP spent, SP spent, Items used.
+    // Page 5: FP spent, SP spent, Items (& shine sprites) used.
     out_buf += sprintf(out_buf, "\n<k><p>FP spent: ");
     out_buf += IntegerToFmtString(GetOptionValue(STAT_FP_SPENT), out_buf);
     out_buf += sprintf(out_buf, "\nSP spent: ");
     out_buf += IntegerToFmtString(GetOptionValue(STAT_SP_SPENT), out_buf);
     out_buf += sprintf(out_buf, "\nItems used: ");
     out_buf += IntegerToFmtString(GetOptionValue(STAT_ITEMS_USED), out_buf);
+    out_buf += sprintf(out_buf, " (");
+    out_buf += IntegerToFmtString(GetOptionValue(STAT_SHINE_SPRITES), out_buf);
+    out_buf += sprintf(out_buf, " Shines)");
     
-    // Page 6: Coins earned / spent, Shine Sprites used.
+    // Page 6: Coins earned / spent, bonus battle conditions met.
     out_buf += sprintf(out_buf, "\n<k><p>Coins earned: ");
     out_buf += IntegerToFmtString(GetOptionValue(STAT_COINS_EARNED), out_buf);
     out_buf += sprintf(out_buf, "\nCoins spent: ");
     out_buf += IntegerToFmtString(GetOptionValue(STAT_COINS_SPENT), out_buf);
-    out_buf += sprintf(out_buf, "\nShine Sprites used: ");
-    out_buf += IntegerToFmtString(GetOptionValue(STAT_SHINE_SPRITES), out_buf);
+    out_buf += sprintf(out_buf, "\nConditions met: ");
+    out_buf += PrintCompletionPercentage(
+        out_buf,
+        GetOptionValue(STAT_CONDITIONS_MET), 
+        GetOptionValue(STAT_CONDITIONS_TOTAL));
+    
+    // Page 7: Achievement progress.
+    out_buf += sprintf(out_buf, "\n<k><p>Chest rewards: ");
+    out_buf += PrintCompletionPercentage(
+        out_buf,
+        AchievementsManager::GetCurrentCompletionPoints(
+            AchievementsManager::kChestRewardItem),
+        AchievementsManager::GetMaxCompletionPoints(
+            AchievementsManager::kChestRewardItem));
+    out_buf += sprintf(out_buf, "\nBadge log: ");
+    out_buf += PrintCompletionPercentage(
+        out_buf,
+        AchievementsManager::GetCurrentCompletionPoints(
+            AchievementsManager::kBadgeLogItem),
+        AchievementsManager::GetMaxCompletionPoints(
+            AchievementsManager::kBadgeLogItem));
+    out_buf += sprintf(out_buf, "\nTattle log: ");
+    out_buf += PrintCompletionPercentage(
+        out_buf,
+        AchievementsManager::GetCurrentCompletionPoints(
+            AchievementsManager::kTattleLogItem),
+        AchievementsManager::GetMaxCompletionPoints(
+            AchievementsManager::kTattleLogItem));
     
     // TODO: Add page for Items, badges, level-ups sold in future?
     out_buf += sprintf(out_buf, "\n<k>");

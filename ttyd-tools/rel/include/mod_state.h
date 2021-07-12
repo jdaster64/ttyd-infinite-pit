@@ -221,6 +221,8 @@ enum Options_v2 {
     STAT_BADGES_SOLD            = 0x4'28'3'2'007,
     STAT_LEVELS_SOLD            = 0x4'2b'2'2'004,
     STAT_SHINE_SPRITES          = 0x4'2d'2'2'003,
+    STAT_CONDITIONS_MET         = 0x4'2f'3'2'007,
+    STAT_CONDITIONS_TOTAL       = 0x4'32'3'2'007,
     
     // Non-option values (used for menu, etc.)
     MENU_EMPTY_OPTION           = 0x7000'0001,      // Used for blank spaces.

@@ -12,5 +12,10 @@ namespace mod::infinite_pit {
 int32_t PickRandomItem(
     int32_t sequence, int32_t normal_item_weight, int32_t recipe_item_weight,
     int32_t badge_weight, int32_t no_item_weight = 0);
+    
+// Returns whether an item is a stackable Mario badge that has a "P" variant.
+bool IsStackableMarioBadge(int32_t item_type);
+// Returns whether an item is a stackable badge that is a "P" variant.
+bool IsStackablePartnerBadge(int32_t item_type);
 
 }

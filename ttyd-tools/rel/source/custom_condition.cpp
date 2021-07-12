@@ -210,7 +210,10 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
         sprintf(g_ConditionTextBuf, conditions[idx].description, param);
     } else {
         sprintf(g_ConditionTextBuf, conditions[idx].description);
-    }        
+    }
+    
+    // Increment the counter of bonus challenges.
+    state.ChangeOption(STAT_CONDITIONS_TOTAL);
 }
 
 void GetBattleConditionString(char* out_buf) {

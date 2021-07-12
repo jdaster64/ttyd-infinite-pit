@@ -169,6 +169,7 @@ extern const int32_t g_BattleDamageDirect_Patch_AddTotalDamage = 0x800fe058;
 extern const int32_t g_BattleDamageDirect_Patch_PityFlowerChance = 0x800fe500;
 extern const int32_t g_BattleChoiceSamplingEnemy_SumRandWeights_BH = 0x800ff528;
 extern const int32_t g_BattleChoiceSamplingEnemy_SumRandWeights_EH = 0x800ff544;
+extern const int32_t g_btlDispMain_DrawNormalHeldItem_BH = 0x80102ff4;
 extern const int32_t g_btlevtcmd_ConsumeItemReserve_Patch_RefundPer = 0x8010ae84;
 extern const int32_t g_btlevtcmd_ConsumeItemReserve_Patch_RefundBase = 0x8010aea0;
 extern const int32_t g_btlevtcmd_ConsumeItem_Patch_RefundPer = 0x8010affc;

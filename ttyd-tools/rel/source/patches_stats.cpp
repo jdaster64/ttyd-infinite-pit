@@ -1,5 +1,6 @@
 #include "patches_stats.h"
 
+#include "custom_item.h"
 #include "mod.h"
 #include "mod_state.h"
 #include "patch.h"
@@ -11,6 +12,7 @@
 #include <ttyd/battle_unit.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
+#include <ttyd/swdrv.h>
 
 #include <cstdint>
 
@@ -81,6 +83,14 @@ void ApplyFixedPatches() {
             if (item_type == ItemType::COIN) {
                 g_Mod->state_.ChangeOption(STAT_COINS_EARNED);
             }
+            
+            // If badge is a "P" badge and playing Mario-alone, also mark
+            // off the relevant "P" badge in the badge log.
+            if (g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER)
+                && IsStackableMarioBadge(item_type)) {
+                ttyd::swdrv::swSet(0x81 + item_type - ItemType::POWER_JUMP);
+            }
+            
             // Run coin increment logic.
             return g_pouchGetItem_trampoline(item_type);
         });

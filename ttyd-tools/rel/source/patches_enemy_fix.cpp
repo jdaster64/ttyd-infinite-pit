@@ -13,6 +13,7 @@
 #include <ttyd/battle_seq.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
+#include <ttyd/dispdrv.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
 #include <ttyd/item_data.h>
@@ -25,10 +26,40 @@ extern "C" {
     // enemy_sampling_patches.s
     void StartSampleRandomTarget();
     void BranchBackSampleRandomTarget();
+    // held_item_disp_patches.s
+    void StartDispEnemyHeldItem();
+    void BranchBackDispEnemyHeldItem();    
     
     int32_t sumWeaponTargetRandomWeights(int32_t* weights) {
         return mod::infinite_pit::enemy_fix::
             SumWeaponTargetRandomWeights(weights);
+    }
+    
+    void dispEnemyHeldItem(
+        ttyd::dispdrv::CameraId cameraId, uint8_t renderMode, float order,
+        ttyd::dispdrv::PFN_dispCallback callback, void *user) {
+        // Alias for convenience.
+        namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
+            
+        auto* battleWork = ttyd::battle::g_BattleWork;
+        // Loop through all units, and skip drawing item if any clones.
+        for (int32_t i = 0; i < 64; ++i) {
+            auto* unit = ttyd::battle::BattleGetUnitPtr(battleWork, i);
+            if (!unit) continue;
+            switch (unit->current_kind) {
+                case BattleUnitType::MAGIKOOPA_CLONE:
+                case BattleUnitType::RED_MAGIKOOPA_CLONE:
+                case BattleUnitType::WHITE_MAGIKOOPA_CLONE:
+                case BattleUnitType::GREEN_MAGIKOOPA_CLONE:
+                case BattleUnitType::DARK_WIZZERD_CLONE:
+                case BattleUnitType::ELITE_WIZZERD_CLONE:
+                    return;
+                default:
+                    break;
+            }
+        }
+        // No clones present, display item as normal.
+        ttyd::dispdrv::dispEntry(cameraId, renderMode, order, callback, user);
     }
 }
 
@@ -57,6 +88,7 @@ extern uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*);
 // Patch addresses.
 extern const int32_t g_BattleChoiceSamplingEnemy_SumRandWeights_BH;
 extern const int32_t g_BattleChoiceSamplingEnemy_SumRandWeights_EH;
+extern const int32_t g_btlDispMain_DrawNormalHeldItem_BH;
 extern const int32_t g_btlevtcmd_CheckSpace_Patch_CheckEnemyTypes;
 extern const int32_t g_jon_BanditAttackEvt_CheckConfusionOffset;
 extern const int32_t g_jon_DarkKoopatrolAttackEvt_NormalAttackReturnLblOffset;
@@ -209,6 +241,12 @@ void ApplyFixedPatches() {
             ReorderWeaponTargets();
             return g_btlevtcmd_GetSelectEnemy_trampoline(evt, isFirstCall);
         });
+
+    // Hooks drawing held item code, skipping it if any clone enemies exist.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_btlDispMain_DrawNormalHeldItem_BH),
+        reinterpret_cast<void*>(StartDispEnemyHeldItem),
+        reinterpret_cast<void*>(BranchBackDispEnemyHeldItem));
 
     // Sums weapon targets' random weights, ensuring that each weight is > 0.
     mod::patch::writeBranchPair(

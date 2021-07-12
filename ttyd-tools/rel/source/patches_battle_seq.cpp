@@ -118,6 +118,8 @@ void CheckBattleCondition() {
                 break;
             }
         }
+        // Increment the count of successful challenges.
+        state.ChangeOption(STAT_CONDITIONS_MET);
     }
     
     // If battle reward mode is "drop all held", award items other than the

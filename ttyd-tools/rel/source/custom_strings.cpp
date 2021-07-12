@@ -27,6 +27,7 @@ namespace MsgKey {
         IN_ACH_2,
         IN_ACH_3,
         IN_CAKE,
+        IN_SUITORU,
         IN_TOUGHEN_UP,
         IN_TOUGHEN_UP_P,
         LIST_ICE_CANDY,
@@ -131,6 +132,7 @@ constexpr const char* kKeyLookups[] = {
     "in_ach_2",
     "in_ach_3",
     "in_cake",
+    "in_suitoru",
     "in_toughen_up",
     "in_toughen_up_p",
     "list_ice_candy",
@@ -327,6 +329,8 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
             return "No Pain, No Gain";
         case MsgKey::IN_CAKE:
             return "Strawberry Cake";
+        case MsgKey::IN_SUITORU:
+            return "HP-Sucker";
         case MsgKey::IN_TOUGHEN_UP:
             return "Toughen Up";
         case MsgKey::IN_TOUGHEN_UP_P:
@@ -572,9 +576,9 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                    "in your stash. <wait 300>Quit wastin'\n"
                    "both our time!\n<k>";
         case MsgKey::RIPPO_NO_FREE_BP:
-            return "<p>\nYou're too loaded up\n"
-                   "with gear! <wait 300>Make some\n"
-                   "space first, <wait 200>sheesh!\n<k>";
+            return "<p>\nYou've got too many badges\n"
+                   "equipped! <wait 300>Make some space\n"
+                   "first, <wait 200>sheesh!\n<k>";
         case MsgKey::RIPPO_NO_STATS:
             return "<p>\n<dynamic 3>Ha,</dynamic> <wait 200>are you kidding?\n"
                    "<wait 300>Go level up some, <wait 150>then we\n"

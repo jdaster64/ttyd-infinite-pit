@@ -2,6 +2,7 @@
 
 #include "common_functions.h"
 #include "common_ui.h"
+#include "custom_item.h"
 #include "mod.h"
 #include "mod_state.h"
 
@@ -25,6 +26,11 @@ using ::ttyd::mario_pouch::PouchData;
     
 namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
+
+// Variables used to track achievement progress.
+// TODO: Make cleaner if more achievements are ever added.
+int32_t g_CurrentTaskPoints[]           = { 0, 0, 0 };
+int32_t g_MaxTaskPoints[]               = { 0, 0, 0 };
 
 // Variables used for drawing "Achievement unlocked" text.
 const int32_t kDisplayItemMaxFrames     = 360;
@@ -60,13 +66,14 @@ void AchievementsManager::Update() {
     }
     
     // Check to see if the player has received all unique chest rewards.
-    int32_t num_rewards = CountSetBits(state.reward_flags_);
-    bool has_all_rewards = state.star_power_levels_ == 0xffff;
-    if (num_rewards < 17) has_all_rewards = false;
-    if (num_rewards < 24 && !state.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) {
-        has_all_rewards = false;
-    }
-    if (has_all_rewards) GetAchievement(kChestRewardItem);
+    const int32_t num_rewards =
+        CountSetBits(state.reward_flags_) +
+        CountSetBits(state.star_power_levels_) - 2;
+    const int32_t total_rewards =
+        state.CheckOptionValue(OPTVAL_PARTNERS_NEVER) ? 39 : 46;
+    if (num_rewards == total_rewards) GetAchievement(kChestRewardItem);
+    g_CurrentTaskPoints[0] = num_rewards;
+    g_MaxTaskPoints[0] = total_rewards;
     
     // Check to see if the player has completed the badge log.
     int32_t num_badges = 0;
@@ -76,6 +83,8 @@ void AchievementsManager::Update() {
         num_badges += ttyd::swdrv::swGet(0x80 + i - ItemType::POWER_JUMP);
     }
     if (num_badges == 80) GetAchievement(kBadgeLogItem);
+    g_CurrentTaskPoints[1] = num_badges;
+    g_MaxTaskPoints[1] = 80;
     
     // Check to see if the player has completed the Tattle log.
     int32_t num_tattles = 0;
@@ -83,6 +92,8 @@ void AchievementsManager::Update() {
         num_tattles += ttyd::swdrv::swGet(0x117a + i);
     }
     if (num_tattles == 94) GetAchievement(kTattleLogItem);
+    g_CurrentTaskPoints[2] = num_tattles;
+    g_MaxTaskPoints[2] = 94;
 }
 
 void AchievementsManager::Draw() {    
@@ -103,6 +114,36 @@ void AchievementsManager::Draw() {
     // Start fadeout early if pause menu is opened.
     if (InPauseMenu() && g_DisplayFrameCount > kDisplayItemFadeoutStart) {
         g_DisplayFrameCount = kDisplayItemFadeoutStart;
+    }
+}
+
+int32_t AchievementsManager::GetCurrentCompletionPoints(int32_t task_type) {
+    switch (task_type) {
+        case kChestRewardItem:  return g_CurrentTaskPoints[0];
+        case kBadgeLogItem:     return g_CurrentTaskPoints[1];
+        case kTattleLogItem:    return g_CurrentTaskPoints[2];
+        default:                return 0;
+    }
+}
+
+int32_t AchievementsManager::GetMaxCompletionPoints(int32_t task_type) {
+    switch (task_type) {
+        case kChestRewardItem:  return g_MaxTaskPoints[0];
+        case kBadgeLogItem:     return g_MaxTaskPoints[1];
+        case kTattleLogItem:    return g_MaxTaskPoints[2];
+        default:                return -1;
+    }
+}
+
+void AchievementsManager::UpdatePartnerVariantBadgesCollected() {
+    // Only mark P badges collected if playing in Mario-alone mode.
+    if (!g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) return;
+    
+    for (int32_t i = ItemType::POWER_JUMP; i < ItemType::MAX_ITEM_TYPE; ++i) {
+        bool collected = ttyd::swdrv::swGet(0x80 + i - ItemType::POWER_JUMP);
+        if (collected && IsStackableMarioBadge(i)) {
+            ttyd::swdrv::swSet(0x81 + i - ItemType::POWER_JUMP);
+        }
     }
 }
 

@@ -15,6 +15,7 @@
 #include <ttyd/evt_pouch.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
+#include <ttyd/swdrv.h>
 
 #include <cstdint>
 
@@ -98,6 +99,10 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
             evt->evtArguments[4] = 0;
             ttyd::evt_mario::evt_mario_set_party_pos(evt, isFirstCall);
             break;
+        }
+        case OPTVAL_PARTNERS_NEVER: {
+            // Mark HP Plus P off in badge log, since HP Plus is marked by default.
+            ttyd::swdrv::swSet(0x80 + ItemType::HP_PLUS_P - ItemType::POWER_JUMP);
         }
     }
     
