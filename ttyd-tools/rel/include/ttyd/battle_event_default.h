@@ -8,6 +8,7 @@ namespace ttyd::battle_event_default {
 
 extern "C" {
 
+// .text
 EVT_DECLARE_USER_FUNC(_get_flower_suitoru_point, 2);
 EVT_DECLARE_USER_FUNC(_get_heart_suitoru_point, 2);
 // _get_escape_rate
@@ -20,6 +21,9 @@ EVT_DECLARE_USER_FUNC(_get_heart_suitoru_point, 2);
 // _anime_load_wait
 // _anime_load
 // _backfire
+
+// .data
+extern int32_t btldefaultevt_SuitoruBadgeEffect[1];
 
 }
 

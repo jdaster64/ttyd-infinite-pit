@@ -5,6 +5,7 @@
 #include "mod.h"
 #include "mod_state.h"
 #include "patch.h"
+#include "patches_battle.h"
 
 #include <ttyd/battle.h>
 #include <ttyd/battle_camera.h>
@@ -92,6 +93,13 @@ extern int32_t (*g_sac_suki_set_weapon_trampoline)(EvtEntry*, bool);
 extern uint32_t (*g_weaponGetPower_ZubaStar_trampoline)(
     BattleWorkUnit*, BattleWeapon*, BattleWorkUnit*, BattleWorkUnitPart*);
 // Patch addresses.
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_GetSp1;
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_GetSp2;
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_GetSp3;
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_GetSp4;
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_PrizeTier1;
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_PrizeTier2;
+extern const int32_t g_marioAttackEvent_JyabaraJump_Patch_ResetFace;
 extern const int32_t g_sac_genki_main_base_BlinkNumbers_BH;
 extern const int32_t g_sac_genki_main_base_BlinkNumbers_EH;
 extern const int32_t g_sac_genki_main_base_SetupTargets_BH;
@@ -127,6 +135,14 @@ const int8_t        kSpCostLevels[] = {
     1, 3, 5,    1, 2, 3,    2, 3, 5,    3, 4, 6,
     4, 5, 7,    3, 4, 6,    2, 4, 6,    7, 8, 9,
 };
+
+// Patch to disable getting Star Power early from certain attacks;
+// battle::AwardStarPowerAndResetFaceDirection will be used to award it
+// at the end of the attack instead, to make sure Stylishes are counted.
+EVT_BEGIN(DeclareStarPowerPatch)
+DEBUG_REM(0) DEBUG_REM(0)
+EVT_PATCH_END()
+static_assert(sizeof(DeclareStarPowerPatch) == 0x10);
 
 // Returns the max level of a move badge based on the number of copies equipped.
 int32_t MaxLevelForMoveBadges(int32_t badge_count) {
@@ -185,8 +201,13 @@ int32_t GetSelectedLevelWeaponCost(BattleWorkUnit* unit, BattleWeapon* weapon) {
 // if is_strategies_menu = false.
 void CheckForSelectingWeaponLevel(bool is_strategies_menu) {
     const uint16_t buttons = ttyd::system::keyGetButtonTrg(0);
-    const bool left_press = buttons & (ButtonId::L | ButtonId::DPAD_LEFT);
-    const bool right_press = buttons & (ButtonId::R | ButtonId::DPAD_RIGHT);
+    const uint32_t dir_trg = ttyd::system::keyGetDirTrg(0); 
+    const bool left_press =
+        (buttons & (ButtonId::L | ButtonId::DPAD_LEFT)) ||
+        (dir_trg == DirectionInputId::ANALOG_LEFT);
+    const bool right_press =
+        (buttons & (ButtonId::R | ButtonId::DPAD_RIGHT)) ||
+        (dir_trg == DirectionInputId::ANALOG_RIGHT);
     
     void** win_data = reinterpret_cast<void**>(
         ttyd::battle::g_BattleWork->command_work.window_work);
@@ -463,6 +484,31 @@ void ApplyFixedPatches() {
             CheckForSelectingWeaponLevel(/* is_strategies_menu = */ false);
             g_DrawWeaponWin_trampoline();
         });
+        
+    // Increase Spring Jump's AC prize level by 1 to make it more desirable.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_marioAttackEvent_JyabaraJump_Patch_PrizeTier1), 1);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_marioAttackEvent_JyabaraJump_Patch_PrizeTier2), 2);
+    // Move SP calculation to the end of the attack so the Stylish matters.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_marioAttackEvent_JyabaraJump_Patch_GetSp1),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_marioAttackEvent_JyabaraJump_Patch_GetSp2),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_marioAttackEvent_JyabaraJump_Patch_GetSp3),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_marioAttackEvent_JyabaraJump_Patch_GetSp4),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(g_marioAttackEvent_JyabaraJump_Patch_ResetFace),
+        reinterpret_cast<uint32_t>(
+            battle::AwardStarPowerAndResetFaceDirection));
     
     // Change the Sweet Treat/Feast target type counts based on level.
     mod::patch::writeBranchPair(
@@ -569,8 +615,8 @@ void ApplyFixedPatches() {
             int32_t bars_full = evtGetValue(evt, evt->evtArguments[0]) - 1;
             switch (g_CurSpecialMoveLvls[6]) {
                 case 1: weapon.ohko_chance = 30 + bars_full * 7;  break;
-                case 2: weapon.ohko_chance = 50 + bars_full * 9;  break;
-                case 3: weapon.ohko_chance = 70 + bars_full * 11; break;
+                case 2: weapon.ohko_chance = 45 + bars_full * 9;  break;
+                case 3: weapon.ohko_chance = 60 + bars_full * 11; break;
             }
             return 2;
         });

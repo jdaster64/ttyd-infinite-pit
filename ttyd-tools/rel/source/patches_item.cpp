@@ -102,6 +102,18 @@ namespace item {
     
 namespace {
 
+// Forward declarations.
+EVT_DECLARE_USER_FUNC(ToggleCookingItemTypeToHeldItem, 1)
+
+// Custom attack event for CookingItems that temporarily sets CookingItem's type
+// to the attacker's held item, so it can be used for target weighting.
+EVT_BEGIN(CookingItemAttackEvent)
+USER_FUNC(ToggleCookingItemTypeToHeldItem, 1)
+RUN_CHILD_EVT(PTR(ttyd::battle_item_data::ItemEvent_Recovery))
+USER_FUNC(ToggleCookingItemTypeToHeldItem, 0)
+RETURN()
+EVT_END()
+
 // Patch over the end of the existing Trade Off item script so it actually
 // calls the part of the code associated with applying its status.
 EVT_BEGIN(TradeOffPatch)
@@ -111,6 +123,26 @@ USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_WeaponAftereffect, LW(12))
 RUN_CHILD_EVT(static_cast<int32_t>(g_ItemEvent_Support_NoEffect_TradeOffJumpPoint))
 RETURN()
 EVT_END()
+
+// Toggles on/off setting CookingItem's item type to the attacker's held item.
+// This allows, e.g., target weighting for pure-FP items to be properly used.
+EVT_DEFINE_USER_FUNC(ToggleCookingItemTypeToHeldItem) {
+    BattleWeapon& weapon = ttyd::battle_item_data::ItemWeaponData_CookingItem;
+    if (evtGetValue(evt, evt->evtArguments[0])) {
+        // Get the held item from the current attacker.
+        if (evt->wActorThisPtr) {
+            BattleWorkUnit* unit = ttyd::battle::BattleGetUnitPtr(
+                ttyd::battle::g_BattleWork,
+                reinterpret_cast<uint32_t>(evt->wActorThisPtr));
+            if (unit && unit->held_item > 0) {
+                weapon.item_id = unit->held_item;
+            }
+        }
+    } else {
+        weapon.item_id = 0;
+    }
+    return 2;
+}
 
 // Returns altered item restoration parameters.
 EVT_DEFINE_USER_FUNC(GetAlteredItemRestorationParams) {
@@ -344,6 +376,10 @@ void ApplyFixedPatches() {
     // (i.e. they use them on characters with less HP)
     ttyd::battle_item_data::ItemWeaponData_CookingItem.target_weighting_flags =
         ttyd::battle_item_data::ItemWeaponData_Kinoko.target_weighting_flags;
+    // Change CookingItem's attack event to CookingItemAttack (wrapper to
+    // ItemEvent_Recovery that passes in the item type being used for enemies).
+    ttyd::battle_item_data::ItemWeaponData_CookingItem.attack_evt_code =
+        const_cast<int32_t*>(CookingItemAttackEvent);
         
     // Make Point Swap and Trial Stew only target Mario or his partner.
     ttyd::battle_item_data::ItemWeaponData_Irekaeeru.target_class_flags = 
@@ -359,11 +395,11 @@ void ApplyFixedPatches() {
         &kLastDinnerWeaponAddr, sizeof(BattleWeapon*));
 
     // Make Poison Mushrooms able to target anyone, and make enemies prefer
-    // to target Mario's team or characters with lower health.
+    // to target Mario's team or characters that are in Peril.
     ttyd::battle_item_data::ItemWeaponData_PoisonKinoko.target_class_flags = 
         0x01100060;
     ttyd::battle_item_data::ItemWeaponData_PoisonKinoko.target_weighting_flags =
-        0x80001403;
+        0x80001023;
     // Make Poison Mushrooms poison & halve HP 67% of the time instead of 80%.
     mod::patch::writePatch(
         reinterpret_cast<void*>(g_ItemEvent_Poison_Kinoko_PoisonChance), 67);

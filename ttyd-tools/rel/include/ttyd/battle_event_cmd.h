@@ -16,7 +16,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_StatusWindowOnOff, 1)
 // btlevtcmd_BtlStageObjSetRotate
 // btlevtcmd_BtlStageObjFlagOnOff
 // btlevtcmd_SacBgsetMove
-// btlevtcmd_InviteApInfoReport
+EVT_DECLARE_USER_FUNC(btlevtcmd_InviteApInfoReport, 0)
 // btlevtcmd_PadCheckNow
 // btlevtcmd_PadCheckTrigger
 // btlevtcmd_EnemyItemUseCheck
@@ -200,7 +200,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_CheckToken, 3)
 // btlevtcmd_OffAttribute
 // btlevtcmd_OnAttribute
 // btlevtcmd_CheckAttribute
-// btlevtcmd_ResetFaceDirection
+EVT_DECLARE_USER_FUNC(btlevtcmd_ResetFaceDirection, 1)
 // btlevtcmd_ChangePartsFaceDirection
 // btlevtcmd_ChangeFaceDirection
 // btlevtcmd_GetFaceDirection

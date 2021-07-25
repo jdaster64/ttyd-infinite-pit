@@ -70,6 +70,7 @@ namespace MsgKey {
         MSG_KAME_NO_NOROI,
         MSG_KIKEN_DE_POWER,
         MSG_KIKEN_DE_POWER_P,
+        MSG_KURI_MAP,
         MSG_NANCY_FRAPPE,
         MSG_PINCH_DE_GANBARU,
         MSG_PINCH_DE_GANBARU_P,
@@ -175,6 +176,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_kame_no_noroi",
     "msg_kiken_de_power",
     "msg_kiken_de_power_p",
+    "msg_kuri_map",
     "msg_nancy_frappe",
     "msg_pinch_de_ganbaru",
     "msg_pinch_de_ganbaru_p",
@@ -619,6 +621,13 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                    "Me, <wait 200>I wouldn't trust this guy\n"
                    "personally, Mario, but I guess\n"
                    "if you're desperate...\n<k>";
+        case MsgKey::MSG_KURI_MAP:
+            return "<keyxon>\nWe're in the Infinite Pit,\n"
+                   "an endless series of trials\n"
+                   "and enemy encounters.\n<k>\n<p>\n"
+                   "It may be never-ending, but that\n"
+                   "doesn't mean we can't give it\n"
+                   "our best effort, right, Mario?\n<k>";
     }
     // Should not be reached.
     return nullptr;

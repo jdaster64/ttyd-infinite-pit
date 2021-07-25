@@ -1006,6 +1006,7 @@
 
 // battle_event_cmd.o
 80103e34:btlevtcmd_StatusWindowOnOff
+8010436c:btlevtcmd_InviteApInfoReport
 80104700:btlevtcmd_snd_se
 80105284:btlevtcmd_GetStageSize
 801054e8:btlevtcmd_WeaponAftereffect
@@ -1023,6 +1024,7 @@
 8010d770:btlevtcmd_SetFallAccel
 8010d860:btlevtcmd_SetMoveSpeed
 8010ddac:btlevtcmd_CheckToken
+8010e4bc:btlevtcmd_ResetFaceDirection
 8010ef44:btlevtcmd_CheckSpace
 8010ff74:btlevtcmd_SetHp
 801124f8:btlevtcmd_GetHomePos
@@ -1031,6 +1033,7 @@
 80113620:btlevtcmd_GetPos
 
 // battle_event_default.o
+// .text
 801138d8:_get_flower_suitoru_point
 80113950:_get_heart_suitoru_point
 

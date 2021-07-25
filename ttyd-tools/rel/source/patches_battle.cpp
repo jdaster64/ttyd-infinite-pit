@@ -1,6 +1,7 @@
 #include "patches_battle.h"
 
 #include "custom_enemy.h"
+#include "evt_cmd.h"
 #include "mod.h"
 #include "mod_state.h"
 #include "patch.h"
@@ -11,7 +12,9 @@
 #include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_damage.h>
+#include <ttyd/battle_event_cmd.h>
 #include <ttyd/battle_unit.h>
+#include <ttyd/evtmgr.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 
@@ -163,6 +166,14 @@ void SetTargetAudienceAmount() {
         target_amount = floor >= 195 ? 200.0f : floor + 5.0f;
     }
     *reinterpret_cast<float*>(audience_work_base + 0x13778) = target_amount;
+}
+
+EVT_DEFINE_USER_FUNC(AwardStarPowerAndResetFaceDirection) {
+    // Declare Star Power / bonuses earned via this attack.
+    ttyd::battle_event_cmd::btlevtcmd_InviteApInfoReport(evt, isFirstCall);
+    // Reset facing direction as usual.
+    ttyd::battle_event_cmd::btlevtcmd_ResetFaceDirection(evt, isFirstCall);
+    return 2;
 }
 
 }  // namespace battle

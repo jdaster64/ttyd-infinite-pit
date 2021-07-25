@@ -23,6 +23,9 @@
 
 // Assembly patch functions.
 extern "C" {
+    // audience_item_patches.s
+    void StartAudienceCheckPlayerTarget();
+    void BranchBackAudienceCheckPlayerTarget();
     // enemy_sampling_patches.s
     void StartSampleRandomTarget();
     void BranchBackSampleRandomTarget();
@@ -86,6 +89,8 @@ extern int32_t (*g_btlevtcmd_GetSelectEnemy_trampoline)(EvtEntry*, bool);
 extern int32_t (*g_btlevtcmd_CheckSpace_trampoline)(EvtEntry*, bool);
 extern uint32_t (*g_BattleCheckConcluded_trampoline)(BattleWork*);
 // Patch addresses.
+extern const int32_t g_BattleAudienceDetectTargetPlayer_CheckPlayer_BH;
+extern const int32_t g_BattleAudienceDetectTargetPlayer_CheckPlayer_EH;
 extern const int32_t g_BattleChoiceSamplingEnemy_SumRandWeights_BH;
 extern const int32_t g_BattleChoiceSamplingEnemy_SumRandWeights_EH;
 extern const int32_t g_btlDispMain_DrawNormalHeldItem_BH;
@@ -241,6 +246,13 @@ void ApplyFixedPatches() {
             ReorderWeaponTargets();
             return g_btlevtcmd_GetSelectEnemy_trampoline(evt, isFirstCall);
         });
+
+    // Disallows audience from throwing items at Infatuated enemies.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_BattleAudienceDetectTargetPlayer_CheckPlayer_BH),
+        reinterpret_cast<void*>(g_BattleAudienceDetectTargetPlayer_CheckPlayer_EH),
+        reinterpret_cast<void*>(StartAudienceCheckPlayerTarget),
+        reinterpret_cast<void*>(BranchBackAudienceCheckPlayerTarget));
 
     // Hooks drawing held item code, skipping it if any clone enemies exist.
     mod::patch::writeBranchPair(

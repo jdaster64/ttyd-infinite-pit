@@ -1,8 +1,29 @@
+.global StartAudienceCheckPlayerTarget
+.global BranchBackAudienceCheckPlayerTarget
 # Code by Zephiles
 .global StartAudienceItem
 .global BranchBackAudienceItem
 .global StartAudienceItemSpaceFix
 .global BranchBackAudienceItemSpaceFix
+
+StartAudienceCheckPlayerTarget:
+# Check if target is >= type 0xde (Mario, Shell Shield or partner).
+lwz %r0, 0x8 (%r27)
+cmpwi %r0, 0xde
+# If so, skip to vanilla alliance check.
+bge+ 0xc
+
+# Otherwise, set alliance to 1 (enemy) and skip loading alliance.
+li %r0, 1
+b 0x8
+
+# Check alliance.
+lbz %r0, 0xc (%r27)
+# Sign-extend and compare (should compare eq only if player-controlled target).
+extsb. %r0, %r0
+
+BranchBackAudienceCheckPlayerTarget:
+b 0
 
 StartAudienceItem:
 stwu %sp,-0x18(%sp)

@@ -6,6 +6,7 @@
 #include "mod.h"
 #include "mod_state.h"
 #include "patch.h"
+#include "patches_battle.h"
 
 #include <ttyd/battle.h>
 #include <ttyd/battle_damage.h>
@@ -70,6 +71,14 @@ extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUlt
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColor1;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColor2;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColor3;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps1;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps2;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps3;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetSp1;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetSp2;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetSp3;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetPrizeTier;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_ResetFace;
 
 namespace partner {
     
@@ -95,6 +104,20 @@ DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
 DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
 EVT_PATCH_END()
 static_assert(sizeof(GaleForceKillPatch) == 0x38);
+
+// Patch to disable getting Star Power early from certain attacks;
+// battle::AwardStarPowerAndResetFaceDirection will be used to award it
+// at the end of the attack instead, to make sure Stylishes are counted.
+EVT_BEGIN(DeclareStarPowerPatch)
+DEBUG_REM(0) DEBUG_REM(0)
+EVT_PATCH_END()
+static_assert(sizeof(DeclareStarPowerPatch) == 0x10);
+
+// Patch to get the altered Love Slap prize level from the AC output value.
+EVT_BEGIN(GetLoveSlapPrizeTierPatch)
+USER_FUNC(GetLoveSlapPrizeTier, LW(0))
+EVT_PATCH_END()
+static_assert(sizeof(GetLoveSlapPrizeTierPatch) == 0xc);
 
 EVT_DEFINE_USER_FUNC(ShellShieldSetInitialHp) {
     int32_t ac_level = evtGetValue(evt, evt->evtArguments[1]);
@@ -389,6 +412,7 @@ void ApplyFixedPatches() {
     ttyd::unit_bomzou::weapon_bomzou_explosion.special_property_flags |= 0x40;
     ttyd::unit_party_sanders::partyWeapon_SandersSuperBombAttack.
         special_property_flags |= 0x40;
+
     // Love Slap immune to fire and spikes (except pre-emptive spikes).
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
         counter_resistance_flags |= 0x1a;
@@ -406,6 +430,12 @@ void ApplyFixedPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(
             g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUltra), 20);
+    // Change tier of Action Command prize level to match the original game's,
+    // since by default it's based on base damage - 2.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetPrizeTier),
+        GetLoveSlapPrizeTierPatch, sizeof(GetLoveSlapPrizeTierPatch));
     // Bar fullness thresholds for color change.
     mod::patch::writePatch(
         reinterpret_cast<void*>(
@@ -416,9 +446,39 @@ void ApplyFixedPatches() {
     mod::patch::writePatch(
         reinterpret_cast<void*>(
             g_partyChuchurinaAttack_NormalAttack_Patch_BarColor3), 80);
-    // Kiss Thief immune to all contact hazards and can target any height.
+    // Change number of slaps based on move rank (avoids bug w/Counter status).
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps1), 1);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps2), 3);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps3), 5);
+    // Move SP calculation to the end of the attack so the Stylish is counted.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp1),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp2),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp3),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_ResetFace),
+        reinterpret_cast<uint32_t>(
+            battle::AwardStarPowerAndResetFaceDirection));
+
+    // Kiss Thief has higher FP cost, is immune to all contact hazards
+    // (except lit Bob-ombs), and can target any height.
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
-        counter_resistance_flags |= 0x7ff;
+        counter_resistance_flags |= 0x6ff;
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
         target_property_flags &= ~0x2000;
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaItemSteal.
@@ -450,6 +510,13 @@ EVT_DEFINE_USER_FUNC(InitializePartyMember) {
     party_data.hp_level = starting_rank;
     party_data.attack_level = starting_rank;
     party_data.tech_level = starting_rank;
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetLoveSlapPrizeTier) {
+    const int32_t damage = evtGetValue(evt, evt->evtArguments[0]);
+    // 2-3 damage = Nice, 4-5 = Good, 6 = Great, similar to original.
+    evtSetValue(evt, evt->evtArguments[0], damage / 2 - 1);
     return 2;
 }
 
