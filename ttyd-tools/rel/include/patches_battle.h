@@ -13,6 +13,8 @@ void ApplyFixedPatches();
 
 // Overrides the default target audience amount to be based on Pit progression.
 void SetTargetAudienceAmount();
+// Applies the option to change the SP amount regained from attacks.
+double ApplySpRegenMultiplier(double base_regen);
 
 // Announces Star Power restoration and resets facing direction simultaneously;
 // used to fix issues with moves in vanilla that had Stylishes placed after

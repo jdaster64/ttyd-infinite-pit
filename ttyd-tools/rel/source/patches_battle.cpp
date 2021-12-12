@@ -26,9 +26,17 @@ extern "C" {
     // audience_level_patches.s
     void StartSetTargetAudienceCount();
     void BranchBackSetTargetAudienceCount();
+    // star_power_patches.s
+    void StartApplySpRegenMultiplierNoBingo();
+    void BranchBackApplySpRegenMultiplierNoBingo();
+    void StartApplySpRegenMultiplierBingo();
+    void BranchBackApplySpRegenMultiplierBingo();
     
     void setTargetAudienceCount() {
         mod::infinite_pit::battle::SetTargetAudienceAmount();
+    }
+    double applySpRegenMultiplier(double base_regen) {
+        return mod::infinite_pit::battle::ApplySpRegenMultiplier(base_regen);
     }
 }
 
@@ -53,6 +61,8 @@ extern void (*g__getSickStatusParam_trampoline)(
 extern const int32_t g_BattleCheckDamage_Patch_PaybackDivisor;
 extern const int32_t g_BattleCheckDamage_Patch_HoldFastDivisor;
 extern const int32_t g_BattleCheckDamage_Patch_ReturnPostageDivisor;
+extern const int32_t g_BattleAudience_ApRecoveryBuild_NoBingoRegen_BH;
+extern const int32_t g_BattleAudience_ApRecoveryBuild_BingoRegen_BH;
 extern const int32_t g_BattleAudience_SetTargetAmount_BH;
 
 namespace battle {
@@ -152,6 +162,16 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(g_BattleAudience_SetTargetAmount_BH),
         reinterpret_cast<void*>(StartSetTargetAudienceCount),
         reinterpret_cast<void*>(BranchBackSetTargetAudienceCount));
+        
+    // Apply the option to change the amount of SP regained from attacks.
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_BattleAudience_ApRecoveryBuild_NoBingoRegen_BH),
+        reinterpret_cast<void*>(StartApplySpRegenMultiplierNoBingo),
+        reinterpret_cast<void*>(BranchBackApplySpRegenMultiplierNoBingo));
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_BattleAudience_ApRecoveryBuild_BingoRegen_BH),
+        reinterpret_cast<void*>(StartApplySpRegenMultiplierBingo),
+        reinterpret_cast<void*>(BranchBackApplySpRegenMultiplierBingo));
 }
 
 void SetTargetAudienceAmount() {
@@ -166,6 +186,11 @@ void SetTargetAudienceAmount() {
         target_amount = floor >= 195 ? 200.0f : floor + 5.0f;
     }
     *reinterpret_cast<float*>(audience_work_base + 0x13778) = target_amount;
+}
+
+double ApplySpRegenMultiplier(double base_regen) {
+    return base_regen * 
+        g_Mod->state_.GetOptionNumericValue(OPTNUM_SP_REGEN_MODIFIER) / 20.0;
 }
 
 EVT_DEFINE_USER_FUNC(AwardStarPowerAndResetFaceDirection) {

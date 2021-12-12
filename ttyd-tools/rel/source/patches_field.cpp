@@ -121,9 +121,10 @@ EVT_DECLARE_USER_FUNC(GetEnemyNpcInfo, 7)
 EVT_DECLARE_USER_FUNC(SetEnemyNpcBattleInfo, 2)
 EVT_DECLARE_USER_FUNC(GetNumChestRewards, 1)
 EVT_DECLARE_USER_FUNC(GetChestReward, 1)
+EVT_DECLARE_USER_FUNC(FullyHealParty, 0)
 EVT_DECLARE_USER_FUNC(CheckRewardClaimed, 1)
 EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
-EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 0)
+EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 1)
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 EVT_DECLARE_USER_FUNC(CheckChetRippoSpawn, 1)
@@ -148,6 +149,8 @@ USER_FUNC(GetNumChestRewards, LW(13))
 DO(0)
     SUB(LW(13), 1)
     IF_SMALL(LW(13), 0)
+        // Fully heal the player's party (if option is set).
+        USER_FUNC(FullyHealParty)
         DO_BREAK()
     END_IF()
     USER_FUNC(GetChestReward, LW(1))
@@ -268,13 +271,13 @@ IF_EQUAL(LW(0), 0)
             SET(LW(0), 1)
         ELSE()    
             SET(LW(0), 0)
-            USER_FUNC(IncrementInfinitePitFloor)
+            USER_FUNC(IncrementInfinitePitFloor, 1)
         END_IF()
     END_IF()
 ELSE()
     // Set LW(0) back to 0 to allow going through pipe.
     SET(LW(0), 0)
-    USER_FUNC(IncrementInfinitePitFloor)
+    USER_FUNC(IncrementInfinitePitFloor, 1)
 END_IF()
 RETURN()
 EVT_END()
@@ -787,6 +790,20 @@ EVT_DEFINE_USER_FUNC(GetChestReward) {
     return 2;
 }
 
+// Fully heals the player's party.
+EVT_DEFINE_USER_FUNC(FullyHealParty) {
+    if (!g_Mod->state_.GetOptionNumericValue(OPT_DISABLE_CHEST_HEAL)) {
+        PouchData& pouch = *ttyd::mario_pouch::pouchGetPtr();
+        pouch.current_hp = pouch.max_hp;
+        pouch.current_fp = pouch.max_fp;
+        pouch.current_sp = pouch.max_sp;
+        for (int32_t i = 0; i < 8; ++i) {
+            pouch.party_data[i].current_hp = pouch.party_data[i].max_hp;
+        }
+    }
+    return 2;
+}
+
 // Returns whether or not the current floor's reward has been claimed.
 EVT_DEFINE_USER_FUNC(CheckRewardClaimed) {
     bool reward_claimed = false;
@@ -810,7 +827,8 @@ EVT_DEFINE_USER_FUNC(CheckPromptSave) {
 
 // Increments the actual current Pit floor, and the corresponding GSW value.
 EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
-    int32_t actual_floor = ++g_Mod->state_.floor_;
+    int32_t inc = evtGetValue(evt, evt->evtArguments[0]);
+    int32_t actual_floor = g_Mod->state_.floor_ += inc;
     // Update the floor number used by the game.
     // Floors 101+ are treated as looping 81-90 nine times + 91-100.
     int32_t gsw_floor = actual_floor;
@@ -830,6 +848,14 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
             rank = 1;
         }
         ttyd::mario_pouch::pouchGetPtr()->rank = rank;
+    }
+    if (inc > 1) {
+        // If more than one floor incremented, a Mover must have been used.
+        g_Mod->state_.ChangeOption(STAT_MOVERS_USED, 1);
+        // Track how many battles were skipped (don't include chest floors).
+        int32_t skipped_battles = inc - 1;
+        if (actual_floor % 10 < inc) --skipped_battles;
+        g_Mod->state_.ChangeOption(STAT_BATTLES_SKIPPED, skipped_battles);
     }
     return 2;
 }
