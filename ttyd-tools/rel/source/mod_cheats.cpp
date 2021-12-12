@@ -57,13 +57,13 @@ void CheatsManager::Update() {
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions1) {
         code_history = 0;
         // Unlock the first page of bonus options.
-        MenuManager::SetMenuPageVisibility(5, true);
+        MenuManager::SetMenuPageVisibility(6, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions2) {
         code_history = 0;
         // Unlock the second page of bonus options.
-        MenuManager::SetMenuPageVisibility(6, true);
+        MenuManager::SetMenuPageVisibility(7, true);
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
     if ((code_history & 0xFFFFFF) == secretCode_BonusOptions3) {

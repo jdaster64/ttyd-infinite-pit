@@ -8,7 +8,7 @@ class StateManager_v2 {
 public:
     // Save file revision; makes it possible to add fields while maintaining
     // backwards compatibility, and detect when a vanilla file is loaded.
-    // Current version = 4, compatible versions = 4.
+    // Current version = 5, compatible versions = 4-5 (v2.00 onward).
     uint8_t     version_;
     
     // Game state / progression.
@@ -183,6 +183,10 @@ enum Options_v2 {
     OPTVAL_CHET_RIPPO_GUARANTEE = 0x2'1e'1'0'001,
     // Whether Merlee's curse should be enabled.
     OPT_MERLEE_CURSE            = 0x1'1f'1'0'002,
+    // Whether to disable full-healing the party after collecting a chest.
+    OPT_DISABLE_CHEST_HEAL      = 0x1'20'1'0'002,
+    // Whether to allow Movers to spawn or not.
+    OPT_MOVERS_ENABLED          = 0x1'21'1'8'002,
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -202,6 +206,8 @@ enum Options_v2 {
     OPTNUM_SUPERGUARD_SP_COST   = 0x3'04'1'0'096,
     // FP cost for switching partners.
     OPTNUM_SWITCH_PARTY_FP_COST = 0x3'05'1'0'00a,
+    // Multiplier for attacks' SP regen (in increments of 0.05 SP, up to 3.00).
+    OPTNUM_SP_REGEN_MODIFIER    = 0x3'06'1'0'03c,
     
     // Gameplay stats.
     STAT_TURNS_SPENT            = 0x4'00'3'2'007,
@@ -223,6 +229,8 @@ enum Options_v2 {
     STAT_SHINE_SPRITES          = 0x4'2d'2'2'003,
     STAT_CONDITIONS_MET         = 0x4'2f'3'2'007,
     STAT_CONDITIONS_TOTAL       = 0x4'32'3'2'007,
+    STAT_MOVERS_USED            = 0x4'35'2'2'004,
+    STAT_BATTLES_SKIPPED        = 0x4'37'3'2'007,
     
     // Non-option values (used for menu, etc.)
     MENU_EMPTY_OPTION           = 0x7000'0001,      // Used for blank spaces.
@@ -238,7 +246,8 @@ enum RngSequence {
     RNG_VANILLA             = -1,    // Calls ttyd::system::irand().
     
     // Mangled w/floor number and OPT_CHEST_REWARDS; will change dramatically
-    // if using options that change seeding, but will be consistent otherwise.
+    // if using options that change seeding or if skipping floors with Movers,
+    // but will be consistent otherwise.
     RNG_CHEST               = 0,    // Chest top-level weighting.
     
     // Mangled w/floor number; may stay reasonably consistent even if using
@@ -267,7 +276,12 @@ enum RngSequence {
     // Used for picking random filenames; should NOT be used for anything else.
     RNG_FILENAME            = 12,
     
-    RNG_SEQUENCE_MAX        = 14,
+    // Used for Movers; unlike other RNG calls, this is used as an offset to the
+    // floor number, to make sure Movers don't appear too close in succession.
+    // Completely consistent per filename.
+    RNG_MOVER               = 14,
+    
+    RNG_SEQUENCE_MAX        = 15,
 };
 
 }

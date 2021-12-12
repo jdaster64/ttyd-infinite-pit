@@ -52,15 +52,22 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
 bool LoadFromPreviousVersion(StateManager_v2* state) {
     void* saved_state = GetSavedStateLocation();
     uint8_t version = *reinterpret_cast<uint8_t*>(saved_state);
-    if (version != 4) {
+    if (version != 4 && version != 5) {
         // Version is incompatible with the current version; fail to load.
         return false;
     }
     
-    // Since the only compatible version is current, a direct copy will suffice.
+    // Since all compatible versions have the same memory layout, copy to start.
     patch::writePatch(state, saved_state, sizeof(StateManager_v2));
+    // Update fields that wouldn't have default value when updating versions.
+    if (state->version_ == 4) {
+        // Update attack SP regen modifier to 1.00x.
+        state->SetOption(OPTNUM_SP_REGEN_MODIFIER, 20);
+        // Update chests to not heal, consistent with older versions.
+        state->SetOption(OPT_DISABLE_CHEST_HEAL, 1);
+    }
     // Force version to current.
-    state->version_ = 4;
+    state->version_ = 5;
     InitPartyMaxHpTable(state->partner_upgrades_);
     
     // If playing Mario-alone, make sure all "P" variants of collected Mario
@@ -115,7 +122,7 @@ bool StateManager_v2::Load(bool new_save) {
     uint32_t cosmetic_options = option_flags_[3];
     
     memset(this, 0, sizeof(StateManager_v2));
-    version_ = 4;
+    version_ = 5;
     SetDefaultOptions();
     option_flags_[3] = cosmetic_options;
     InitPartyMaxHpTable(partner_upgrades_);
@@ -202,6 +209,14 @@ uint32_t StateManager_v2::Rand(uint32_t range, int32_t sequence) {
                 data[1] = floor_;
                 break;
             }
+            case RNG_MOVER: {
+                // Special-case; for Movers, have the data just be the floor #,
+                // with higher `seq_val` simulating values from earlier floors.
+                // Calling code will use this to limit how close together
+                // subsequent Movers can appear.
+                data[0] = floor_ - *seq_val;
+                break;
+            }
             case RNG_INVENTORY_UPGRADE:
             case RNG_CHEST_BADGE_FIXED:
             case RNG_PARTNER:
@@ -232,6 +247,7 @@ void StateManager_v2::SetDefaultOptions() {
     SetOption(OPTVAL_STARTER_ITEMS_BASIC);
     SetOption(OPTNUM_ENEMY_HP, 100);
     SetOption(OPTNUM_ENEMY_ATK, 100);
+    SetOption(OPTNUM_SP_REGEN_MODIFIER, 20);  // 1.00x
 }
 
 void StateManager_v2::ChangeOption(int32_t option, int32_t change) {
@@ -437,6 +453,12 @@ void StateManager_v2::GetOptionStrings(
         case OPT_CHET_RIPPO_APPEARANCE: {
             strcpy(name_buf, "Chet Rippo appear %:");       break;
         }
+        case OPT_DISABLE_CHEST_HEAL: {
+            strcpy(name_buf, "Full heal from chests:");     break;
+        }
+        case OPT_MOVERS_ENABLED: {
+            strcpy(name_buf, "Mover appearance:");          break;
+        }
         case OPTNUM_ENEMY_HP: {
             strcpy(name_buf, "Enemy HP multiplier:");       break;
         }
@@ -449,11 +471,16 @@ void StateManager_v2::GetOptionStrings(
         case OPTNUM_SWITCH_PARTY_FP_COST: {
             strcpy(name_buf, "Partner switch cost:");       break;
         }
+        case OPTNUM_SP_REGEN_MODIFIER: {
+            strcpy(name_buf, "SP regen from attacks:");     break;
+        }
     }
     
     // Check if option is default.
     if (option == OPTNUM_ENEMY_ATK || option == OPTNUM_ENEMY_HP) {
         *is_default = value == 100;
+    } else if (option == OPTNUM_SP_REGEN_MODIFIER) {
+        *is_default = value == 20;
     } else if (option == OPT_CHEST_REWARDS) {
         *is_default = num_value == 3;
     } else if (option == OPT_STARTER_ITEMS) {
@@ -596,6 +623,11 @@ void StateManager_v2::GetOptionStrings(
             strcpy(value_buf, num_value ? "+1/+2" : "+2/+5");
             return;
         }
+        case OPT_DISABLE_CHEST_HEAL: {
+            // Reverse conditions, since healing is defaulted to be on.
+            strcpy(value_buf, num_value ? "Off" : "On");
+            return;
+        }
         case OPTNUM_ENEMY_HP:
         case OPTNUM_ENEMY_ATK: {
             sprintf(value_buf, "%" PRId32 "%s", num_value, "%");
@@ -609,13 +641,17 @@ void StateManager_v2::GetOptionStrings(
             sprintf(value_buf, "%" PRId32 " FP", num_value);
             return;
         }
+        case OPTNUM_SP_REGEN_MODIFIER: {
+            sprintf(value_buf, "%.2fx", num_value / 20.0f);
+            return;
+        }
     }
     // Default to using "On"/"Off" for nonzero/zero values.
     strcpy(value_buf, num_value ? "On" : "Off");
 }
 
 const char* StateManager_v2::GetEncodedOptions() const {
-    static char enc_options[16];
+    static char enc_options[18];
 
     uint64_t numeric_options = GetOptionValue(OPTNUM_ENEMY_HP);
     numeric_options <<= 12;
@@ -624,25 +660,29 @@ const char* StateManager_v2::GetEncodedOptions() const {
     numeric_options += GetOptionValue(OPTNUM_SUPERGUARD_SP_COST);
     numeric_options <<= 4;
     numeric_options += GetOptionValue(OPTNUM_SWITCH_PARTY_FP_COST);
+    numeric_options <<= 6;
+    numeric_options += GetOptionValue(OPTNUM_SP_REGEN_MODIFIER);
     // Flip "starting items" flag off to make default options look simpler.
-    uint32_t flag_options = option_flags_[0] ^ 0x4000;
+    uint64_t flag_options = option_flags_[1];
+    flag_options <<= 32;
+    flag_options |= (option_flags_[0] ^ 0x4000);
     
     // Convert to a base-64 scheme using A-Z, a-z, 0-9, !, ?.
-    // Format: 6+.6+.1 (FLAGS.NUMERIC.VERSION)
+    // Format: 6+.7+.1 (FLAGS.NUMERIC.VERSION)
     for (int32_t i = 5; i >= 0; --i) {
         const int32_t sextet = flag_options & 63;
         enc_options[i] = GetBase64EncodingChar(sextet);
         flag_options >>= 6;
     }
-    for (int32_t i = 12; i >= 7; --i) {
+    for (int32_t i = 13; i >= 7; --i) {
         const int32_t sextet = numeric_options & 63;
         enc_options[i] = GetBase64EncodingChar(sextet);
         numeric_options >>= 6;
     }
     enc_options[6]  = '.';
-    enc_options[13] = '.';
-    enc_options[14] = GetBase64EncodingChar(version_);
-    enc_options[15] = '\0';
+    enc_options[14] = '.';
+    enc_options[15] = GetBase64EncodingChar(version_);
+    enc_options[16] = '\0';
     return enc_options;
 }
 
@@ -661,9 +701,10 @@ bool StateManager_v2::GetPlayStatsString(char* out_buf) {
     
     const int64_t start_diff    = current_time - pit_start_time_;
     const int32_t turn_total    = GetOptionValue(STAT_TURNS_SPENT);
-    const int32_t battles_won   = (floor_ + 1) * 91 / 100;
     const int64_t battle_time   = 
         mariost->animationTimeIncludingBattle - mariost->animationTimeNoBattle;
+    int32_t battles_won   = (floor_ + 1) * 91 / 100;
+    battles_won -= GetOptionValue(STAT_BATTLES_SKIPPED);
     
     // Page 1: Seed, floor, options & total play time.
     out_buf += sprintf(
@@ -746,7 +787,7 @@ bool StateManager_v2::GetPlayStatsString(char* out_buf) {
         AchievementsManager::GetMaxCompletionPoints(
             AchievementsManager::kTattleLogItem));
     
-    // TODO: Add page for Items, badges, level-ups sold in future?
+    // TODO: Add page for Items, badges, level-ups sold or Mover use in future?
     out_buf += sprintf(out_buf, "\n<k>");
     
     return true;

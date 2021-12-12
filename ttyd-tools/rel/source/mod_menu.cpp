@@ -25,7 +25,7 @@ const int32_t kMenuX                = -260;
 const int32_t kMenuY                = -85;
 const int32_t kMenuWidth            = 395;
 const int32_t kMenuPadding          = 15;
-const int32_t kNumOptionPages       = 7;
+const int32_t kNumOptionPages       = 8;
 const int32_t kOptionsPerPage       = 5;
 const int32_t kFadeoutStartTime     = 600;
 const int32_t kFadeoutEndTime       = 600 + 15;
@@ -44,7 +44,7 @@ const int32_t kMenuCommandFastTickStart     = 96;
 const int32_t kMenuCommandFastTickRate      = 2;
 
 // Global menu state variables.
-int32_t pages_unlocked_ = 0b11110;
+int32_t pages_unlocked_ = 0b111110;
 uint16_t last_command_ = 0;
 int32_t time_button_held_ = kFadeoutEndTime;
 int32_t menu_selection_ = 1;
@@ -86,20 +86,25 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         case 303: return OPT_BOSS_SCALING;
         case 304: return OPT_FLOOR_100_SCALING;
         
-        case 401: return OPTNUM_SUPERGUARD_SP_COST;
-        case 402: return OPTNUM_SWITCH_PARTY_FP_COST;
-        case 403: return OPT_MERLEE_CURSE;
-        case 404: return OPT_STAGE_RANK;
+        case 401: return OPTNUM_SP_REGEN_MODIFIER;
+        case 402: return OPTNUM_SUPERGUARD_SP_COST;
+        case 403: return OPTNUM_SWITCH_PARTY_FP_COST;
+        case 404: return OPT_DISABLE_CHEST_HEAL;
         
-        case 501: return OPT_PERCENT_BASED_DANGER;
-        case 502: return OPT_WEAKER_RUSH_BADGES;
-        case 503: return OPT_EVASION_BADGES_CAP;
-        case 504: return OPT_64_STYLE_HP_FP_DRAIN;
+        case 501: return OPT_MERLEE_CURSE;
+        case 502: return OPT_CHET_RIPPO_APPEARANCE;
+        case 503: return OPT_MOVERS_ENABLED;
+        case 504: return MENU_EMPTY_OPTION;
         
-        case 601: return OPT_STAGE_HAZARDS;
-        case 602: return OPT_RANDOM_DAMAGE;
-        case 603: return OPT_AUDIENCE_RANDOM_THROWS;
-        case 604: return OPT_CHET_RIPPO_APPEARANCE;
+        case 601: return OPT_PERCENT_BASED_DANGER;
+        case 602: return OPT_WEAKER_RUSH_BADGES;
+        case 603: return OPT_EVASION_BADGES_CAP;
+        case 604: return OPT_64_STYLE_HP_FP_DRAIN;
+        
+        case 701: return OPT_STAGE_HAZARDS;
+        case 702: return OPT_STAGE_RANK;
+        case 703: return OPT_RANDOM_DAMAGE;
+        case 704: return OPT_AUDIENCE_RANDOM_THROWS;
         
         default:  return MENU_CHANGE_PAGE;
     }
@@ -300,12 +305,12 @@ void MenuManager::Draw() {
     
     // Print the current page information in the bottom row.
     color = GetActiveColor(kOptionsPerPage, alpha);
-    if (menu_page_ <= 4) {
+    if (menu_page_ <= 5) {
         sprintf(
-            name_buf, "Change Page (%" PRId32 "/%" PRId32 ")", menu_page_, 4);
+            name_buf, "Change Page (%" PRId32 "/%" PRId32 ")", menu_page_, 5);
     } else {
         sprintf(
-            name_buf, "Change Page (Bonus %" PRId32 ")", menu_page_ - 4);
+            name_buf, "Change Page (Bonus %" PRId32 ")", menu_page_ - 5);
     }
     DrawMenuString(name_buf, kTextX, kRowY, color, /* left-center */ 3);
     
