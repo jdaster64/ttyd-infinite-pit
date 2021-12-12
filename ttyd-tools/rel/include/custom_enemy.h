@@ -38,6 +38,9 @@ const char* SetCustomTattle(
 const char* SetCustomMenuTattle(const char* original_tattle_msg);
 // Returns a custom ordering for Tattles that only considers enemies in the Pit.
 int8_t GetCustomTattleIndex(int32_t unit_type);
+// Returns the custom attack and defense "stat" for an enemy type, as used by
+// the in-battle Tattle display. Returns false if no stats exist.
+bool GetTattleDisplayStats(int32_t unit_type, int32_t* atk, int32_t* def);
 
 // Used for debugging purposes:
 // Returns whether a battle unit type can included in a starting loadout.

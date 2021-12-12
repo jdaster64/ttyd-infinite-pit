@@ -2,6 +2,7 @@
 
 #include "common_functions.h"
 #include "common_ui.h"
+#include "custom_enemy.h"
 #include "custom_item.h"
 #include "mod.h"
 #include "mod_state.h"
@@ -89,6 +90,8 @@ void AchievementsManager::Update() {
     // Check to see if the player has completed the Tattle log.
     int32_t num_tattles = 0;
     for (int32_t i = 0; i <= BattleUnitType::BONETAIL; ++i) {
+        // Only check for enemies included in the Tattle log.
+        if (GetCustomTattleIndex(i) < 0) continue;
         num_tattles += ttyd::swdrv::swGet(0x117a + i);
     }
     if (num_tattles == 94) GetAchievement(kTattleLogItem);

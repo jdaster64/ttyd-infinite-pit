@@ -407,6 +407,9 @@ ELSE()
         END_IF()
     END_INLINE()
     IF_NOT_EQUAL(LW(13), -1)
+        // Heal partner status ailments.
+        SET(LW(9), LW(13))
+        RUN_CHILD_EVT(ttyd::sac_genki::status_recover_evt)
         IF_LARGE_EQUAL(LW(11), 1)
             // Apply HP-Regen status to partner.
             USER_FUNC(SetSweetFeastWeapon, 1, LW(11), LW(9))
@@ -415,6 +418,9 @@ ELSE()
                 -2, LW(13), LW(14), LW(9), 256, LW(5))
         END_IF()
     END_IF()
+    // Heal Mario status ailments.
+    SET(LW(9), -2)
+    RUN_CHILD_EVT(ttyd::sac_genki::status_recover_evt)
     IF_LARGE_EQUAL(LW(10), 1)
         // Apply HP-Regen status to Mario.
         USER_FUNC(SetSweetFeastWeapon, 0, LW(10), LW(9))

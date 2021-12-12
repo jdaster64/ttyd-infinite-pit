@@ -1033,6 +1033,17 @@ int8_t GetCustomTattleIndex(int32_t unit_type) {
     return kEnemyInfo[unit_type].tattle_idx;
 }
 
+bool GetTattleDisplayStats(int32_t unit_type, int32_t* atk, int32_t* def) {
+    if (unit_type > BattleUnitType::BONETAIL || unit_type < 0 ||
+        kEnemyInfo[unit_type].hp_scale < 0) {
+        return false;
+    }
+    const EnemyTypeInfo& ei = kEnemyInfo[unit_type];
+    int32_t base_atk_power = ei.atk_offset + ei.atk_base;
+    return GetEnemyStats(
+        unit_type, nullptr, atk, def, nullptr, nullptr, base_atk_power);
+}
+
 bool IsEligibleLoadoutEnemy(int32_t unit_type) {
     if (unit_type > BattleUnitType::BONETAIL || unit_type < 0) return false;
     return kEnemyInfo[unit_type].battle_unit_setup_offset >= 0;

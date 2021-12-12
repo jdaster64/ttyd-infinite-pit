@@ -33,6 +33,10 @@ EVT_DECLARE_USER_FUNC(end_genki, 0)
 // main_base
 EVT_DECLARE_USER_FUNC(main_genki, 2)
 
+// .data
+extern int32_t genki_evt_common[1];
+extern int32_t status_recover_evt[1];
+
 }
 
 }

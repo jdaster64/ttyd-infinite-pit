@@ -187,6 +187,7 @@ extern const int32_t g_btlseqTurn_Patch_HappyHeartReductionAtMax = 0x8011dee4;
 extern const int32_t g_btlseqTurn_Patch_HappyHeartBaseRate = 0x8011dee8;
 extern const int32_t g_btlseqTurn_Patch_HappyFlowerReductionAtMax = 0x8011e09c;
 extern const int32_t g_btlseqTurn_Patch_HappyFlowerBaseRate = 0x8011e0a0;
+extern const int32_t g_BattleDrawEnemyHP_DrawEnemyHPText_BH = 0x8011ffcc;
 extern const int32_t g__btlcmd_SetAttackEvent_SwitchPartnerCost_BH = 0x801204c8;
 extern const int32_t g__btlcmd_MakeOperationTable_AppealAlways_BH = 0x801239e4;
 extern const int32_t g__btlcmd_MakeSelectWeaponTable_Patch_GetNameFromItem = 0x80124924;

@@ -10,6 +10,7 @@
 #include <ttyd/battle_actrecord.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_information.h>
+#include <ttyd/battle_monosiri.h>
 #include <ttyd/battle_seq.h>
 #include <ttyd/battle_unit.h>
 #include <ttyd/npcdrv.h>
@@ -37,6 +38,8 @@ using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::npcdrv::FbatBattleInformation;
 using ::ttyd::npcdrv::NpcBattleInfo;
 using ::ttyd::npcdrv::NpcEntry;
+
+namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 
 }
 
@@ -138,6 +141,29 @@ void CheckBattleCondition() {
             }
         }
     }
+    
+    // If playing with the "no partners" option, give the player the Tattle logs 
+    // for all enemies present at the start of the fight.
+    if (g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) {
+        const auto* group = npc_info->pConfiguration;
+        for (int32_t i = 0; i < group->num_enemies; ++i) {
+            int32_t type = group->enemy_data[i].unit_kind_params->unit_type;
+            switch (type) {
+                case BattleUnitType::LAKITU:
+                case BattleUnitType::DARK_LAKITU:
+                case BattleUnitType::YUX:
+                case BattleUnitType::Z_YUX:
+                case BattleUnitType::X_YUX:
+                    // For enemy types that spawn minions, assume that they
+                    // were also present (as they're never there at the start,
+                    // and as such would otherwise never be marked).
+                    ttyd::battle_monosiri::battleSetUnitMonosiriFlag(type + 1);
+                    // fallthrough to default case...
+                default:
+                    ttyd::battle_monosiri::battleSetUnitMonosiriFlag(type);
+            }
+        }
+    }
 }
 
 // Displays text associated with the battle condition.
@@ -223,7 +249,8 @@ void ApplyFixedPatches() {
     g_BtlActRec_JudgeRuleKeep_trampoline = patch::hookFunction(
         ttyd::battle_actrecord::BtlActRec_JudgeRuleKeep, []() {
             g_BtlActRec_JudgeRuleKeep_trampoline();
-            // Handle item drops from conditions / ALL_HELD_ITEMS mode.
+            // Handle item drops from conditions / ALL_HELD_ITEMS mode,
+            // as well as marking Tattles in PARTNERS_NEVER mode.
             CheckBattleCondition();
         });
         

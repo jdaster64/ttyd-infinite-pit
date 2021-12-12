@@ -6,6 +6,10 @@
 
 #include <cstdint>
 
+namespace ttyd::battle_unit {
+struct BattleWorkUnit;
+}
+
 namespace ttyd::battle_monosiri {
     
 struct MonosiriMsgEntry {
@@ -22,8 +26,8 @@ static_assert(sizeof(MonosiriMsgEntry) == 0x18);
 extern "C" {
 
 // .text
-// battleSetUnitMonosiriFlag
-// battleCheckUnitMonosiriFlag
+void battleSetUnitMonosiriFlag(int32_t unit_type);
+bool battleCheckUnitMonosiriFlag(ttyd::battle_unit::BattleWorkUnit* unit);
 MonosiriMsgEntry* battleGetUnitMonosiriPtr(int32_t unit_type);
 
 }

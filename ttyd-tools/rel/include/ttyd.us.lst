@@ -108,6 +108,7 @@
 // icondrv.o
 80019120:iconNumberDispGx
 8001a29c:iconGetTexObj
+8001a4bc:iconDispGxCol
 8001a918:iconDispGx
 8001a93c:iconDispGxAlpha
 
@@ -1605,9 +1606,13 @@
 803b5a40:marioAttackEvent_ZubaStar
 
 // sac_genki.o
+// .text
 80245a50:get_score
 8024678c:end_genki
 80248738:main_genki
+// .data
+803b68b8:genki_evt_common
+803b6e1c:status_recover_evt
 
 // sac_common.o
 802489c8:sac_enemy_slide_return

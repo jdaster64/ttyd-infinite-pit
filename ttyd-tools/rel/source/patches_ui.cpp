@@ -145,11 +145,11 @@ void DisplayStarPowerNumber() {
     if (menu_height < 100.f || menu_height > 330.f) return;
     
     gc::mtx34 matrix;
-    int32_t unknown_param = -1;
+    uint32_t color = ~0U;
     int32_t current_AP = ttyd::mario_pouch::pouchGetAP();
     gc::mtx::PSMTXTrans(&matrix, 192.f, menu_height - 100.f, 0.f);
     ttyd::icondrv::iconNumberDispGx(
-        &matrix, current_AP, /* is_small = */ 1, &unknown_param);
+        &matrix, current_AP, /* is_small = */ 1, &color);
 }
 
 // Display the orbs representing the Star Power (replaces the vanilla logic

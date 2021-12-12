@@ -1,5 +1,6 @@
 #include "patches_partner.h"
 
+#include "common_functions.h"
 #include "custom_enemy.h"
 #include "custom_item.h"
 #include "evt_cmd.h"
@@ -8,15 +9,20 @@
 #include "patch.h"
 #include "patches_battle.h"
 
+#include <gc/types.h>
 #include <ttyd/battle.h>
 #include <ttyd/battle_damage.h>
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_event_cmd.h>
+#include <ttyd/battle_monosiri.h>
 #include <ttyd/battle_sub.h>
+#include <ttyd/battle_unit.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
+#include <ttyd/icondrv.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
+#include <ttyd/swdrv.h>
 #include <ttyd/unit_bomzou.h>
 #include <ttyd/unit_koura.h>
 #include <ttyd/unit_party_christine.h>
@@ -30,11 +36,26 @@
 #include <cstdint>
 #include <cstring>
 
+// Assembly patch functions.
+extern "C" {
+    // tattle_disp_patches.s
+    void StartDispTattleStats();
+    void BranchBackDispTattleStats();
+    
+    void dispTattleStats(
+        gc::mtx34* matrix, int32_t number, int32_t is_small, uint32_t* color,
+        ttyd::battle_unit::BattleWorkUnit* unit) {
+        mod::infinite_pit::partner::DisplayTattleStats(
+            matrix, number, is_small, color, unit);
+    }
+}
+
 namespace mod::infinite_pit {
 
 namespace {
 
 using ::ttyd::battle_database_common::BattleWeapon;
+using ::ttyd::battle_unit::BattleWorkUnit;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::evtmgr_cmd::evtGetValue;
 using ::ttyd::evtmgr_cmd::evtSetValue;
@@ -48,6 +69,7 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 extern int32_t (*g__make_madowase_weapon_trampoline)(EvtEntry*, bool);
 extern int32_t (*g_btlevtcmd_get_monosiri_msg_no_trampoline)(EvtEntry*, bool);
 // Patch addresses.
+extern const int32_t g_BattleDrawEnemyHP_DrawEnemyHPText_BH;
 extern const int32_t g_partyNokotarouAttack_KouraGuard_Patch_SetHpFunc;
 extern const int32_t g_koura_pose_tbl_reset_Patch_HeavyDmg;
 extern const int32_t g_koura_pose_tbl_reset_Patch_LightDmg;
@@ -263,6 +285,13 @@ void ApplyFixedPatches() {
     // better than an Excellent + Stylish if successful.
     ttyd::unit_party_christine::partyWeapon_ChristineMonosiri.
         stylish_multiplier = 3;
+
+    // Calls a custom function to display ATK / DEF under HP if a unit has
+    // previously been Tattled (and if it's currently the player's turn to act).
+    mod::patch::writeBranchPair(
+        reinterpret_cast<void*>(g_BattleDrawEnemyHP_DrawEnemyHPText_BH),
+        reinterpret_cast<void*>(StartDispTattleStats),
+        reinterpret_cast<void*>(BranchBackDispTattleStats));
         
     // Set Shell Shield's max HP to 3.
     ttyd::unit_koura::unit_koura.max_hp = 3;
@@ -493,6 +522,43 @@ void ApplyFixedPatches() {
         target_class_flags |= 0x10;
     ttyd::unit_party_vivian::partyWeapon_VivianShadowGuard.
         target_class_flags |= 0x10;
+}
+
+void DisplayTattleStats(
+    gc::mtx34* matrix, int32_t number, int32_t is_small, uint32_t* color,
+    BattleWorkUnit* unit) {
+    // If enemy has been Tattled (Peekaboo does not count) and the player is
+    // selecting an action, display the enemy's ATK and DEF underneath their HP.
+    if (ttyd::swdrv::swGet(0x117a + unit->true_kind) &&
+        (ttyd::battle::g_BattleWork->battle_flags & 0x80)) {
+        int32_t atk, def;
+        // If the enemy's atk and def aren't fetched, just draw HP normally.
+        if (!GetTattleDisplayStats(unit->current_kind, &atk, &def)) {
+            ttyd::icondrv::iconNumberDispGx(matrix, number, is_small, color);
+            return;
+        }
+        atk = Clamp(atk, 0, 99);
+        def = Clamp(def, 0, 99);
+
+        // Undo alignment adjustment the game normally does for small numbers.
+        if (number < 100) matrix->m[0][3] += 4.0f;
+        if (number < 10) matrix->m[0][3] += 4.0f;
+        ttyd::icondrv::iconNumberDispGx(matrix, number, is_small, color);
+        
+        // Draw ATK and DEF numbers.
+        uint32_t color_atk = 0xffa0a0ffU;
+        uint32_t color_def = 0xc0c0ffffU;
+        matrix->m[1][3] -= 20.0f;
+        ttyd::icondrv::iconNumberDispGx(matrix, def, is_small, &color_def);
+        matrix->m[0][3] -= 16.0f * (def > 9 ? 3 : 2) - 4.0f;
+        ttyd::icondrv::iconNumberDispGx(matrix, atk, is_small, &color_atk);
+        // Draw slash in-between ATK and DEF.
+        matrix->m[0][3] += 14.0f;
+        ttyd::icondrv::iconDispGxCol(matrix, 0x10, 0x1e0, color);
+    } else {
+        // Otherwise, just draw HP.
+        ttyd::icondrv::iconNumberDispGx(matrix, number, is_small, color);
+    }
 }
 
 EVT_DEFINE_USER_FUNC(InitializePartyMember) {
