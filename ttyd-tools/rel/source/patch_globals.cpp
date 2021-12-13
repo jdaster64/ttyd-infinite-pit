@@ -293,11 +293,14 @@ extern const int32_t g_crashHandler_Patch_FontScale = 0x80428bc0;
 // JON (Pit of 100 Trials)
 extern const int32_t g_jon_setup_npc_ex_para_FuncOffset = 0x388;
 extern const int32_t g_jon_yattukeFlag_FuncOffset = 0x3e8;
+extern const int32_t g_jon_evt_raster_FuncOffset = 0x500;
 extern const int32_t g_jon_init_evt_MoverSetupHookOffset = 0xeaa0;
 extern const int32_t g_jon_enemy_100_Offset = 0xef90;
 extern const int32_t g_jon_enemy_setup_EvtOffset = 0x102a4;
 extern const int32_t g_jon_evt_open_box_EvtOffset = 0x11348;
 extern const int32_t g_jon_move_evt_EvtOffset = 0x11400;
+extern const int32_t g_jon_talk_idouya_EvtOffset = 0x11698;
+extern const int32_t g_jon_npcEnt_idouya_Offset = 0x118cc;
 extern const int32_t g_jon_talk_gyousyou_MinItemForBadgeDialogOffset = 0x11b1c;
 extern const int32_t g_jon_talk_gyousyou_NoInvSpaceBranchOffset = 0x11c7c;
 extern const int32_t g_jon_gyousyou_setup_CharlietonSpawnChanceOffset = 0x11ea4;

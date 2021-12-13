@@ -67,6 +67,7 @@ namespace MsgKey {
         MSG_JON_KANBAN_1,
         MSG_JON_KANBAN_2,
         MSG_JON_KANBAN_3,
+        MSG_JON_MOVER_SELECT,
         MSG_KAME_NO_NOROI,
         MSG_KIKEN_DE_POWER,
         MSG_KIKEN_DE_POWER_P,
@@ -173,6 +174,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_jon_kanban_1",
     "msg_jon_kanban_2",
     "msg_jon_kanban_3",
+    "msg_jon_mover_select",
     "msg_kame_no_noroi",
     "msg_kiken_de_power",
     "msg_kiken_de_power_p",
@@ -245,6 +247,25 @@ const char* GetStarPowerItemDescription(char* buf, int32_t index) {
         "Allows Mario to use level %" PRId32 "\n"
         "of the move %s.", level, ttyd::msgdrv::msgSearch(name_msg));
     return buf;
+}
+
+const char* GetMoverOptionsString(char* buf) {
+    char* buf_start = buf;
+    int32_t floor = g_Mod->state_.floor_ + 1;
+    int32_t cost = (floor > 90 ? 90 : floor) / 10 + 1;
+    buf += sprintf(buf, 
+        "<select 0 3 0 40>\n"
+        "Down 3 floors:       %" PRId32 " coins", cost * 5);
+    // Don't provide options that allow warping past a Bonetail floor.
+    if (floor % 100 <= 95) {
+        buf += sprintf(buf, 
+            "\nDown 5 floors:       %" PRId32 " coins", cost * 10);
+        if (floor % 100 <= 90) {
+            buf += sprintf(buf, 
+                "\nDown 10 floors:      %" PRId32 " coins", cost * 20);
+        }
+    }
+    return buf_start;
 }
 
 }
@@ -621,6 +642,8 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
                    "Me, <wait 200>I wouldn't trust this guy\n"
                    "personally, Mario, but I guess\n"
                    "if you're desperate...\n<k>";
+        case MsgKey::MSG_JON_MOVER_SELECT:
+            return GetMoverOptionsString(buf);
         case MsgKey::MSG_KURI_MAP:
             return "<keyxon>\nWe're in the Infinite Pit,\n"
                    "an endless series of trials\n"

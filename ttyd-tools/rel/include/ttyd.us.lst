@@ -561,6 +561,7 @@
 8007a50c:evt_bero_get_info
 8007a9c0:evt_bero_exec_wait
 8007aa34:evt_bero_exec_onoff
+8007aad0:evt_bero_mapchange
 // .data
 80416060:default_entevt
 80416074:default_outevt
@@ -1173,6 +1174,19 @@
 8012b8cc:evt_btl_camera_set_moveSpeedLv
 8012bfd0:evt_btl_camera_set_mode
 8012c0ac:evt_btl_camera_set_prilimit
+
+// evt_fade.o
+80135b44:evt_fade_reset
+80135b74:evt_fade_softfocus_onoff
+80135bb4:evt_fade_tec_onoff
+80135c38:evt_fade_set_mapchange_type
+80135d3c:evt_fade_set_anim_virtual_pos
+80135dc0:evt_fade_set_anim_ofs_pos
+80135e28:evt_fade_set_spot_pos
+80135fa4:evt_fade_end_wait
+80135fdc:evt_fade_entry
+80136080:evt_fade_out
+801360ec:evt_fade_in
 
 // statuswindow.o
 // .text

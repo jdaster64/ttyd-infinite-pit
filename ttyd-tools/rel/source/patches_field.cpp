@@ -20,6 +20,7 @@
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_cam.h>
 #include <ttyd/evt_eff.h>
+#include <ttyd/evt_fade.h>
 #include <ttyd/evt_item.h>
 #include <ttyd/evt_map.h>
 #include <ttyd/evt_mario.h>
@@ -77,11 +78,14 @@ extern const int32_t g_select_disp_Patch_PitItemPriceHook;
 extern const int32_t g_getBadgeBottakuru100TableMaxCount_Patch_ShopSize;
 extern const int32_t g_jon_setup_npc_ex_para_FuncOffset;
 extern const int32_t g_jon_yattukeFlag_FuncOffset;
+extern const int32_t g_jon_evt_raster_FuncOffset;
 extern const int32_t g_jon_init_evt_MoverSetupHookOffset;
 extern const int32_t g_jon_enemy_100_Offset;
 extern const int32_t g_jon_enemy_setup_EvtOffset;
 extern const int32_t g_jon_evt_open_box_EvtOffset;
 extern const int32_t g_jon_move_evt_EvtOffset;
+extern const int32_t g_jon_talk_idouya_EvtOffset;
+extern const int32_t g_jon_npcEnt_idouya_Offset;
 extern const int32_t g_jon_talk_gyousyou_MinItemForBadgeDialogOffset;
 extern const int32_t g_jon_talk_gyousyou_NoInvSpaceBranchOffset;
 extern const int32_t g_jon_gyousyou_setup_CharlietonSpawnChanceOffset;
@@ -113,6 +117,8 @@ const char kRedChompName[] =
 const char kBonetailName[] = "\x83\x5d\x83\x93\x83\x6f\x83\x6f";
 const char kChetRippoName[] =
     "\x83\x70\x83\x8f\x81\x5b\x83\x5f\x83\x45\x83\x93\x89\xae";
+const char kMoverName[] = "\x88\xda\x93\xae\x89\xae";
+const char kMoverTribeName[] = "\x83\x76\x83\x6a\x8f\xee\x95\xf1\x89\xae";
 
 ttyd::npcdrv::NpcSetupInfo g_ChetRippoNpcSetupInfo[2];
     
@@ -128,10 +134,12 @@ EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 1)
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
 EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
 EVT_DECLARE_USER_FUNC(CheckChetRippoSpawn, 1)
+EVT_DECLARE_USER_FUNC(CheckMoverSpawn, 1)
 EVT_DECLARE_USER_FUNC(CheckAnyStatsDowngradeable, 1)
 EVT_DECLARE_USER_FUNC(CheckStatDowngradeable, 2)
 EVT_DECLARE_USER_FUNC(DowngradeStat, 1)
 EVT_DECLARE_USER_FUNC(TrackChetRippoSellActionType, 1)
+EVT_DECLARE_USER_FUNC(GetMoverSelectionParams, 5)
 
 // Event that plays "get partner" fanfare.
 EVT_BEGIN(PartnerFanfareEvt)
@@ -290,6 +298,11 @@ EVT_END()
 
 // Event that sets up a Pit enemy NPC, and opens a pipe when it is defeated.
 EVT_BEGIN(EnemyNpcSetupEvt)
+USER_FUNC(ttyd::evt_npc::evt_npc_check, PTR(kMoverName), LW(0))
+IF_EQUAL(LW(0), 1)
+    // Don't spawn an enemy if there's a Mover on this floor.
+    RETURN()
+END_IF()
 SET(LW(0), GSW(1321))
 ADD(LW(0), 1)
 IF_NOT_EQUAL(LW(0), 100)
@@ -564,8 +577,46 @@ USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
 RETURN()
 EVT_END()
 
-// Chet Rippo NPC spawning event.
-EVT_BEGIN(ChetRippoSetupEvt)
+// Mover NPC talking event.
+EVT_BEGIN(MoverTalkEvt)
+USER_FUNC(ttyd::evt_msg::evt_msg_print, 0, PTR("msg_jon_mover"), 0, 0)
+USER_FUNC(ttyd::evt_msg::evt_msg_select, 0, PTR("msg_jon_mover_select"))
+// If window cancelled, end conversation.
+IF_EQUAL(LW(0), 3)
+    USER_FUNC(ttyd::evt_msg::evt_msg_continue)
+    RETURN()
+END_IF()
+// LW(1) = coin cost, LW(2) = floors to skip, LW(3) = map, LW(4) = bero.
+USER_FUNC(GetMoverSelectionParams, LW(0), LW(1), LW(2), LW(3), LW(4))
+USER_FUNC(ttyd::evt_pouch::evt_pouch_get_coin, LW(5))
+IF_SMALL(LW(5), LW(1))
+    USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("msg_jon_mover_nocoin"))
+    RETURN()
+END_IF()
+MUL(LW(1), -1)
+USER_FUNC(ttyd::evt_pouch::evt_pouch_add_coin, LW(1))
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 1, PTR("<scrl_auto><once_stop>"))
+USER_FUNC(ttyd::evt_msg::evt_msg_print_add, 0, PTR("msg_jon_mover_2"))
+INLINE_EVT()
+    UNCHECKED_USER_FUNC(REL_PTR(ModuleId::JON, g_jon_evt_raster_FuncOffset))
+END_INLINE()
+WAIT_MSEC(5000)
+USER_FUNC(ttyd::evt_fade::evt_fade_set_mapchange_type, 0, 10, 300, 9, 300)
+USER_FUNC(ttyd::evt_fade::evt_fade_set_mapchange_type, 1, 10, 300, 9, 300)
+USER_FUNC(ttyd::evt_mario::evt_mario_goodbye_party, 0)
+USER_FUNC(IncrementInfinitePitFloor, LW(2))
+USER_FUNC(ttyd::evt_bero::evt_bero_mapchange, LW(3), LW(4))
+RETURN()
+EVT_END()
+
+// Wrapper for Charlieton full-inventory event.
+EVT_BEGIN(MoverTalkEvtHook)
+RUN_CHILD_EVT(MoverTalkEvt)
+RETURN()
+EVT_END()
+
+// Chet Rippo / Mover NPC spawning event.
+EVT_BEGIN(ChetRippoMoverSetupEvt)
 USER_FUNC(CheckChetRippoSpawn, LW(0))
 IF_EQUAL(LW(0), 1)
     USER_FUNC(
@@ -575,6 +626,17 @@ IF_EQUAL(LW(0), 1)
     USER_FUNC(ttyd::evt_npc::evt_npc_setup, PTR(g_ChetRippoNpcSetupInfo))
     USER_FUNC(ttyd::evt_npc::evt_npc_set_position,
         PTR(kChetRippoName), -160, 0, 110)
+END_IF()
+USER_FUNC(CheckMoverSpawn, LW(0))
+IF_EQUAL(LW(0), 1)
+    USER_FUNC(
+        ttyd::evt_npc::evt_npc_entry, PTR(kMoverName), PTR("c_pjoho"))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_tribe,
+        PTR(kMoverName), PTR(kMoverTribeName))
+    USER_FUNC(ttyd::evt_npc::evt_npc_setup, 
+        REL_PTR(ModuleId::JON, g_jon_npcEnt_idouya_Offset))
+    USER_FUNC(ttyd::evt_npc::evt_npc_set_position,
+        PTR(kMoverName), -100, 0, 0)
 END_IF()
 RETURN()
 EVT_PATCH_END()
@@ -852,7 +914,8 @@ EVT_DEFINE_USER_FUNC(IncrementInfinitePitFloor) {
     if (inc > 1) {
         // If more than one floor incremented, a Mover must have been used.
         g_Mod->state_.ChangeOption(STAT_MOVERS_USED, 1);
-        // Track how many battles were skipped (don't include chest floors).
+        // Track how many battles were skipped by taking a Mover.
+        // Ignore the current floor, as well as a rest floor if one was passed.
         int32_t skipped_battles = inc - 1;
         if (actual_floor % 10 < inc) --skipped_battles;
         g_Mod->state_.ChangeOption(STAT_BATTLES_SKIPPED, skipped_battles);
@@ -908,6 +971,44 @@ EVT_DEFINE_USER_FUNC(CheckChetRippoSpawn) {
         }
     }
     evtSetValue(evt, evt->evtArguments[0], can_spawn);
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(CheckMoverSpawn) {
+    // Default to assuming a Mover will not spawn.
+    evtSetValue(evt, evt->evtArguments[0], false);
+    
+    // If Movers are disabled, they cannot spawn.
+    if (!g_Mod->state_.GetOptionNumericValue(OPT_MOVERS_ENABLED)) return 2;
+    
+    uint32_t floor = g_Mod->state_.floor_ + 1;
+    // Cannot spawn on rest floors.
+    if (floor % 10 == 0) return 2;
+    // Cannot spawn < floor 30 (so you're forced to have a partner, if enabled).
+    if (floor < 30) return 2;
+    // Cannot spawn on Atomic Boo's floor (he can still be skipped, though).
+    if (floor % 100 == 49) return 2;
+    // Cannot spawn if even the cheapest warp would skip Bonetail.
+    // (custom_strings ensures that no options appear that would skip Bonetail).
+    if (floor % 100 > 97) return 2;
+    
+    // Assuming all other criteria are met, spawn Movers 10% of the time, unless
+    // naive RNG checks of the previous 5 floors show that one would've spawned.
+    // This should make Movers appear on ~5% of eligible floors, similar to
+    // TTYD, without allowing them to appear in quick succession if skipped.
+    
+    // Failed the RNG check for this floor.
+    if (g_Mod->state_.Rand(100, RNG_MOVER) >= 10) return 2;
+    for (int32_t i = 0; i < 5; ++i) {
+        if (g_Mod->state_.Rand(100, RNG_MOVER) < 10) {
+            // Passed the RNG check for a recent prior floor.
+            return 2;
+        }
+    }
+
+    // A Mover should spawn; mark one battle skipped automatically (this floor).
+    evtSetValue(evt, evt->evtArguments[0], true);
+    g_Mod->state_.ChangeOption(STAT_BATTLES_SKIPPED, 1);
     return 2;
 }
 
@@ -974,6 +1075,62 @@ EVT_DEFINE_USER_FUNC(TrackChetRippoSellActionType) {
         case 1:     g_Mod->state_.ChangeOption(STAT_BADGES_SOLD);   break;
         case 2:     g_Mod->state_.ChangeOption(STAT_LEVELS_SOLD);   break;
     }
+    return 2;
+}
+
+// Gets the coin cost, floors skipped, and warp destination for a Mover option.
+EVT_DEFINE_USER_FUNC(GetMoverSelectionParams) {
+    int32_t floor = g_Mod->state_.floor_ + 1;
+    int32_t cost = (floor > 90 ? 90 : floor) / 10 + 1;
+    int32_t floors_to_increment = 0;
+    
+    switch (evtGetValue(evt, evt->evtArguments[0])) {
+        case 0: {
+            cost *= 5;
+            floors_to_increment = 3;
+            break;
+        }
+        case 1: {
+            cost *= 10;
+            floors_to_increment = 5;
+            break;
+        }
+        case 2: {
+            cost *= 20;
+            floors_to_increment = 10;
+            break;
+        }
+        // Should not be reached.
+        default: return 2;
+    }
+    
+    // Determine which floor to warp to based on the destination floor.
+    const char* map;
+    floor += floors_to_increment;
+    if (floor % 10) {
+        if (floor < 50) {
+            map = "jon_00";
+        } else if (floor < 80) {
+            map = "jon_01";
+        } else {
+            map = "jon_02";
+        }
+    } else {
+        if (floor < 50) {
+            map = "jon_03";
+        } else if (floor < 80) {
+            map = "jon_04";
+        } else if (floor % 100) {
+            map = "jon_05";
+        } else {
+            map = "jon_06";
+        }
+    }
+    
+    evtSetValue(evt, evt->evtArguments[1], cost);
+    evtSetValue(evt, evt->evtArguments[2], floors_to_increment);
+    evtSetValue(evt, evt->evtArguments[3], PTR(map));
+    evtSetValue(evt, evt->evtArguments[4], PTR("dokan_2"));
     return 2;
 }
 
@@ -1089,24 +1246,30 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
             module_start + g_jon_talk_gyousyou_MinItemForBadgeDialogOffset),
             1000);
         
-    // Make Charlieton always spawn, and Movers never spawn.
+    // Make Charlieton always spawn.
     mod::patch::writePatch(
         reinterpret_cast<void*>(
             module_start + g_jon_gyousyou_setup_CharlietonSpawnChanceOffset),
             1000);
             
-    // Spawn Chet Rippo NPC.
+    // Set Chet Rippo NPC information.
     memset(&g_ChetRippoNpcSetupInfo, 0, sizeof(g_ChetRippoNpcSetupInfo));
     g_ChetRippoNpcSetupInfo[0].nameJp = kChetRippoName;
     g_ChetRippoNpcSetupInfo[0].flags = 0x10000600;
     g_ChetRippoNpcSetupInfo[0].regularEvtCode = nullptr;
     g_ChetRippoNpcSetupInfo[0].talkEvtCode =
         const_cast<int32_t*>(ChetRippoTalkEvt);
-    // Hook Chet Rippo setup function in place of Mover event call.
+    // Replace call to vanilla Mover init event with call to custom
+    // Chet Rippo / Mover setup function.
     mod::patch::writePatch(
         reinterpret_cast<void*>(
             module_start + g_jon_init_evt_MoverSetupHookOffset),
-        reinterpret_cast<int32_t>(ChetRippoSetupEvt));
+        reinterpret_cast<int32_t>(ChetRippoMoverSetupEvt));
+    // Patch Mover NPC talk hook event on top of the vanilla Mover talk event.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            module_start + g_jon_talk_idouya_EvtOffset),
+        MoverTalkEvtHook, sizeof(MoverTalkEvtHook));
     
     // If normal fight floor, reset Pit-related flags and save-related status.
     if (state.floor_ % 10 != 9) {
@@ -1164,6 +1327,10 @@ void LinkCustomEvts(void* module_ptr, ModuleId::e module_id, bool link) {
             module_id, module_ptr, const_cast<int32_t*>(EnemyNpcSetupEvt));
         LinkCustomEvt(
             module_id, module_ptr, const_cast<int32_t*>(CharlietonInvFullEvt));
+        LinkCustomEvt(
+            module_id, module_ptr, const_cast<int32_t*>(ChetRippoMoverSetupEvt));
+        LinkCustomEvt(
+            module_id, module_ptr, const_cast<int32_t*>(MoverTalkEvt));
     } else {
         UnlinkCustomEvt(
             module_id, module_ptr, const_cast<int32_t*>(BossSetupEvt));
@@ -1171,6 +1338,10 @@ void LinkCustomEvts(void* module_ptr, ModuleId::e module_id, bool link) {
             module_id, module_ptr, const_cast<int32_t*>(EnemyNpcSetupEvt));
         UnlinkCustomEvt(
             module_id, module_ptr, const_cast<int32_t*>(CharlietonInvFullEvt));
+        UnlinkCustomEvt(
+            module_id, module_ptr, const_cast<int32_t*>(ChetRippoMoverSetupEvt));
+        UnlinkCustomEvt(
+            module_id, module_ptr, const_cast<int32_t*>(MoverTalkEvt));
     }
 }
 
