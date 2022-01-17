@@ -67,9 +67,10 @@ void AchievementsManager::Update() {
     }
     
     // Check to see if the player has received all unique chest rewards.
-    const int32_t num_rewards =
-        CountSetBits(state.reward_flags_) +
-        CountSetBits(state.star_power_levels_) - 2;
+    int32_t num_rewards = CountSetBits(state.reward_flags_) - 2;
+    for (int32_t i = 0; i < 8; ++i) {
+        num_rewards += state.GetStarPowerLevel(i);
+    }
     const int32_t total_rewards =
         state.CheckOptionValue(OPTVAL_PARTNERS_NEVER) ? 39 : 46;
     if (num_rewards == total_rewards) GetAchievement(kChestRewardItem);
