@@ -140,6 +140,8 @@ EVT_DECLARE_USER_FUNC(CheckStatDowngradeable, 2)
 EVT_DECLARE_USER_FUNC(DowngradeStat, 1)
 EVT_DECLARE_USER_FUNC(TrackChetRippoSellActionType, 1)
 EVT_DECLARE_USER_FUNC(GetMoverSelectionParams, 5)
+EVT_DECLARE_USER_FUNC(GetExitBeroName, 1)
+EVT_DECLARE_USER_FUNC(UpdateExitDestinationImpl, 1)
 
 // Event that plays "get partner" fanfare.
 EVT_BEGIN(PartnerFanfareEvt)
@@ -708,6 +710,16 @@ USER_FUNC(ttyd::battle_camera::evt_btl_camera_set_moveSpeedLv, 0, 3)
 RETURN()
 EVT_END()
 
+// Updates a floor's exit destination to be consistent with the floor number.
+EVT_BEGIN(UpdateExitDestinationEvt)
+USER_FUNC(GetExitBeroName, LW(0))
+RUN_CHILD_EVT(ttyd::evt_bero::bero_case_switch_off)
+USER_FUNC(GetExitBeroName, LW(0))
+USER_FUNC(UpdateExitDestinationImpl, LW(0))
+RUN_CHILD_EVT(ttyd::evt_bero::bero_case_switch_on)
+RETURN()
+EVT_END()
+
 // Fetches information required for dynamically spawning an enemy NPC,
 // such as the model name, battle id, and initial position.
 EVT_DEFINE_USER_FUNC(GetEnemyNpcInfo) {
@@ -1078,6 +1090,31 @@ EVT_DEFINE_USER_FUNC(TrackChetRippoSellActionType) {
     return 2;
 }
 
+// Returns the name of the map used for a given floor (one-indexed).
+const char* GetFloorMapName(int32_t floor) {
+    const char* map;
+    if (floor % 10) {
+        if (floor < 50) {
+            map = "jon_00";
+        } else if (floor < 80) {
+            map = "jon_01";
+        } else {
+            map = "jon_02";
+        }
+    } else {
+        if (floor < 50) {
+            map = "jon_03";
+        } else if (floor < 80) {
+            map = "jon_04";
+        } else if (floor % 100) {
+            map = "jon_05";
+        } else {
+            map = "jon_06";
+        }
+    }
+    return map;
+}
+
 // Gets the coin cost, floors skipped, and warp destination for a Mover option.
 EVT_DEFINE_USER_FUNC(GetMoverSelectionParams) {
     int32_t floor = g_Mod->state_.floor_ + 1;
@@ -1105,32 +1142,45 @@ EVT_DEFINE_USER_FUNC(GetMoverSelectionParams) {
     }
     
     // Determine which floor to warp to based on the destination floor.
-    const char* map;
-    floor += floors_to_increment;
-    if (floor % 10) {
-        if (floor < 50) {
-            map = "jon_00";
-        } else if (floor < 80) {
-            map = "jon_01";
-        } else {
-            map = "jon_02";
-        }
-    } else {
-        if (floor < 50) {
-            map = "jon_03";
-        } else if (floor < 80) {
-            map = "jon_04";
-        } else if (floor % 100) {
-            map = "jon_05";
-        } else {
-            map = "jon_06";
-        }
-    }
+    const char* map = GetFloorMapName(floor + floors_to_increment);
     
     evtSetValue(evt, evt->evtArguments[1], cost);
     evtSetValue(evt, evt->evtArguments[2], floors_to_increment);
     evtSetValue(evt, evt->evtArguments[3], PTR(map));
     evtSetValue(evt, evt->evtArguments[4], PTR("dokan_2"));
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(GetExitBeroName) {
+    // Get the name of the exit loading zone for the current map.
+    // (Chest floors' exits use a different name from others).
+    const char* exit_bero = "dokan_1";
+    const char* current_map = GetCurrentMap();
+    if (!strcmp(current_map, "jon_03") || !strcmp(current_map, "jon_04") ||
+        !strcmp(current_map, "jon_05")) {
+        exit_bero = "dokan_3";
+    }
+    evtSetValue(evt, evt->evtArguments[0], PTR(exit_bero));
+    return 2;
+}
+
+EVT_DEFINE_USER_FUNC(UpdateExitDestinationImpl)  {
+    const char* exit_bero =
+        reinterpret_cast<const char*>(evtGetValue(evt, evt->evtArguments[0]));
+        
+    // Get the correct map name for the next floor number.
+    int32_t floor = g_Mod->state_.floor_ + 1;
+    const char* next_map = GetFloorMapName(floor + 1);
+    
+    // Update the destination of the exit loading zone to match the floor.
+    BeroEntry** entries = ttyd::evt_bero::BeroINFOARR;
+    for (int32_t i = 0; i < 16; ++i) {
+        if (entries[i] && !strcmp(entries[i]->name, exit_bero)) {
+            entries[i]->target_map = next_map;
+            entries[i]->target_bero = "dokan_2";
+            break;
+        }
+    }
     return 2;
 }
 
@@ -1343,6 +1393,10 @@ void LinkCustomEvts(void* module_ptr, ModuleId::e module_id, bool link) {
         UnlinkCustomEvt(
             module_id, module_ptr, const_cast<int32_t*>(MoverTalkEvt));
     }
+}
+
+void UpdateExitDestination() {
+    ttyd::evtmgr::evtEntry(const_cast<int32_t*>(UpdateExitDestinationEvt), 0, 0);
 }
 
 }  // namespace field

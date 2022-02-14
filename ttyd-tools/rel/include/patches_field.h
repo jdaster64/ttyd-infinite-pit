@@ -16,4 +16,8 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id);
 // Unlinks if `link` = false.
 void LinkCustomEvts(void* module_ptr, ModuleId::e module_id, bool link);
 
+// Updates the destination of the current floor's exit pipe to be consistent
+// with a change in floor number.
+void UpdateExitDestination();
+
 }

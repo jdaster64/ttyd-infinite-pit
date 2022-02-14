@@ -591,6 +591,8 @@
 8030ec7c:evt_bero_info_run
 8030f060:evt_bero_initial_pos
 8030f2d8:evt_bero_mario_enter
+// .bss
+803dc110:BeroINFOARR
 
 // windowdrv.o
 // 8007AD30:getWakuTexObj

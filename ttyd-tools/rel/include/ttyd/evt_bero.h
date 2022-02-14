@@ -113,6 +113,9 @@ extern int32_t evt_bero_info_run[1];
 extern int32_t evt_bero_initial_pos[1];
 extern int32_t evt_bero_mario_enter[1];
 
+// .bss
+extern BeroEntry* BeroINFOARR[16];
+
 }
 
 }

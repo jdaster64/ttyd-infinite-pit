@@ -6,6 +6,7 @@
 #include "custom_enemy.h"
 #include "mod.h"
 #include "mod_state.h"
+#include "patches_field.h"
 
 #include <ttyd/battle_database_common.h>
 #include <ttyd/battle_monosiri.h>
@@ -210,6 +211,7 @@ void DebugManager::Update() {
             dir = -1;       
         } else if (button_trg & ButtonId::Y) {
             g_Mod->state_.floor_ = g_CursorPos;
+            field::UpdateExitDestination();
             g_DebugMode = DEBUG_OFF;
             return;
         }
@@ -273,8 +275,7 @@ void DebugManager::Draw() {
             "Set Current Floor",
             0, -20, 0xFFu, true, 0xFFFFFFFFu, 0.7f, black_alpha, 10, 7);
         DrawText(
-            "Warning: don't change floor to/from a number\n"
-            "ending in 9 or 0 unless you know what you're doing!",
+            "Warning: don't change floor during a warp transition!",
             0, -90, 0xFFu, true, ~0U, 0.6f, /* top-middle */ 1);
     }
     
