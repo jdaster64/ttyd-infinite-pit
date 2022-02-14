@@ -1017,8 +1017,10 @@
 801056f4:btlevtcmd_GetItemRecoverParam
 80106bb8:btlevtcmd_AnimeChangePose
 8010749c:btlevtcmd_AudienceDeclareACResult
+80107694:btlevtcmd_ResultACDefence
 8010a26c:btlevtcmd_StartWaitEvent
 8010a78c:btlevtcmd_CheckDamage
+8010abac:btlevtcmd_PreCheckDamage
 8010af58:btlevtcmd_ConsumeItem
 8010b3d4:btlevtcmd_GetConsumeItem
 8010b490:btlevtcmd_GetSelectNextEnemy
@@ -1030,6 +1032,7 @@
 8010ddac:btlevtcmd_CheckToken
 8010e4bc:btlevtcmd_ResetFaceDirection
 8010ef44:btlevtcmd_CheckSpace
+8010f200:btlevtcmd_StartAvoid
 8010ff74:btlevtcmd_SetHp
 801124f8:btlevtcmd_GetHomePos
 80112fcc:btlevtcmd_SetPos

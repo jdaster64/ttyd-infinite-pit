@@ -99,7 +99,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_AudienceDeclareACResult, 2)
 // btlevtcmd_GetResultACDefence
 // btlevtcmd_GetResultPrizeLv
 // btlevtcmd_GetResultAC
-// btlevtcmd_ResultACDefence
+EVT_DECLARE_USER_FUNC(btlevtcmd_ResultACDefence, 2)
 // btlevtcmd_ResultAC
 // btlevtcmd_StopAC
 // btlevtcmd_StartAC
@@ -148,7 +148,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_CheckDamage, 6)
 // btlevtcmd_CommandPreCheckCounter
 // btlevtcmd_PreCheckCounter
 // btlevtcmd_CommandPreCheckDamage
-// btlevtcmd_PreCheckDamage
+EVT_DECLARE_USER_FUNC(btlevtcmd_PreCheckDamage, 6)
 // btlevtcmd_AttackDeclareAll
 // btlevtcmd_AttackDeclare
 // btlevtcmd_ConsumeItemReserve
@@ -218,7 +218,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_ResetFaceDirection, 1)
 EVT_DECLARE_USER_FUNC(btlevtcmd_CheckSpace, 8)
 // btlevtcmd_CheckDamagePattern
 // btlevtcmd_RunHitEventDirect
-// btlevtcmd_StartAvoid
+EVT_DECLARE_USER_FUNC(btlevtcmd_StartAvoid, 2)
 // btlevtcmd_CheckDamageCode
 // btlevtcmd_GetDamageCode
 // btlevtcmd_GetTotalDamage

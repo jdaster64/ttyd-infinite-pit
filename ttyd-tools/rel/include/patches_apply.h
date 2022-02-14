@@ -46,6 +46,7 @@ inline void ApplyAllModuleLevelPatches(void* module_ptr, ModuleId::e module_id) 
 // Links / unlinks all custom events that rely on code in TTYD's modules.
 // Unlinks if `link` = false.
 inline void LinkAllCustomEvts(void* module_ptr, ModuleId::e module_id, bool link) {
+    enemy_fix::LinkCustomEvts(module_ptr, module_id, link);
     field::LinkCustomEvts(module_ptr, module_id, link);
 }
 

@@ -1,5 +1,6 @@
 #include "patches_enemy_fix.h"
 
+#include "common_functions.h"
 #include "common_types.h"
 #include "evt_cmd.h"
 #include "mod.h"
@@ -104,6 +105,8 @@ extern const int32_t g_jon_EliteWizzerdGaleForceDeathEvt_PatchOffset;
 extern const int32_t g_jon_BadgeBanditAttackEvt_CheckConfusionOffset;
 extern const int32_t g_jon_PiderGaleForceDeathEvt_PatchOffset;
 extern const int32_t g_jon_ArantulaGaleForceDeathEvt_PatchOffset;
+extern const int32_t g_custom_AtomicBoo_BreathWeapon_Offset;
+extern const int32_t g_custom_AtomicBooBreathSubEvt_Offset;
 extern const int32_t g_custom_HammerBrosAttackEvt_CheckHpOffset;
 extern const int32_t g_custom_BoomerangBrosAttackEvt_CheckHpOffset;
 extern const int32_t g_custom_FireBrosAttackEvt_CheckHpOffset;
@@ -139,6 +142,90 @@ DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
 DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
 EVT_PATCH_END()
 static_assert(sizeof(GaleForceKillPatch) == 0x38);
+
+// Modified Atomic Boo breath event that checks for both characters' guards.
+EVT_BEGIN(AtomicBooBreathSubEvt)
+
+USER_FUNC(
+    ttyd::battle_event_cmd::btlevtcmd_PreCheckDamage, -2, LW(3), LW(4),
+    REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset), 0, LW(5))
+SWITCH(LW(5))
+    CASE_OR(4)
+        GOTO(90)
+        CASE_END()
+    CASE_EQUAL(3)
+        USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StartAvoid, LW(3), 38)
+        GOTO(90)
+        CASE_END()
+    CASE_EQUAL(6)
+        USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StartAvoid, LW(3), 39)
+        GOTO(90)
+        CASE_END()
+    CASE_EQUAL(2)
+        USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_StartAvoid, LW(3), 40)
+        GOTO(90)
+        CASE_END()
+    CASE_EQUAL(1)
+        GOTO(91)
+        CASE_END()
+    CASE_ETC()
+        GOTO(98)  // This is what it does in the original script?
+        CASE_END()
+END_SWITCH()
+LBL(90)
+    GOTO(99)
+LBL(91)
+    // Use a random variable not used in the Pit to track how many checks have
+    // taken place; just setting this here could cause race-condition issues,
+    // but for this particular attack hits happen ~simultaneously for all
+    // targets so it shouldn't be an issue.
+    SET(GSW(821), 0)
+    
+    WAIT_FRM(15)
+    IF_SMALL(GSW(821), 1)
+        USER_FUNC(
+            ttyd::battle_event_cmd::btlevtcmd_ResultACDefence, LW(3),
+            REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset))
+        SET(GSW(821), 1)
+    END_IF()
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_CheckDamage, -2, LW(3), LW(4),
+        REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset),
+        0, LW(5))
+        
+    WAIT_FRM(30)
+    IF_SMALL(GSW(821), 2)
+        USER_FUNC(
+            ttyd::battle_event_cmd::btlevtcmd_ResultACDefence, LW(3),
+            REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset))
+        SET(GSW(821), 2)
+    END_IF()
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_CheckDamage, -2, LW(3), LW(4),
+        REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset),
+        0, LW(5))
+    
+    WAIT_FRM(30)
+    IF_SMALL(GSW(821), 3)
+        USER_FUNC(
+            ttyd::battle_event_cmd::btlevtcmd_ResultACDefence, LW(3),
+            REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset))
+        SET(GSW(821), 3)
+    END_IF()
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_CheckDamage, -2, LW(3), LW(4),
+        REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset),
+        0, LW(5))
+        
+LBL(99)
+RETURN()
+EVT_END()
+
+// Wrapper for modified Atomic Boo breath event.
+EVT_BEGIN(AtomicBooBreathSubEvtHook)
+RUN_CHILD_EVT(AtomicBooBreathSubEvt)
+RETURN()
+EVT_END()
 
 // A fragment of an event to patch over Hammer/Boomerang/Fire Bros.' HP checks.
 const int32_t HammerBrosHpCheck[] = {
@@ -375,6 +462,12 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
                 module_start +
                 g_jon_DarkKoopatrolAttackEvt_NormalAttackReturnLblOffset), 98);
     } else if (module_id == ModuleId::CUSTOM) {
+        // Custom logic for Atomic Boo's breath attack that allows guards with
+        // both characters at once.
+        mod::patch::writePatch(
+            reinterpret_cast<void*>(
+                module_start + g_custom_AtomicBooBreathSubEvt_Offset),
+            AtomicBooBreathSubEvtHook, sizeof(AtomicBooBreathSubEvtHook));
         // Patch over Hammer, Boomerang, and Fire Bros.' HP checks.
         mod::patch::writePatch(
             reinterpret_cast<void*>(
@@ -469,6 +562,18 @@ void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
             reinterpret_cast<void*>(
                 module_start + g_custom_GrnMagikoopa_DefenseOffset),
             kDefenseArr, sizeof(kDefenseArr));
+    }
+}
+
+void LinkCustomEvts(void* module_ptr, ModuleId::e module_id, bool link) {
+    if (module_id != ModuleId::CUSTOM || !module_ptr) return;
+    
+    if (link) {
+        LinkCustomEvt(
+            module_id, module_ptr, const_cast<int32_t*>(AtomicBooBreathSubEvt));
+    } else {
+        UnlinkCustomEvt(
+            module_id, module_ptr, const_cast<int32_t*>(AtomicBooBreathSubEvt));
     }
 }
 
