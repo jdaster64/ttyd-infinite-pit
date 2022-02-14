@@ -52,7 +52,7 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
 bool LoadFromPreviousVersion(StateManager_v2* state) {
     void* saved_state = GetSavedStateLocation();
     uint8_t version = *reinterpret_cast<uint8_t*>(saved_state);
-    if (version != 4 && version != 5) {
+    if (version < 4 || version > 6) {
         // Version is incompatible with the current version; fail to load.
         return false;
     }
@@ -67,7 +67,7 @@ bool LoadFromPreviousVersion(StateManager_v2* state) {
         state->SetOption(OPT_DISABLE_CHEST_HEAL, 1);
     }
     // Force version to current.
-    state->version_ = 5;
+    state->version_ = 6;
     InitPartyMaxHpTable(state->partner_upgrades_);
     
     // If playing Mario-alone, make sure all "P" variants of collected Mario
@@ -122,7 +122,7 @@ bool StateManager_v2::Load(bool new_save) {
     uint32_t cosmetic_options = option_flags_[3];
     
     memset(this, 0, sizeof(StateManager_v2));
-    version_ = 5;
+    version_ = 6;
     SetDefaultOptions();
     option_flags_[3] = cosmetic_options;
     InitPartyMaxHpTable(partner_upgrades_);
@@ -459,6 +459,9 @@ void StateManager_v2::GetOptionStrings(
         case OPT_MOVERS_ENABLED: {
             strcpy(name_buf, "Mover appearance:");          break;
         }
+        case OPT_FIRST_PARTNER: {
+            strcpy(name_buf, "Pick first partner:");        break;
+        }
         case OPTNUM_ENEMY_HP: {
             strcpy(name_buf, "Enemy HP multiplier:");       break;
         }
@@ -527,7 +530,14 @@ void StateManager_v2::GetOptionStrings(
             strcpy(value_buf, "Start with one");        return;
         }
         case OPTVAL_PARTNERS_NEVER: {
-            strcpy(value_buf, "Never");                 return;
+            // If a 'first partner' is selected, rather than disabling them
+            // entirely, start with that one and never receive any others.
+            if (GetOptionNumericValue(OPT_FIRST_PARTNER)) {
+                strcpy(value_buf, "Only starter");
+            } else {
+                strcpy(value_buf, "Never");
+            }
+            return;
         }
         case OPTVAL_PARTNER_RANK_NORMAL: {
             strcpy(value_buf, "Normal");                return;
@@ -604,6 +614,30 @@ void StateManager_v2::GetOptionStrings(
         case OPTVAL_CHET_RIPPO_GUARANTEE: {
             strcpy(value_buf, "Guaranteed");            return;
         }
+        case OPTVAL_NONE_FIRST: {
+            strcpy(value_buf, "Default");               return;
+        }
+        case OPTVAL_GOOMBELLA_FIRST: {
+            strcpy(value_buf, "Goombella");             return;
+        }
+        case OPTVAL_KOOPS_FIRST: {
+            strcpy(value_buf, "Koops");                 return;
+        }
+        case OPTVAL_FLURRIE_FIRST: {
+            strcpy(value_buf, "Flurrie");               return;
+        }
+        case OPTVAL_YOSHI_FIRST: {
+            strcpy(value_buf, "Yoshi");                 return;
+        }
+        case OPTVAL_VIVIAN_FIRST: {
+            strcpy(value_buf, "Vivian");                return;
+        }
+        case OPTVAL_BOBBERY_FIRST: {
+            strcpy(value_buf, "Bobbery");               return;
+        }
+        case OPTVAL_MS_MOWZ_FIRST: {
+            strcpy(value_buf, "Ms. Mowz");              return;
+        }
     }
     // Options with special formatting.
     switch (option) {
@@ -651,7 +685,7 @@ void StateManager_v2::GetOptionStrings(
 }
 
 const char* StateManager_v2::GetEncodedOptions() const {
-    static char enc_options[18];
+    static char enc_options[19];
 
     uint64_t numeric_options = GetOptionValue(OPTNUM_ENEMY_HP);
     numeric_options <<= 12;
@@ -668,21 +702,21 @@ const char* StateManager_v2::GetEncodedOptions() const {
     flag_options |= (option_flags_[0] ^ 0x4000);
     
     // Convert to a base-64 scheme using A-Z, a-z, 0-9, !, ?.
-    // Format: 6+.7+.1 (FLAGS.NUMERIC.VERSION)
-    for (int32_t i = 5; i >= 0; --i) {
+    // Format: 7+.7+.1 (FLAGS.NUMERIC.VERSION)
+    for (int32_t i = 6; i >= 0; --i) {
         const int32_t sextet = flag_options & 63;
         enc_options[i] = GetBase64EncodingChar(sextet);
         flag_options >>= 6;
     }
-    for (int32_t i = 13; i >= 7; --i) {
+    for (int32_t i = 14; i >= 8; --i) {
         const int32_t sextet = numeric_options & 63;
         enc_options[i] = GetBase64EncodingChar(sextet);
         numeric_options >>= 6;
     }
-    enc_options[6]  = '.';
-    enc_options[14] = '.';
-    enc_options[15] = GetBase64EncodingChar(version_);
-    enc_options[16] = '\0';
+    enc_options[7]  = '.';
+    enc_options[15] = '.';
+    enc_options[16] = GetBase64EncodingChar(version_);
+    enc_options[17] = '\0';
     return enc_options;
 }
 

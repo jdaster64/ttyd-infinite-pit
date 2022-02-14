@@ -8,7 +8,7 @@ class StateManager_v2 {
 public:
     // Save file revision; makes it possible to add fields while maintaining
     // backwards compatibility, and detect when a vanilla file is loaded.
-    // Current version = 5, compatible versions = 4-5 (v2.00 onward).
+    // Current version = 6, compatible versions = 4-6 (v2.00 onward).
     uint8_t     version_;
     
     // Game state / progression.
@@ -128,7 +128,7 @@ enum Options_v2 {
     OPTVAL_PARTNERS_ALL_REWARDS = 0x2'08'2'8'000,   // all from chest rewards
     OPTVAL_PARTNERS_ONE_START   = 0x2'08'2'8'001,   // one at start, rest later
     OPTVAL_PARTNERS_ALL_START   = 0x2'08'2'8'002,   // all at start
-    OPTVAL_PARTNERS_NEVER       = 0x2'08'2'8'003,   // no partners at all
+    OPTVAL_PARTNERS_NEVER       = 0x2'08'2'8'003,   // no partner rewards
     // Which rank partners start at.
     OPT_PARTNER_RANK            = 0x1'0a'2'0'003,
     OPTVAL_PARTNER_RANK_NORMAL  = 0x2'0a'2'0'000,
@@ -187,6 +187,16 @@ enum Options_v2 {
     OPT_DISABLE_CHEST_HEAL      = 0x1'20'1'0'002,
     // Whether to allow Movers to spawn or not.
     OPT_MOVERS_ENABLED          = 0x1'21'1'8'002,
+    // Whether to override which partner is rewarded first.
+    OPT_FIRST_PARTNER           = 0x1'22'3'0'008,
+    OPTVAL_NONE_FIRST           = 0x2'22'3'0'000,
+    OPTVAL_GOOMBELLA_FIRST      = 0x2'22'3'0'001,
+    OPTVAL_KOOPS_FIRST          = 0x2'22'3'0'002,
+    OPTVAL_FLURRIE_FIRST        = 0x2'22'3'0'003,
+    OPTVAL_YOSHI_FIRST          = 0x2'22'3'0'004,
+    OPTVAL_VIVIAN_FIRST         = 0x2'22'3'0'005,
+    OPTVAL_BOBBERY_FIRST        = 0x2'22'3'0'006,
+    OPTVAL_MS_MOWZ_FIRST        = 0x2'22'3'0'007,
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -197,6 +207,8 @@ enum Options_v2 {
     OPT_ENABLE_PARTNER_REWARD   = 0x1'65'1'0'002,
     OPT_DEBUG_MODE_USED         = 0x1'66'1'0'002,
     OPT_ENABLE_UPGRADE_REWARD   = 0x1'67'1'0'002,   // Boots, Hammer, S. Sack
+    // Saves which partner was replaced if using non-none OPT_FIRST_PARTNER.
+    OPT_FIRST_PARTNER_REPLACED  = 0x1'68'3'0'008,
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).

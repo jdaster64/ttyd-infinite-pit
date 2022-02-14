@@ -77,24 +77,24 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         case 104: return MENU_SET_DEFAULT;
         
         case 201: return OPT_PARTNERS_OBTAINED;
-        case 202: return OPT_PARTNER_RANK;
-        case 203: return OPT_BADGE_MOVE_LEVEL;
-        case 204: return OPT_STARTER_ITEMS;
+        case 202: return OPT_FIRST_PARTNER;
+        case 203: return OPT_PARTNER_RANK;
+        case 204: return OPT_BADGE_MOVE_LEVEL;
         
-        case 301: return OPTNUM_ENEMY_HP;
-        case 302: return OPTNUM_ENEMY_ATK;
-        case 303: return OPT_BOSS_SCALING;
-        case 304: return OPT_FLOOR_100_SCALING;
+        case 301: return OPT_MOVERS_ENABLED;
+        case 302: return OPT_CHET_RIPPO_APPEARANCE;
+        case 303: return OPT_MERLEE_CURSE;
+        case 304: return OPT_STARTER_ITEMS;
         
-        case 401: return OPTNUM_SP_REGEN_MODIFIER;
-        case 402: return OPTNUM_SUPERGUARD_SP_COST;
-        case 403: return OPTNUM_SWITCH_PARTY_FP_COST;
-        case 404: return OPT_DISABLE_CHEST_HEAL;
+        case 401: return OPTNUM_ENEMY_HP;
+        case 402: return OPTNUM_ENEMY_ATK;
+        case 403: return OPT_BOSS_SCALING;
+        case 404: return OPT_FLOOR_100_SCALING;
         
-        case 501: return OPT_MERLEE_CURSE;
-        case 502: return OPT_CHET_RIPPO_APPEARANCE;
-        case 503: return OPT_MOVERS_ENABLED;
-        case 504: return MENU_EMPTY_OPTION;
+        case 501: return OPTNUM_SP_REGEN_MODIFIER;
+        case 502: return OPTNUM_SUPERGUARD_SP_COST;
+        case 503: return OPTNUM_SWITCH_PARTY_FP_COST;
+        case 504: return OPT_DISABLE_CHEST_HEAL;
         
         case 601: return OPT_PERCENT_BASED_DANGER;
         case 602: return OPT_WEAKER_RUSH_BADGES;
