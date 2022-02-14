@@ -521,7 +521,7 @@ void StateManager_v2::GetOptionStrings(
             strcpy(value_buf, "All held + bonus");      return;
         }
         case OPTVAL_PARTNERS_ALL_REWARDS: {
-            strcpy(value_buf, "All rewards");           return;
+            strcpy(value_buf, "All as rewards");        return;
         }
         case OPTVAL_PARTNERS_ALL_START: {
             strcpy(value_buf, "Start with all");        return;
@@ -533,7 +533,7 @@ void StateManager_v2::GetOptionStrings(
             // If a 'first partner' is selected, rather than disabling them
             // entirely, start with that one and never receive any others.
             if (GetOptionNumericValue(OPT_FIRST_PARTNER)) {
-                strcpy(value_buf, "Only starter");
+                strcpy(value_buf, "Starter only");
             } else {
                 strcpy(value_buf, "Never");
             }

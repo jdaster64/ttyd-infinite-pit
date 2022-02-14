@@ -197,7 +197,7 @@ int16_t PickChestReward() {
             weights[REWARD_INVENTORY_UPGRADE] * 3/4;
         weights[REWARD_SHINE_SPRITE] = weights[REWARD_SHINE_SPRITE] * 3/4;
     }
-    // If playing a Mario Alone run, reduce the weight for Shine Sprites.
+    // If playing without partner rewards, reduce the weight for Shine Sprites.
     if (state.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) {
         weights[REWARD_SHINE_SPRITE] /= 2;
     }
@@ -245,7 +245,44 @@ int16_t PickPartnerReward() {
     state.reward_flags_ |= (1 << reward_idx);
     // Disable getting partners until the next reward floor.
     state.SetOption(OPT_ENABLE_PARTNER_REWARD, 0);
-    return kRewards[reward_idx];
+    
+    int32_t partner = kRewards[reward_idx];
+    
+    // If a fixed first partner was chosen, reorder so they come first, and all
+    // others are shifted back one slot in the order as necessary.
+    if (!state.CheckOptionValue(OPTVAL_PARTNERS_ALL_START) &&
+        !state.CheckOptionValue(OPTVAL_NONE_FIRST)) {
+            
+        // Determine which partner id is associated with the one chosen.
+        int32_t first_partner = 0;
+        switch (state.GetOptionValue(OPT_FIRST_PARTNER)) {
+            case OPTVAL_GOOMBELLA_FIRST:    first_partner = 1; break;
+            case OPTVAL_KOOPS_FIRST:        first_partner = 2; break;
+            case OPTVAL_FLURRIE_FIRST:      first_partner = 5; break;
+            case OPTVAL_YOSHI_FIRST:        first_partner = 4; break;
+            case OPTVAL_VIVIAN_FIRST:       first_partner = 6; break;
+            case OPTVAL_BOBBERY_FIRST:      first_partner = 3; break;
+            case OPTVAL_MS_MOWZ_FIRST:      first_partner = 7; break;
+        }
+        
+        // Check the last_partner that was intended to be obtained.
+        int32_t last_partner =
+            state.GetOptionNumericValue(OPT_LAST_PARTNER_INTENDED);
+            
+        // If we've passed the point where the selected first partner was
+        // meant to be obtained, no more shifting is necessary.
+        if (last_partner == first_partner) {
+            return partner;
+        }
+        
+        // Otherwise, save the partner intended to be obtained for next time.
+        state.SetOption(OPT_LAST_PARTNER_INTENDED, -partner);
+        // Return the previous intended partner if one exists, or the fixed
+        // first partner if one does not (meaning that this is the first).
+        return last_partner ? -last_partner : -first_partner;
+    }
+    
+    return partner;
 }
 
 }

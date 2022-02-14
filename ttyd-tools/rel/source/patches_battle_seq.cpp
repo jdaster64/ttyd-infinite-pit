@@ -144,7 +144,8 @@ void CheckBattleCondition() {
     
     // If playing with the "no partners" option, give the player the Tattle logs 
     // for all enemies present at the start of the fight.
-    if (g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) {
+    if (g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER) &&
+        !g_Mod->state_.GetOptionNumericValue(OPT_FIRST_PARTNER)) {
         const auto* group = npc_info->pConfiguration;
         for (int32_t i = 0; i < group->num_enemies; ++i) {
             int32_t type = group->enemy_data[i].unit_kind_params->unit_type;

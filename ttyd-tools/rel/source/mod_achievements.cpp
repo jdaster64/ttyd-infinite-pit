@@ -140,8 +140,9 @@ int32_t AchievementsManager::GetMaxCompletionPoints(int32_t task_type) {
 }
 
 void AchievementsManager::UpdatePartnerVariantBadgesCollected() {
-    // Only mark P badges collected if playing in Mario-alone mode.
-    if (!g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER)) return;
+    // Only mark P badges collected if playing without partners.
+    if (!g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER) ||
+        g_Mod->state_.GetOptionNumericValue(OPT_FIRST_PARTNER)) return;
     
     for (int32_t i = ItemType::POWER_JUMP; i < ItemType::MAX_ITEM_TYPE; ++i) {
         bool collected = ttyd::swdrv::swGet(0x80 + i - ItemType::POWER_JUMP);

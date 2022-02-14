@@ -207,8 +207,8 @@ enum Options_v2 {
     OPT_ENABLE_PARTNER_REWARD   = 0x1'65'1'0'002,
     OPT_DEBUG_MODE_USED         = 0x1'66'1'0'002,
     OPT_ENABLE_UPGRADE_REWARD   = 0x1'67'1'0'002,   // Boots, Hammer, S. Sack
-    // Saves which partner was replaced if using non-none OPT_FIRST_PARTNER.
-    OPT_FIRST_PARTNER_REPLACED  = 0x1'68'3'0'008,
+    // Used to ensure similar partner order if using non-zero OPT_FIRST_PARTNER.
+    OPT_LAST_PARTNER_INTENDED   = 0x1'68'3'0'008,
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).

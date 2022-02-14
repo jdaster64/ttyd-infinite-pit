@@ -101,8 +101,37 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
             break;
         }
         case OPTVAL_PARTNERS_NEVER: {
-            // Mark HP Plus P off in badge log, since HP Plus is marked by default.
-            ttyd::swdrv::swSet(0x80 + ItemType::HP_PLUS_P - ItemType::POWER_JUMP);
+            // See if the player selected a single starting partner.
+            int32_t first_partner = 0;
+            switch (state.GetOptionValue(OPT_FIRST_PARTNER)) {
+                case OPTVAL_GOOMBELLA_FIRST:    first_partner = 1; break;
+                case OPTVAL_KOOPS_FIRST:        first_partner = 2; break;
+                case OPTVAL_FLURRIE_FIRST:      first_partner = 5; break;
+                case OPTVAL_YOSHI_FIRST:        first_partner = 4; break;
+                case OPTVAL_VIVIAN_FIRST:       first_partner = 6; break;
+                case OPTVAL_BOBBERY_FIRST:      first_partner = 3; break;
+                case OPTVAL_MS_MOWZ_FIRST:      first_partner = 7; break;
+            }
+            if (first_partner) {
+                evt->evtArguments[0] = first_partner;
+                ttyd::evt_pouch::evt_pouch_party_join(evt, isFirstCall);
+                partner::InitializePartyMember(evt, isFirstCall);
+                // Place partner on the field.
+                evt->evtArguments[0] = 0;
+                evt->evtArguments[1] = first_partner;
+                evt->evtArguments[2] = 0;
+                evt->evtArguments[3] = 0;
+                evt->evtArguments[4] = 0;
+                ttyd::evt_mario::evt_mario_set_party_pos(evt, isFirstCall);
+            } else {
+                // No partners selected, so running with Mario alone.
+                
+                // Mark HP Plus P off in badge log, since HP Plus is marked
+                // by default and HP Plus P can't be obtained.
+                ttyd::swdrv::swSet(
+                    0x80 + ItemType::HP_PLUS_P - ItemType::POWER_JUMP);
+            }
+            break;
         }
     }
     

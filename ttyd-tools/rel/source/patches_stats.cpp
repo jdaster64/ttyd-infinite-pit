@@ -87,6 +87,7 @@ void ApplyFixedPatches() {
             // If badge is a "P" badge and playing Mario-alone, also mark
             // off the relevant "P" badge in the badge log.
             if (g_Mod->state_.CheckOptionValue(OPTVAL_PARTNERS_NEVER)
+                && !g_Mod->state_.GetOptionNumericValue(OPT_FIRST_PARTNER)
                 && IsStackableMarioBadge(item_type)) {
                 ttyd::swdrv::swSet(0x81 + item_type - ItemType::POWER_JUMP);
             }
