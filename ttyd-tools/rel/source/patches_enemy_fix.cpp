@@ -215,7 +215,7 @@ LBL(91)
     USER_FUNC(
         ttyd::battle_event_cmd::btlevtcmd_CheckDamage, -2, LW(3), LW(4),
         REL_PTR(ModuleId::CUSTOM, g_custom_AtomicBoo_BreathWeapon_Offset),
-        0, LW(5))
+        0x100, LW(5))
         
 LBL(99)
 RETURN()
