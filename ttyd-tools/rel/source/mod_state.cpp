@@ -144,7 +144,8 @@ bool StateManager_v2::Load(bool new_save) {
     if (!strcmp(filename, "random") || !strcmp(filename, "Random") ||
         !strcmp(filename, "RANDOM") || !strcmp(filename, "\xde") ||
         !strcmp(filename, "random\xd0") || !strcmp(filename, "Random\xd0") ||
-        !strcmp(filename, "RANDOM\xd0") || !strcmp(filename, "\xde\xd0")) { 
+        !strcmp(filename, "RANDOM\xd0") || !strcmp(filename, "\xde\xd0") ||
+        !strcmp(filename, "\xd0\xde")) { 
         char filenameChars[9];
         // Temporarily set the filename seed based on the current time.
         filename_seed_ = static_cast<uint32_t>(gc::OSTime::OSGetTime());

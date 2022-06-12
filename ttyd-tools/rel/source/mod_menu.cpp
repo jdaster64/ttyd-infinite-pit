@@ -74,7 +74,7 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         case 101: return OPT_CHEST_REWARDS;
         case 102: return OPT_NO_EXP_MODE;
         case 103: return OPT_BATTLE_REWARD_MODE;
-        case 104: return MENU_SET_DEFAULT;
+        case 104: return OPT_DISABLE_CHEST_HEAL;
         
         case 201: return OPT_PARTNERS_OBTAINED;
         case 202: return OPT_FIRST_PARTNER;
@@ -94,7 +94,7 @@ int32_t GetMenuState(int32_t page, int32_t selection) {
         case 501: return OPTNUM_SP_REGEN_MODIFIER;
         case 502: return OPTNUM_SUPERGUARD_SP_COST;
         case 503: return OPTNUM_SWITCH_PARTY_FP_COST;
-        case 504: return OPT_DISABLE_CHEST_HEAL;
+        case 504: return MENU_SET_DEFAULT;
         
         case 601: return OPT_PERCENT_BASED_DANGER;
         case 602: return OPT_WEAKER_RUSH_BADGES;

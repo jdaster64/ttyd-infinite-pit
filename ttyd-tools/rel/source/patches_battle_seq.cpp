@@ -114,7 +114,16 @@ void CheckBattleCondition() {
     
     // If condition is a success and rule is not 0, add a bonus item.
     if (fbat_info->wBtlActRecCondition && fbat_info->wRuleKeepResult == 6) {
-        const int32_t item_reward = npc_info->pConfiguration->random_item_weight;
+        int32_t item_reward = 0;
+        if (g_Mod->state_.CheckOptionValue(OPTVAL_DROP_HELD_FROM_BONUS)) {
+            // If using "drop gated by bonus" option, use the held item that
+            // would otherwise normally drop instead of the random item.
+            // (If that item was stolen, the player receives nothing.)
+            item_reward = npc_info->wHeldItems[
+                npc_info->pConfiguration->held_item_weight];
+        } else {
+            item_reward = npc_info->pConfiguration->random_item_weight;
+        }
         for (int32_t i = 0; i < 8; ++i) {
             if (npc_info->wBackItemIds[i] == 0) {
                 npc_info->wBackItemIds[i] = item_reward;

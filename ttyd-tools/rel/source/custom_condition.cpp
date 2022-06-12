@@ -195,13 +195,6 @@ void SetBattleCondition(ttyd::npcdrv::NpcBattleInfo* npc_info, bool enable) {
     npc_info->ruleParameter0 = param;
     npc_info->ruleParameter1 = param;
     
-    // If the held item drop is contingent on the condition, override the item
-    // with a random one of the held items.
-    if (reward_mode == OPTVAL_DROP_HELD_FROM_BONUS) {
-        int32_t enemy_index = npc_info->pConfiguration->held_item_weight;
-        *item_reward = npc_info->wHeldItems[enemy_index];
-    }
-    
     // Assign the condition text.
     if (conditions[idx].param_max > 0 || 
         conditions[idx].type == MARIO_FINAL_HP_MORE) {
