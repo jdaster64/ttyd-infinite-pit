@@ -99,10 +99,15 @@ void CheatsManager::Update() {
 
 void CheatsManager::Draw() {
     if (InMainGameModes() && g_DrawRtaTimer) {
-        // Print the current RTA timer to the screen.
+        // Print the current RTA timer and floor number to the screen.
         char buf[32];
         sprintf(buf, "%s", g_Mod->state_.GetCurrentTimeString());
         DrawText(buf, -260, -195, 0xFF, true, ~0U, 0.75f, /* center-left */ 3);
+        if (!strcmp(GetCurrentArea(), "jon")) {
+            sprintf(buf, "Floor %" PRId32, g_Mod->state_.floor_ + 1);
+            DrawText(
+                buf, 260, -195, 0xFF, true, ~0U, 0.75f, /* center-right */ 5);
+        }
     }
 }
 
