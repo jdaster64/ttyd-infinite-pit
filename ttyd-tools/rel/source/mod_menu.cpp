@@ -57,7 +57,8 @@ bool ShouldDisplayMenu() {
 }
 
 bool ShouldControlMenu() {
-    return ShouldDisplayMenu() && !strcmp(GetNextMap(), kStartRoomName);
+    return ShouldDisplayMenu() && !strcmp(GetNextMap(), kStartRoomName) &&
+           !g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN);
 }
 
 bool ShouldTickOrAutotick(int32_t time_held) {

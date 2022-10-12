@@ -136,6 +136,10 @@ int32_t (*g_weaponGetPower_Deka_trampoline)(
 int32_t (*g_main_muki_trampoline)(EvtEntry*, bool) = nullptr;
 // sac_suki.o  8024fa74
 int32_t (*g_sac_suki_set_weapon_trampoline)(EvtEntry*, bool) = nullptr;
+// evt_memcard.o  8025c0b8
+int32_t (*g_memcard_write_trampoline)(EvtEntry*, bool) = nullptr;
+// evt_memcard.o  8025c454
+int32_t (*g_memcard_code_trampoline)(EvtEntry*, bool) = nullptr;
 // os.a OSLink.c  8029a8e4
 bool (*g_OSLink_trampoline)(OSModuleInfo*, void*) = nullptr;
 

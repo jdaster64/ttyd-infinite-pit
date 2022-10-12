@@ -209,6 +209,9 @@ enum Options_v2 {
     OPT_ENABLE_UPGRADE_REWARD   = 0x1'67'1'0'002,   // Boots, Hammer, S. Sack
     // Used to ensure similar partner order if using non-zero OPT_FIRST_PARTNER.
     OPT_LAST_PARTNER_INTENDED   = 0x1'68'3'0'008,
+    // v2.22, determines whether the player has saved at the start of a run.
+    // (disables changing options any further, including after a reload)
+    OPT_HAS_STARTED_RUN         = 0x1'69'1'0'002,
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).

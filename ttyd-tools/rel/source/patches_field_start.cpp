@@ -10,9 +10,14 @@
 #include "patches_options.h"
 #include "patches_partner.h"
 
+#include <ttyd/cardmgr.h>
 #include <ttyd/evt_bero.h>
 #include <ttyd/evt_mario.h>
+#include <ttyd/evt_memcard.h>
+#include <ttyd/evt_mobj.h>
 #include <ttyd/evt_pouch.h>
+#include <ttyd/evtmgr.h>
+#include <ttyd/evtmgr_cmd.h>
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/swdrv.h>
@@ -24,6 +29,7 @@ namespace mod::infinite_pit {
 namespace {
 
 using ::ttyd::evt_bero::BeroEntry;
+using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::mario_pouch::PouchData;
 
 namespace ItemType = ::ttyd::item_data::ItemType;
@@ -31,6 +37,8 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 }
 
 // Function hooks.
+extern int32_t (*g_memcard_write_trampoline)(EvtEntry*, bool);
+extern int32_t (*g_memcard_code_trampoline)(EvtEntry*, bool);
 // Patch addresses.
 extern const int32_t g_tik_06_PitBeroEntryOffset;
 extern const int32_t g_tik_06_RightBeroEntryOffset;
@@ -39,14 +47,30 @@ namespace field_start {
     
 namespace {
     
+// Tracks whether the player is being prompted to save before entering the Pit.
+bool g_ReadyForPitSaveWrite = false;
+bool g_AttemptingPitSaveWrite = false;
+bool g_SuccessfullySaved = false;
+    
 // Declarations for USER_FUNCs.
+EVT_DECLARE_USER_FUNC(CheckHasSaved, 1)
 EVT_DECLARE_USER_FUNC(InitOptionsOnPitEntry, 5)
 EVT_DECLARE_USER_FUNC(IncrementYoshiColor, 0)
 
 // Event that runs when taking the pipe to enter the Pit.
 EVT_BEGIN(PitStartPipeEvt)
-// Parameters are dummy values, and get overwritten during execution.
-USER_FUNC(InitOptionsOnPitEntry, 0, 0, 0, 0, 0)
+USER_FUNC(CheckHasSaved, LW(0))
+IF_EQUAL(LW(0), 0)
+    // If the player hasn't yet saved, force them to save to start the RTA timer
+    // (and save their options if the player has to restart before floor 10).
+    RUN_CHILD_EVT(ttyd::evt_mobj::mobj_save_blk_sysevt)
+    SET(LW(0), 1)
+ELSE()
+    // Good to go; do any necessary setup for the selected options.
+    // Parameters are dummy values, and get overwritten during execution.
+    USER_FUNC(InitOptionsOnPitEntry, 0, 0, 0, 0, 0)
+    SET(LW(0), 0)
+END_IF()
 RETURN()
 EVT_END()
 
@@ -55,6 +79,13 @@ EVT_BEGIN(PrePitRoomLoopEvt)
 USER_FUNC(IncrementYoshiColor)
 RETURN()
 EVT_END()
+
+EVT_DEFINE_USER_FUNC(CheckHasSaved) {
+    g_ReadyForPitSaveWrite = true;
+    ttyd::evtmgr_cmd::evtSetValue(
+        evt, evt->evtArguments[0], g_SuccessfullySaved);
+    return 2;
+}
 
 // Initializes all selected options on initially entering the Pit.
 EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
@@ -193,11 +224,9 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     pouch.max_sp = 150;
     pouch.current_sp = 150;
     pouch.star_powers_obtained |= 3;
-    g_Mod->state_.star_power_levels_ = 0b0101;
+    state.star_power_levels_ = 0b0101;
     
     options::ApplySettingBasedPatches();
-    // Save the timestamp you entered the Pit.
-    state.SaveCurrentTime(/* pit_start = */ true);
     // All other options are handled immediately on setting them,
     // or are checked explicitly every time they are relevant.
     return 2;
@@ -213,9 +242,43 @@ EVT_DEFINE_USER_FUNC(IncrementYoshiColor) {
 
 }
 
-void ApplyFixedPatches() {}
+void ApplyFixedPatches() {
+    g_memcard_write_trampoline = patch::hookFunction(
+        ttyd::evt_memcard::memcard_write,
+        [](EvtEntry* evt, bool isFirstCall) {
+            if (g_ReadyForPitSaveWrite && !g_AttemptingPitSaveWrite) {
+                // Save the timestamp you entered the Pit.
+                g_AttemptingPitSaveWrite = true;
+                g_Mod->state_.SaveCurrentTime(/* pit_start = */ true);
+                // Mark run as "started", assuming the save will succeed.
+                g_Mod->state_.SetOption(OPT_HAS_STARTED_RUN, true);
+                // Copy state to save file location.
+                g_Mod->state_.Save();
+            }
+            return g_memcard_write_trampoline(evt, isFirstCall);
+        });
+        
+    g_memcard_code_trampoline = patch::hookFunction(
+        ttyd::evt_memcard::memcard_code,
+        [](EvtEntry* evt, bool isFirstCall) {
+            if (!ttyd::cardmgr::cardIsExec()) {
+                if (g_AttemptingPitSaveWrite && !ttyd::cardmgr::cardGetCode()) {
+                    g_SuccessfullySaved = true;
+                } else {
+                    g_AttemptingPitSaveWrite = false;
+                }
+            }
+            return g_memcard_code_trampoline(evt, isFirstCall);
+        });
+}
 
 void ApplyModuleLevelPatches(void* module_ptr, ModuleId::e module_id) {
+    // Clear the flags for tracking save status every time a module is loaded.
+    g_ReadyForPitSaveWrite = false;
+    g_AttemptingPitSaveWrite = false;
+    g_SuccessfullySaved =
+        g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN);
+    
     if (module_id != ModuleId::TIK || !module_ptr) return;
     const uint32_t module_start = reinterpret_cast<uint32_t>(module_ptr);
     

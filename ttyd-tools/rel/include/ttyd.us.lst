@@ -670,6 +670,8 @@
 
 // cardmgr.o
 800b2388:cardCopy2Main
+800b2b80:cardGetCode
+800b2b8c:cardIsExec
 
 // evt_msg.o
 800d0998:evt_msg_fill_num
@@ -1653,7 +1655,9 @@
 
 // evt_memcard.o
 // .text 
+8025c0b8:memcard_write
 // 8025c2bc:memcard_create
+8025c454:memcard_code
 // .data
 803b9b38:evt_memcard_nosave
 803b9b84:evt_memcard_check

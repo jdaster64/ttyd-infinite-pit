@@ -98,7 +98,8 @@ void CheatsManager::Update() {
 }
 
 void CheatsManager::Draw() {
-    if (InMainGameModes() && g_DrawRtaTimer) {
+    if (InMainGameModes() && g_DrawRtaTimer &&
+        g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN)) {
         // Print the current RTA timer and floor number to the screen.
         char buf[32];
         sprintf(buf, "%s", g_Mod->state_.GetCurrentTimeString());

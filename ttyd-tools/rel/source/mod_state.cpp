@@ -70,6 +70,11 @@ bool LoadFromPreviousVersion(StateManager_v2* state) {
     state->version_ = 6;
     InitPartyMaxHpTable(state->partner_upgrades_);
     
+    // Set "has started" flag if loading into an already-in-progress file.
+    if (state->floor_ > 0) {
+        state->SetOption(OPT_HAS_STARTED_RUN, true);
+    }
+    
     // If playing Mario-alone, make sure all "P" variants of collected Mario
     // badges are marked off in the badge log.
     AchievementsManager::UpdatePartnerVariantBadgesCollected();

@@ -9,7 +9,7 @@ namespace ttyd::evt_memcard {
 extern "C" {
 
 // .text
-// memcard_write
+EVT_DECLARE_USER_FUNC(memcard_write, 0)
 // memcard_file_existance
 // memcard_ipl
 // memcard_header_write
@@ -22,7 +22,7 @@ extern "C" {
 // unk_JP_US_EU_65_8025c3a4
 // unk_JP_US_EU_66_8025c40c
 // unk_JP_US_EU_67_8025c430
-// memcard_code
+EVT_DECLARE_USER_FUNC(memcard_code, 1)
 
 // .data
 extern int32_t evt_memcard_nosave[1];
