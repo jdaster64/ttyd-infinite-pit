@@ -81,9 +81,16 @@ RETURN()
 EVT_END()
 
 EVT_DEFINE_USER_FUNC(CheckHasSaved) {
+    if (g_ReadyForPitSaveWrite &&
+        !g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN)) {
+        // If save already declined, return true.
+        ttyd::evtmgr_cmd::evtSetValue(evt, evt->evtArguments[0], true);
+    } else {
+        // Otherwise, return whether the player has saved successfully.
+        ttyd::evtmgr_cmd::evtSetValue(
+            evt, evt->evtArguments[0], g_SuccessfullySaved);
+    }
     g_ReadyForPitSaveWrite = true;
-    ttyd::evtmgr_cmd::evtSetValue(
-        evt, evt->evtArguments[0], g_SuccessfullySaved);
     return 2;
 }
 
@@ -227,6 +234,14 @@ EVT_DEFINE_USER_FUNC(InitOptionsOnPitEntry) {
     state.star_power_levels_ = 0b0101;
     
     options::ApplySettingBasedPatches();
+    
+    // Set the 'run started' flag to true, and start the run timer, if the
+    // player didn't choose to save.
+    if (!state.GetOptionNumericValue(OPT_HAS_STARTED_RUN)) {
+        state.SetOption(OPT_HAS_STARTED_RUN, true);
+        g_Mod->state_.SaveCurrentTime(/* pit_start = */ true);
+    }
+    
     // All other options are handled immediately on setting them,
     // or are checked explicitly every time they are relevant.
     return 2;
