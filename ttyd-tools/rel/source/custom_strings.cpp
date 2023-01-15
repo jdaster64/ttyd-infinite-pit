@@ -93,6 +93,7 @@ namespace MsgKey {
         PIT_CHARLIETON_FULL_INV,
         PIT_CHEST_UNCLAIMED,
         PIT_DISABLED_RETURN,
+        PIT_MOVE_LEVEL,
         PIT_REWARD_PARTY_JOIN,
         RIPPO_CONFIRM_BP,
         RIPPO_CONFIRM_FP,
@@ -200,6 +201,7 @@ constexpr const char* kKeyLookups[] = {
     "pit_charlieton_full_inv",
     "pit_chest_unclaimed",
     "pit_disabled_return",
+    "pit_move_level",
     "pit_reward_party_join",
     "rippo_confirm_bp",
     "rippo_confirm_fp",
@@ -319,6 +321,11 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
             return "<system>\n<p>\nYou can't leave the Infinite Pit!\n<k>";
         case MsgKey::PIT_CHEST_UNCLAIMED:
             return "<system>\n<p>\nYou haven't claimed your\nreward!\n<k>";
+        case MsgKey::PIT_MOVE_LEVEL:
+            return "<system>\n<p>\n"
+                   "You obtained a Lv. 2 Star Power!\n"
+                   "Tap left or right to select which\n"
+                   "power level you want to use.\n<k>";
         case MsgKey::MSG_JON_KANBAN_1: {
             sprintf(buf, "<kanban>\n<pos 150 25>\nFloor %" PRId32 "\n<k>", 
                     g_Mod->state_.floor_ + 1);

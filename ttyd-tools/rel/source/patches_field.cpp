@@ -132,7 +132,7 @@ EVT_DECLARE_USER_FUNC(CheckRewardClaimed, 1)
 EVT_DECLARE_USER_FUNC(CheckPromptSave, 1)
 EVT_DECLARE_USER_FUNC(IncrementInfinitePitFloor, 1)
 EVT_DECLARE_USER_FUNC(GetUniqueItemName, 1)
-EVT_DECLARE_USER_FUNC(AddItemStarPower, 1)
+EVT_DECLARE_USER_FUNC(AddItemStarPower, 2)
 EVT_DECLARE_USER_FUNC(CheckChetRippoSpawn, 1)
 EVT_DECLARE_USER_FUNC(CheckMoverSpawn, 1)
 EVT_DECLARE_USER_FUNC(CheckAnyStatsDowngradeable, 1)
@@ -208,8 +208,12 @@ DO(0)
         USER_FUNC(ttyd::evt_mobj::evt_mobj_wait_animation_end, PTR("box"))
         USER_FUNC(ttyd::evt_item::evt_item_get_item, LW(14))
         // If the item was a Crystal Star / Magical Map, unlock its Star Power.
-        // TODO: The journal displays wrong SP moves if unlocked out-of-order.
-        USER_FUNC(AddItemStarPower, LW(1))
+        // If this is the first level 2+ move unlocked, show the level tutorial.
+        USER_FUNC(AddItemStarPower, LW(1), LW(11))
+        IF_EQUAL(LW(11), 1)
+            USER_FUNC(
+                ttyd::evt_msg::evt_msg_print, 0, PTR("pit_move_level"), 0, 0)
+        END_IF()
     END_IF()
 WHILE()
 USER_FUNC(ttyd::evt_mario::evt_mario_key_onoff, 1)
@@ -961,6 +965,13 @@ EVT_DEFINE_USER_FUNC(AddItemStarPower) {
             item == ItemType::MAGICAL_MAP ? 0 : item - ItemType::DIAMOND_STAR + 1;
         pouch.star_powers_obtained |= (1 << star_power_type);
         g_Mod->state_.star_power_levels_ += (1 << (2 * star_power_type));
+        
+        // Check whether to show the Star Power level tutorial.
+        if (g_Mod->state_.GetStarPowerLevel(star_power_type) > 1 &&
+            !g_Mod->state_.GetOptionNumericValue(OPT_SEEN_MOVE_LEVEL_TUT)) {
+            evtSetValue(evt, evt->evtArguments[1], 1);
+            g_Mod->state_.SetOption(OPT_SEEN_MOVE_LEVEL_TUT, true);
+        }
     }
     return 2;
 }

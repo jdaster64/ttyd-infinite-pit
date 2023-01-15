@@ -212,6 +212,8 @@ enum Options_v2 {
     // v2.22, determines whether the player has saved at the start of a run.
     // (disables changing options any further, including after a reload)
     OPT_HAS_STARTED_RUN         = 0x1'69'1'0'002,
+    // v2.23, shows a one-time tutorial when picking up a Lv. 2 Special Move.
+    OPT_SEEN_MOVE_LEVEL_TUT     = 0x1'6a'1'0'002,
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).
