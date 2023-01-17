@@ -52,22 +52,17 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
 bool LoadFromPreviousVersion(StateManager_v2* state) {
     void* saved_state = GetSavedStateLocation();
     uint8_t version = *reinterpret_cast<uint8_t*>(saved_state);
-    if (version < 4 || version > 6) {
+    if (version != 7) {
         // Version is incompatible with the current version; fail to load.
         return false;
     }
     
     // Since all compatible versions have the same memory layout, copy to start.
     patch::writePatch(state, saved_state, sizeof(StateManager_v2));
-    // Update fields that wouldn't have default value when updating versions.
-    if (state->version_ == 4) {
-        // Update attack SP regen modifier to 1.00x.
-        state->SetOption(OPTNUM_SP_REGEN_MODIFIER, 20);
-        // Update chests to not heal, consistent with older versions.
-        state->SetOption(OPT_DISABLE_CHEST_HEAL, 1);
-    }
+    // Update fields that wouldn't have default value when updating versions...
+
     // Force version to current.
-    state->version_ = 6;
+    state->version_ = 7;
     InitPartyMaxHpTable(state->partner_upgrades_);
     
     // Set "has started" flag if loading into an already-in-progress file.
@@ -127,7 +122,7 @@ bool StateManager_v2::Load(bool new_save) {
     uint32_t cosmetic_options = option_flags_[3];
     
     memset(this, 0, sizeof(StateManager_v2));
-    version_ = 6;
+    version_ = 7;
     SetDefaultOptions();
     option_flags_[3] = cosmetic_options;
     InitPartyMaxHpTable(partner_upgrades_);

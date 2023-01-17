@@ -8,7 +8,7 @@ class StateManager_v2 {
 public:
     // Save file revision; makes it possible to add fields while maintaining
     // backwards compatibility, and detect when a vanilla file is loaded.
-    // Current version = 6, compatible versions = 4-6 (v2.00 onward).
+    // Current version = 7, compatible versions = 7 (2.30 onward).
     uint8_t     version_;
     
     // Game state / progression.
@@ -197,6 +197,7 @@ enum Options_v2 {
     OPTVAL_VIVIAN_FIRST         = 0x2'22'3'0'005,
     OPTVAL_BOBBERY_FIRST        = 0x2'22'3'0'006,
     OPTVAL_MS_MOWZ_FIRST        = 0x2'22'3'0'007,
+    // Next: 0x2'25...
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -211,9 +212,10 @@ enum Options_v2 {
     OPT_LAST_PARTNER_INTENDED   = 0x1'68'3'0'008,
     // v2.22, determines whether the player has saved at the start of a run.
     // (disables changing options any further, including after a reload)
-    OPT_HAS_STARTED_RUN         = 0x1'69'1'0'002,
+    OPT_HAS_STARTED_RUN         = 0x1'6b'1'0'002,
     // v2.23, shows a one-time tutorial when picking up a Lv. 2 Special Move.
-    OPT_SEEN_MOVE_LEVEL_TUT     = 0x1'6a'1'0'002,
+    OPT_SEEN_MOVE_LEVEL_TUT     = 0x1'6c'1'0'002,
+    // Next: 0x1'6d...
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).
@@ -225,6 +227,7 @@ enum Options_v2 {
     OPTNUM_SWITCH_PARTY_FP_COST = 0x3'05'1'0'00a,
     // Multiplier for attacks' SP regen (in increments of 0.05 SP, up to 3.00).
     OPTNUM_SP_REGEN_MODIFIER    = 0x3'06'1'0'03c,
+    // Next: 0x3'07...
     
     // Gameplay stats.
     STAT_TURNS_SPENT            = 0x4'00'3'2'007,
@@ -248,6 +251,7 @@ enum Options_v2 {
     STAT_CONDITIONS_TOTAL       = 0x4'32'3'2'007,
     STAT_MOVERS_USED            = 0x4'35'2'2'004,
     STAT_BATTLES_SKIPPED        = 0x4'37'3'2'007,
+    // Next: 0x4'3a...
     
     // Non-option values (used for menu, etc.)
     MENU_EMPTY_OPTION           = 0x7000'0001,      // Used for blank spaces.
