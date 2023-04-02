@@ -197,7 +197,9 @@ enum Options_v2 {
     OPTVAL_VIVIAN_FIRST         = 0x2'22'3'0'005,
     OPTVAL_BOBBERY_FIRST        = 0x2'22'3'0'006,
     OPTVAL_MS_MOWZ_FIRST        = 0x2'22'3'0'007,
-    // Next: 0x2'25...
+    // Hidden option; shuffles the appearance and description of items.
+    OPT_OBFUSCATE_ITEMS         = 0x1'25'1'0'002,
+    // Next: 0x1/2'26...
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -302,7 +304,10 @@ enum RngSequence {
     // Completely consistent per filename.
     RNG_MOVER               = 14,
     
-    RNG_SEQUENCE_MAX        = 15,
+    // Used to seed the shuffles used for item obfuscation option.
+    RNG_ITEM_OBFUSCATION    = 15,
+
+    RNG_SEQUENCE_MAX        = 16,
 };
 
 }

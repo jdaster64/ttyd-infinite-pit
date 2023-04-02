@@ -3,6 +3,7 @@
 #include "common_functions.h"
 #include "common_types.h"
 #include "custom_enemy.h"
+#include "custom_item.h"
 #include "custom_strings.h"
 #include "mod.h"
 #include "mod_loading.h"
@@ -169,6 +170,12 @@ void OnFileLoad(bool new_file = true) {
         ttyd::mario_pouch::pouchSetPartyColor(4, g_Mod->state_.Rand(7));
     }
     g_PromptSave = false;
+    
+    // If previous file loaded had obfuscated items, turn off and wipe flag.
+    if (g_Mod->state_.GetOptionNumericValue(OPT_OBFUSCATE_ITEMS)) {
+        g_Mod->state_.SetOption(OPT_OBFUSCATE_ITEMS, 0);
+        ObfuscateItems(false);
+    }
 }
 
 }

@@ -375,6 +375,10 @@ void ApplySettingBasedPatches() {
         itemDataTable[ItemType::FP_DRAIN].buy_price = 125;
         itemDataTable[ItemType::FP_DRAIN_P].buy_price = 125;
     }
+    
+    if (g_Mod->state_.GetOptionNumericValue(OPT_OBFUSCATE_ITEMS)) {
+        ObfuscateItems(true);
+    }
 }
 
 void SpendFpOnSwitchingPartner(ttyd::battle_unit::BattleWorkUnit* unit) {

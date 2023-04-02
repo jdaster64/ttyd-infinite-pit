@@ -31,6 +31,7 @@ uint32_t secretCode_BonusOptions2   = 043652131;
 uint32_t secretCode_BonusOptions3   = 031313141;
 uint32_t secretCode_RtaTimer        = 034345566;
 uint32_t secretCode_UnlockFxBadges  = 026122146;
+uint32_t secretCode_ObfuscateItems  = 046362123;
 uint32_t secretCode_DebugMode       = 036363636;
 
 bool g_DrawRtaTimer = false;
@@ -87,6 +88,14 @@ void CheatsManager::Update() {
             ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_Y);
             ttyd::mario_pouch::pouchGetItem(ItemType::ATTACK_FX_R);
             ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+        }
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_ObfuscateItems) {
+        code_history = 0;
+        if (InMainGameModes() && 
+            !g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN)) {
+            g_Mod->state_.ChangeOption(OPT_OBFUSCATE_ITEMS);
+            ttyd::sound::SoundEfxPlayEx(0x3c, 0, 0x64, 0x40);
         }
     }
     // TODO: Turn off before releases?

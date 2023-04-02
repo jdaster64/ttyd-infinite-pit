@@ -65,6 +65,9 @@ bool LoadFromPreviousVersion(StateManager_v2* state) {
     state->version_ = 7;
     InitPartyMaxHpTable(state->partner_upgrades_);
     
+    // Reset item obfuscation RNG position in case it needs to be performed.
+    g_Mod->state_.rng_sequences_[RNG_ITEM_OBFUSCATION] = 0;
+    
     // Set "has started" flag if loading into an already-in-progress file.
     if (state->floor_ > 0) {
         state->SetOption(OPT_HAS_STARTED_RUN, true);
@@ -127,6 +130,8 @@ bool StateManager_v2::Load(bool new_save) {
     option_flags_[3] = cosmetic_options;
     InitPartyMaxHpTable(partner_upgrades_);
     
+    // Turn off "has started" bit, so it won't carry over from previous files.
+    SetOption(OPT_HAS_STARTED_RUN, 0);
     // Turn off Debug Mode flag, so it won't carry over from previous files.
     SetOption(OPT_DEBUG_MODE_USED, 0);
     
@@ -226,6 +231,7 @@ uint32_t StateManager_v2::Rand(uint32_t range, int32_t sequence) {
             case RNG_CHEST_BADGE_RANDOM:
             case RNG_AUDIENCE_ITEM:
             case RNG_FILENAME:
+            case RNG_ITEM_OBFUSCATION:
                 break;
         }
         return third_party::fasthash64(
@@ -701,7 +707,7 @@ const char* StateManager_v2::GetEncodedOptions() const {
     uint64_t flag_options = option_flags_[1];
     flag_options <<= 32;
     flag_options |= (option_flags_[0] ^ 0x4000);
-    
+
     // Convert to a base-64 scheme using A-Z, a-z, 0-9, !, ?.
     // Format: 7+.7+.1 (FLAGS.NUMERIC.VERSION)
     for (int32_t i = 6; i >= 0; --i) {
