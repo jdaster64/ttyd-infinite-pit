@@ -91,6 +91,9 @@
 // .data
 80414FA0:seqTitleWorkPointer2
 
+// camdrv.o
+8000f2fc:camGetPtr
+
 // fadedrv.o
 80010d94:fadeIsFinish
 
@@ -1800,11 +1803,38 @@
 8029da6c:OSTicksToCalendarTime
 
 // gx.a GXAttr.c
+802b3c08:GXSetVtxDesc
+802b4520:GXClearVtxDesc
+802b4558:GXSetVtxAttrFmt
+802b4db0:GXSetArray
 802b4e04:GXSetTexCoordGen2
 802b5084:GXSetNumTexGens
 
+// gx.a GXLight.c
+802b6d6c:GXSetChanAmbColor
+802b6e54:GXSetChanMatColor
+802b6f3c:GXSetNumChans
+
 // gx.a GXTexture.c
 802b7880:GXLoadTexObj
+
+// gx.a GXTev.c
+802b88d4:GXSetTevOp
+802b89e8:GXSetTevColorOp
+802b8a50:GXSetTevAlphaOp
+802b8e30:GXSetTevOrder
+802b8fcc:GXSetNumTevStages
+
+// gx.a GXPixel.c
+802b8ff4:GXSetFog
+802b932c:GXSetBlendMode
+802b9380:GXSetColorUpdate
+802b93ac:GXSetAlphaUpdate
+802b93d8:GXSetZMode
+802b940c:GXSetZCompLoc
+
+// gx.a GXDisplayList.c
+802b9fa0:GXCallDisplayList
 
 // gx.a GXTransform.c
 802ba2fc:GXLoadPosMtxImm

@@ -4,6 +4,7 @@
 #include "mod_achievements.h"
 #include "mod_cheats.h"
 #include "mod_debug.h"
+#include "mod_gfxtest.h"
 #include "mod_loading.h"
 #include "mod_menu.h"
 #include "mod_title.h"
