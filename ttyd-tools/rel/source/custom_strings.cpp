@@ -73,6 +73,7 @@ namespace MsgKey {
         MSG_KIKEN_DE_POWER_P,
         MSG_KURI_MAP,
         MSG_NANCY_FRAPPE,
+        MSG_PCH_MADOWASERU,
         MSG_PINCH_DE_GANBARU,
         MSG_PINCH_DE_GANBARU_P,
         MSG_PKR_MONOSIRI,
@@ -181,6 +182,7 @@ constexpr const char* kKeyLookups[] = {
     "msg_kiken_de_power_p",
     "msg_kuri_map",
     "msg_nancy_frappe",
+    "msg_pch_madowaseru",
     "msg_pinch_de_ganbaru",
     "msg_pinch_de_ganbaru_p",
     "msg_pkr_monosiri",
@@ -432,6 +434,9 @@ const char* StringsManager::LookupReplacement(const char* msg_key) {
         case MsgKey::MSG_PYS_NOMIKOMI:
             return "Spit the front enemy into all\n"
                    "ground-bound enemies behind it.";
+        case MsgKey::MSG_PCH_MADOWASERU:
+            return "Tease enemies with some sly\n"
+                   "moves, confusing them.";
         case MsgKey::MSG_SUPER_COIN:
             return "A powerful object that raises\n"
                    "max SP, or ranks up a partner.";

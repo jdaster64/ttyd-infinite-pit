@@ -512,10 +512,13 @@ void ApplyFixedPatches() {
             BattleWeapon& weapon = 
                 *reinterpret_cast<BattleWeapon*>(evt->lwData[12]);
             weapon.confuse_chance = weapon.dizzy_chance * 1.27;
+            weapon.confuse_time = 3;
             weapon.dizzy_chance = 0;
+            weapon.dizzy_time = 0;
             return 2;
         });
-
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaMadowaseAttack.base_fp_cost = 4;
+    
     ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaKiss.base_fp_cost = 5;
     // Smooch parameter changes to make it restore 0 - 15 HP.
     // % of bar filled to gain 1 HP.
