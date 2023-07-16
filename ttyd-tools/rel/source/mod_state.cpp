@@ -24,6 +24,10 @@ namespace {
 using ::ttyd::mario_pouch::PouchData;
 namespace ItemType = ::ttyd::item_data::ItemType;
 
+// Global for floor 100 time, and whether it has been stopped on this file load.
+bool g_RtaTimerStopped = false;
+uint64_t g_RtaTimer100 = 0;
+
 const char* GetSavefileName() {
     return ttyd::mariost::g_MarioSt->saveFileName;
 }
@@ -119,6 +123,8 @@ int32_t PrintCompletionPercentage(char* buf, int32_t completed, int32_t total) {
 }
 
 bool StateManager_v2::Load(bool new_save) {
+    g_RtaTimerStopped = false;
+    
     if (!new_save) return LoadFromPreviousVersion(this);
     
     // Carry cosmetic / cheats state over between files.
@@ -691,8 +697,14 @@ void StateManager_v2::GetOptionStrings(
     strcpy(value_buf, num_value ? "On" : "Off");
 }
 
-const char* StateManager_v2::GetEncodedOptions() const {
-    static char enc_options[19];
+const char* StateManager_v2::GetEncodedOptions() const {    
+    static char enc_options[24];
+    
+    if (GetOptionNumericValue(OPT_RACE_MODE)) {
+        // Return special string for race mode.
+        sprintf(enc_options, "Community Race (v.%" PRId32 ")", version_);
+        return enc_options;
+    }
 
     uint64_t numeric_options = GetOptionValue(OPTNUM_ENEMY_HP);
     numeric_options <<= 12;
@@ -740,7 +752,18 @@ bool StateManager_v2::GetPlayStatsString(char* out_buf) {
         return false;
     }
     
-    const int64_t start_diff    = current_time - pit_start_time_;
+    // Lock timer value when the player reads the sign on floor 100 w/race mode.
+    if (GetOptionNumericValue(OPT_RACE_MODE) && floor_ + 1 == 100) {
+        if (!g_RtaTimerStopped) {
+            g_RtaTimerStopped = true;
+            g_RtaTimer100 = current_time;
+        }
+    } else {
+        g_RtaTimerStopped = false;
+    }
+    
+    const int64_t start_diff =
+        (g_RtaTimerStopped ? g_RtaTimer100 : current_time) - pit_start_time_;
     const int32_t turn_total    = GetOptionValue(STAT_TURNS_SPENT);
     const int64_t battle_time   = 
         mariost->animationTimeIncludingBattle - mariost->animationTimeNoBattle;
@@ -840,10 +863,11 @@ void StateManager_v2::SaveCurrentTime(bool pit_start) {
     last_save_time_ = current_time;
 }
 
-const char* StateManager_v2::GetCurrentTimeString() {
+const char* StateManager_v2::GetCurrentTimeString() {    
     static char buf[16];
     const uint64_t current_time = gc::OSTime::OSGetTime();
-    const int64_t start_diff = current_time - pit_start_time_;
+    const int64_t start_diff =
+        (g_RtaTimerStopped ? g_RtaTimer100 : current_time) - pit_start_time_;
     const int64_t last_save_diff = current_time - last_save_time_;
     // If debug mode was used on this file, the time since the last save
     // is negative (implying the time was rolled back), or time was never set,

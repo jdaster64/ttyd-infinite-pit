@@ -24,6 +24,7 @@
 #include <ttyd/item_data.h>
 #include <ttyd/mario_pouch.h>
 #include <ttyd/swdrv.h>
+#include <ttyd/system.h>
 #include <ttyd/unit_bomzou.h>
 #include <ttyd/unit_koura.h>
 #include <ttyd/unit_party_christine.h>
@@ -64,6 +65,11 @@ using ::ttyd::evtmgr_cmd::evtSetValue;
 
 namespace BattleUnitType = ::ttyd::battle_database_common::BattleUnitType;
 namespace ItemType = ::ttyd::item_data::ItemType;
+
+// Global, toggles whether to show/hide ATK/DEF stats below enemies.
+// Can be toggled on or off freely with 'Z' button, but is reset each battle.
+bool g_ShowAtkDefThisFloor = true;
+bool g_JustPressedZ = false;
 
 }
 
@@ -299,6 +305,9 @@ EVT_DEFINE_USER_FUNC(GetKissThiefResult) {
 }
     
 void ApplyFixedPatches() {
+    // Reset whether to show ATK/DEF stats below enemies.
+    g_ShowAtkDefThisFloor = true;
+    
     // Tattle returns a custom message based on the enemy's stats.
     g_btlevtcmd_get_monosiri_msg_no_trampoline = mod::patch::hookFunction(
         ttyd::unit_party_christine::btlevtcmd_get_monosiri_msg_no,
@@ -610,6 +619,16 @@ void ApplyFixedPatches() {
 void DisplayTattleStats(
     gc::mtx34* matrix, int32_t number, int32_t is_small, uint32_t* color,
     BattleWorkUnit* unit) {
+    // Pressing Z during the player action phase toggles on/off ATK+DEF display.
+    if (ttyd::system::keyGetButtonTrg(0) & ButtonId::Z) {
+        if (!g_JustPressedZ) {
+            g_ShowAtkDefThisFloor = !g_ShowAtkDefThisFloor;
+            g_JustPressedZ = true;
+        }
+    } else {
+        g_JustPressedZ = false;
+    }
+        
     // If enemy has been Tattled (Peekaboo does not count), 
     // display the enemy's ATK and DEF underneath their HP.
     bool show_atk_def =
@@ -620,8 +639,9 @@ void DisplayTattleStats(
         g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
         show_atk_def = true;
     }
-    // Only show ATK / DEF if player is currently selecting an action.
-    if (!(ttyd::battle::g_BattleWork->battle_flags & 0x80)) {
+    // Hide ATK / DEF outside player action phase (or if hidden for this floor).
+    if (!(ttyd::battle::g_BattleWork->battle_flags & 0x80) ||
+        !g_ShowAtkDefThisFloor) {
         show_atk_def = false;
     }
        
@@ -654,6 +674,10 @@ void DisplayTattleStats(
         // Otherwise, just draw HP.
         ttyd::icondrv::iconNumberDispGx(matrix, number, is_small, color);
     }
+}
+
+void RefreshExtraTattleStats() {
+    g_ShowAtkDefThisFloor = true;
 }
 
 EVT_DEFINE_USER_FUNC(InitializePartyMember) {

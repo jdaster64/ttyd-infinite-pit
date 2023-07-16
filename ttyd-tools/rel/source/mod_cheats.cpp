@@ -60,7 +60,8 @@ void CheatsManager::Update() {
     if ((code_history & 0xFFFFFF) == secretCode_RaceMode) {
         code_history = 0;
         if (InMainGameModes() && 
-            !g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN)) {
+            !g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN) &&
+            !g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
             // Enable standard options for community races.
             g_DrawRtaTimer = true;
             g_Mod->state_.EnableRaceOptions();
