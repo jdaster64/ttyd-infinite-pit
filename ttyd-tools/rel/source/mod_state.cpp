@@ -52,7 +52,7 @@ void InitPartyMaxHpTable(uint8_t* partner_upgrades) {
 bool LoadFromPreviousVersion(StateManager_v2* state) {
     void* saved_state = GetSavedStateLocation();
     uint8_t version = *reinterpret_cast<uint8_t*>(saved_state);
-    if (version != 7) {
+    if (version < 7) {
         // Version is incompatible with the current version; fail to load.
         return false;
     }
@@ -62,7 +62,7 @@ bool LoadFromPreviousVersion(StateManager_v2* state) {
     // Update fields that wouldn't have default value when updating versions...
 
     // Force version to current.
-    state->version_ = 7;
+    state->version_ = 8;
     InitPartyMaxHpTable(state->partner_upgrades_);
     
     // Reset item obfuscation RNG position in case it needs to be performed.
@@ -125,7 +125,7 @@ bool StateManager_v2::Load(bool new_save) {
     uint32_t cosmetic_options = option_flags_[3];
     
     memset(this, 0, sizeof(StateManager_v2));
-    version_ = 7;
+    version_ = 8;
     SetDefaultOptions();
     option_flags_[3] = cosmetic_options;
     InitPartyMaxHpTable(partner_upgrades_);
@@ -857,6 +857,14 @@ const char* StateManager_v2::GetCurrentTimeString() {
     // Otherwise, return the time since start as a string.
     DurationTicksToFmtString(start_diff, buf);
     return buf;
+}
+
+void StateManager_v2::EnableRaceOptions() {
+    SetDefaultOptions();
+    SetOption(OPT_RACE_MODE, 1);
+    SetOption(OPT_CHEST_REWARDS, 4);
+    SetOption(OPT_DISABLE_CHEST_HEAL, 1);
+    SetOption(OPTVAL_STARTER_ITEMS_RANDOM);
 }
 
 }

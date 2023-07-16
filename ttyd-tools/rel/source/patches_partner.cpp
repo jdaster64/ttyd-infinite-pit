@@ -610,11 +610,22 @@ void ApplyFixedPatches() {
 void DisplayTattleStats(
     gc::mtx34* matrix, int32_t number, int32_t is_small, uint32_t* color,
     BattleWorkUnit* unit) {
-    // If enemy has been Tattled (Peekaboo does not count) and the player is
-    // selecting an action, display the enemy's ATK and DEF underneath their HP.
-    if ((ttyd::swdrv::swGet(0x117a + unit->true_kind) ||
-         ttyd::swdrv::swGet(0x117a + unit->current_kind)) &&
-        (ttyd::battle::g_BattleWork->battle_flags & 0x80)) {
+    // If enemy has been Tattled (Peekaboo does not count), 
+    // display the enemy's ATK and DEF underneath their HP.
+    bool show_atk_def =
+        (ttyd::swdrv::swGet(0x117a + unit->true_kind) ||
+        ttyd::swdrv::swGet(0x117a + unit->current_kind));
+    // If cheat is enabled, force it to be on. (TODO: toggle on/off with Z?)
+    if (g_Mod->state_.GetOptionNumericValue(OPT_SHOW_ATK_DEF) ||
+        g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
+        show_atk_def = true;
+    }
+    // Only show ATK / DEF if player is currently selecting an action.
+    if (!(ttyd::battle::g_BattleWork->battle_flags & 0x80)) {
+        show_atk_def = false;
+    }
+       
+    if (show_atk_def) {
         int32_t atk, def;
         // If the enemy's atk and def aren't fetched, just draw HP normally.
         if (!GetTattleDisplayStats(unit->current_kind, &atk, &def)) {

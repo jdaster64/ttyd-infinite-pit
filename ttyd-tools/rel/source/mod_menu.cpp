@@ -159,6 +159,16 @@ void MenuManager::Update() {
         return;
     }
     
+    // If race mode is enabled, prevent input and force-close menu.
+    if (g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
+        if (time_button_held_ < kFadeoutStartTime) {
+            time_button_held_ = kFadeoutStartTime;
+        }
+        last_command_ = 0;
+        ++time_button_held_;
+        return;
+    }
+    
     uint16_t buttons = ttyd::system::keyGetButton(0);
     
     if (last_command_ && (buttons & last_command_) == last_command_) {
@@ -253,10 +263,19 @@ void MenuManager::Draw() {
         alpha = 0xff * (time_button_held_ - kFadeinTextStartTime)
                      / (kFadeinTextEndTime - kFadeinTextStartTime);
         if (alpha > 0xff) alpha = 0xff;
-        DrawText(
-            "Press L+Z to open the options menu, then\n"
-            "hold Z and press L or the D-Pad to make selections.",
-            0, -150, alpha, true, ~0U, 0.75f, /* alignment = center */ 4);
+        
+        if (g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
+            DrawText(
+                "Glitz Pit community race settings activated.\n"
+                "Options can no longer be changed.",
+                0, -150, alpha, true, 0xffed00ffU, 0.75f, 
+                /* alignment = center */ 4);
+        } else {
+            DrawText(
+                "Press L+Z to open the options menu, then\n"
+                "hold Z and press L or the D-Pad to make selections.",
+                0, -150, alpha, true, ~0U, 0.75f, /* alignment = center */ 4);
+        }
         return;
     }
     

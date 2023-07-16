@@ -8,7 +8,7 @@ class StateManager_v2 {
 public:
     // Save file revision; makes it possible to add fields while maintaining
     // backwards compatibility, and detect when a vanilla file is loaded.
-    // Current version = 7, compatible versions = 7 (2.30 onward).
+    // Current version = 8, compatible versions = 7-8 (2.30 onward).
     uint8_t     version_;
     
     // Game state / progression.
@@ -77,6 +77,10 @@ public:
     // Get the current RTA play time as a string.
     // Will return the empty string if the start time was unset or incompatible.
     const char* GetCurrentTimeString();
+    
+    // Enables standard settings for community races, including showing ATK/DEF,
+    // and disables the menu so changes cannot be made.
+    void EnableRaceOptions();
 } __attribute__((__packed__));
 
 static_assert(sizeof(StateManager_v2) <= 0x120);
@@ -199,7 +203,9 @@ enum Options_v2 {
     OPTVAL_MS_MOWZ_FIRST        = 0x2'22'3'0'007,
     // Hidden option; shuffles the appearance and description of items.
     OPT_OBFUSCATE_ITEMS         = 0x1'25'1'0'002,
-    // Next: 0x1/2'26...
+    // Turns on options for community races and disables option changes.
+    OPT_RACE_MODE               = 0x1'26'1'0'002,
+    // Next: 0x1/2'27...
     
     // Cosmetic / internal-only flag-based options.
     OPT_RTA_TIMER               = 0x1'60'1'0'002,
@@ -217,7 +223,8 @@ enum Options_v2 {
     OPT_HAS_STARTED_RUN         = 0x1'6b'1'0'002,
     // v2.23, shows a one-time tutorial when picking up a Lv. 2 Special Move.
     OPT_SEEN_MOVE_LEVEL_TUT     = 0x1'6c'1'0'002,
-    // Next: 0x1'6d...
+    OPT_SHOW_ATK_DEF            = 0x1'6d'1'0'002,
+    // Next: 0x1'6e...
     
     // Numeric options.
     // Global HP and ATK scaling (in percentage).

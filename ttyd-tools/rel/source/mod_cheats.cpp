@@ -29,7 +29,9 @@ namespace ItemType = ::ttyd::item_data::ItemType;
 uint32_t secretCode_BonusOptions1   = 012651265;
 uint32_t secretCode_BonusOptions2   = 043652131;
 uint32_t secretCode_BonusOptions3   = 031313141;
+uint32_t secretCode_RaceMode        = 013341336;
 uint32_t secretCode_RtaTimer        = 034345566;
+uint32_t secretCode_ShowAtkDef      = 023122312;
 uint32_t secretCode_UnlockFxBadges  = 026122146;
 uint32_t secretCode_ObfuscateItems  = 046362123;
 uint32_t secretCode_DebugMode       = 036363636;
@@ -49,6 +51,22 @@ void CheatsManager::Update() {
     if (ttyd::system::keyGetButtonTrg(0) & ButtonId::X) code = 5;
     if (ttyd::system::keyGetButtonTrg(0) & ButtonId::Y) code = 6;
     if (code) code_history = (code_history << 3) | code;
+    
+    if (g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
+        // Automatically turn on RTA timer if loading race mode file.
+        g_DrawRtaTimer = true;
+    }
+    
+    if ((code_history & 0xFFFFFF) == secretCode_RaceMode) {
+        code_history = 0;
+        if (InMainGameModes() && 
+            !g_Mod->state_.GetOptionNumericValue(OPT_HAS_STARTED_RUN)) {
+            // Enable standard options for community races.
+            g_DrawRtaTimer = true;
+            g_Mod->state_.EnableRaceOptions();
+            ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+        }
+    }
     if ((code_history & 0xFFFFFF) == secretCode_RtaTimer) {
         code_history = 0;
         // Display the RTA time since the current Pit run was started.
@@ -73,6 +91,15 @@ void CheatsManager::Update() {
         g_Mod->state_.ChangeOption(OPT_BGM_DISABLED);
         if (g_Mod->state_.GetOptionNumericValue(OPT_BGM_DISABLED)) {
             ttyd::pmario_sound::psndStopAllFadeOut();
+        }
+        ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
+    }
+    if ((code_history & 0xFFFFFF) == secretCode_ShowAtkDef) {
+        code_history = 0;
+        // Toggle on/off ability to show ATK/DEF of enemies by default.
+        // (Cannot be turned off if in race mode)
+        if (!g_Mod->state_.GetOptionNumericValue(OPT_RACE_MODE)) {
+            g_Mod->state_.ChangeOption(OPT_SHOW_ATK_DEF);
         }
         ttyd::sound::SoundEfxPlayEx(0x265, 0, 0x64, 0x40);
     }
