@@ -17,6 +17,7 @@
 #include <ttyd/battle_monosiri.h>
 #include <ttyd/battle_sub.h>
 #include <ttyd/battle_unit.h>
+#include <ttyd/battle_weapon_power.h>
 #include <ttyd/evtmgr.h>
 #include <ttyd/evtmgr_cmd.h>
 #include <ttyd/icondrv.h>
@@ -56,6 +57,7 @@ namespace {
 
 using ::ttyd::battle_database_common::BattleWeapon;
 using ::ttyd::battle_unit::BattleWorkUnit;
+using ::ttyd::battle_weapon_power::weaponGetPowerDefault;
 using ::ttyd::evtmgr::EvtEntry;
 using ::ttyd::evtmgr_cmd::evtGetValue;
 using ::ttyd::evtmgr_cmd::evtSetValue;
@@ -78,6 +80,7 @@ extern const int32_t g_koura_damage_core_Patch_LightDmg;
 extern const int32_t g_subsetevt_blow_dead_Patch_GetRewards;
 extern const int32_t g_BattleSetStatusDamage_Patch_GaleLevelFactor;
 extern const int32_t g_partyClaudaAttack_KumoGuard_Patch_UseOnSelf;
+extern const int32_t g_partyVivianAttack_MagicalPowder_Patch_ChangeButtons;
 extern const int32_t g_partyVivianAttack_CharmKissAttack_Patch_DisableNext;
 extern const int32_t g_partyVivianAttack_CharmKissAttack_Patch_ResultFunc;
 extern const int32_t g_partyChuchurinaAttack_ItemSteal_Patch_StealFunc;
@@ -88,18 +91,23 @@ extern const int32_t g_partyChuchurinaAttack_Kiss_Patch_BarColor2;
 extern const int32_t g_partyChuchurinaAttack_Kiss_Patch_AcLevel3;
 extern const int32_t g_partyChuchurinaAttack_Kiss_Patch_AcLevel2;
 extern const int32_t g_partyChuchurinaAttack_Kiss_Patch_AcLevel1;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgNormal;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgNormal2;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgSuper;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgSuper2;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUltra;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColor1;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColor2;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColor3;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps1;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps2;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps3;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUltra2;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColorU1;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColorU2;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColorU3;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColorS1;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColorS2;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_BarColorN1;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetNumberHits;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetSp1;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetSp2;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetSp3;
-extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_GetPrizeTier;
+extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_PrizeTierOffset;
 extern const int32_t g_partyChuchurinaAttack_NormalAttack_Patch_ResetFace;
 
 namespace partner {
@@ -127,6 +135,41 @@ DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
 EVT_PATCH_END()
 static_assert(sizeof(GaleForceKillPatch) == 0x38);
 
+// Patch to change number of buttons in Fiery Jinx action command per rank.
+EVT_BEGIN(VivianFieryJinxButtonsEvt)
+USER_FUNC(ttyd::battle_event_cmd::btlevtcmd_GetPartyTechLv, -2, LW(1))
+SET(LW(2), 5)
+IF_EQUAL(LW(1), 2)
+    // If Ultra-Rank, set # buttons to 6 and add another half-second to timer.
+    ADD(LW(0), 30)
+    ADD(LW(2), 1)
+END_IF()
+USER_FUNC(
+    ttyd::battle_event_cmd::btlevtcmd_AcSetParamAll,
+    LW(0), 1, LW(2), -3, 1, 
+    EVT_HELPER_POINTER_BASE, EVT_HELPER_POINTER_BASE, EVT_HELPER_POINTER_BASE)
+RETURN()
+EVT_END()
+// Hook to run above event.
+EVT_BEGIN(VivianFieryJinxButtonsPatch)
+RUN_CHILD_EVT(VivianFieryJinxButtonsEvt)
+DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
+EVT_PATCH_END()
+static_assert(sizeof(VivianFieryJinxButtonsPatch) == 0x28);
+
+// Patch to make Mowz's Love Slap deal a varying number of hits, determined by
+// AC output param 2.
+EVT_BEGIN(LoveSlapNumberOfHitsPatch)
+CASE_ETC()
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_AcGetOutputParam, 2, LW(0))
+    USER_FUNC(
+        ttyd::battle_event_cmd::btlevtcmd_SetUnitWork, -2, 5, LW(0))
+// Pad out to fill rest of original switch statement.
+DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0) DEBUG_REM(0)
+EVT_PATCH_END()
+static_assert(sizeof(LoveSlapNumberOfHitsPatch) == 0x50);
+
 // Patch to disable getting Star Power early from certain attacks;
 // battle::AwardStarPowerAndResetFaceDirection will be used to award it
 // at the end of the attack instead, to make sure Stylishes are counted.
@@ -134,12 +177,6 @@ EVT_BEGIN(DeclareStarPowerPatch)
 DEBUG_REM(0) DEBUG_REM(0)
 EVT_PATCH_END()
 static_assert(sizeof(DeclareStarPowerPatch) == 0x10);
-
-// Patch to get the altered Love Slap prize level from the AC output value.
-EVT_BEGIN(GetLoveSlapPrizeTierPatch)
-USER_FUNC(GetLoveSlapPrizeTier, LW(0))
-EVT_PATCH_END()
-static_assert(sizeof(GetLoveSlapPrizeTierPatch) == 0xc);
 
 EVT_DEFINE_USER_FUNC(ShellShieldSetInitialHp) {
     int32_t ac_level = evtGetValue(evt, evt->evtArguments[1]);
@@ -328,6 +365,12 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(g_partyClaudaAttack_KumoGuard_Patch_UseOnSelf),
         DodgyFogFlurriePatch, sizeof(DodgyFogFlurriePatch));
         
+    // Have Fiery Jinx have six buttons / deal 6 damage at Ultra Rank.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyVivianAttack_MagicalPowder_Patch_ChangeButtons),
+        VivianFieryJinxButtonsPatch, sizeof(VivianFieryJinxButtonsPatch));
+        
     // Make Infatuate single-target and slightly more expensive.
     ttyd::unit_party_vivian::partyWeapon_VivianCharmKissAttack.
         target_class_flags = 0x01101260;
@@ -343,6 +386,108 @@ void ApplyFixedPatches() {
         reinterpret_cast<void*>(
             g_partyVivianAttack_CharmKissAttack_Patch_ResultFunc),
         reinterpret_cast<int32_t>(InfatuateChangeAlliance));
+
+    // Basically reinventing Love Slap completely again!
+    // Love Slap does up to 3-5 hits based on rank.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetNumberHits),
+        LoveSlapNumberOfHitsPatch, sizeof(LoveSlapNumberOfHitsPatch));
+    // Love Slap does 1 base damage on all hits.
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
+        damage_function =  reinterpret_cast<void*>(&weaponGetPowerDefault);
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRight.
+        damage_function =  reinterpret_cast<void*>(&weaponGetPowerDefault);
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeftLast.
+        damage_function =  reinterpret_cast<void*>(&weaponGetPowerDefault);
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRightLast.
+        damage_function =  reinterpret_cast<void*>(&weaponGetPowerDefault);
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
+        damage_function_params[0] = 1;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRight.
+        damage_function_params[0] = 1;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeftLast.
+        damage_function_params[0] = 1;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRightLast.
+        damage_function_params[0] = 1;
+    // Love Slap has diminishing returns per hit.
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
+        special_property_flags |= 0x10;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRight.
+        special_property_flags |= 0x10;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeftLast.
+        special_property_flags |= 0x10;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRightLast.
+        special_property_flags |= 0x10;
+    // Love Slap immune to fire/spikes (except pre-emptive), but not Payback.
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
+        counter_resistance_flags = 0x1a;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRight.
+        counter_resistance_flags = 0x1a;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeftLast.
+        counter_resistance_flags = 0x1a;
+    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRightLast.
+        counter_resistance_flags = 0x1a;
+    // Change % of bar fullness needed for additional hit.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgNormal), 50);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgNormal2), 50);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgSuper), 34);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgSuper2), 34);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUltra), 25);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUltra2), 25);
+    // Change tier of Action Command prize level to number of hits - 3.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_PrizeTierOffset), 3);
+    // Bar fullness thresholds for color change.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_BarColorU1), 25);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_BarColorU2), 50);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_BarColorU3), 75);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_BarColorS1), 34);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_BarColorS2), 67);
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_BarColorN1), 50);
+    // Move SP calculation to the end of the attack so the Stylish is counted.
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp1),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp2),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp3),
+        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
+    mod::patch::writePatch(
+        reinterpret_cast<void*>(
+            g_partyChuchurinaAttack_NormalAttack_Patch_ResetFace),
+        reinterpret_cast<uint32_t>(
+            battle::AwardStarPowerAndResetFaceDirection));
         
     // Replace Kiss Thief's item stealing routine with a custom one.
     mod::patch::writePatch(
@@ -350,13 +495,15 @@ void ApplyFixedPatches() {
             g_partyChuchurinaAttack_ItemSteal_Patch_StealFunc),
         reinterpret_cast<int32_t>(GetKissThiefResult));
         
-    // Increase Tease's base status rate to 1.27x.
+    // Increase Tease's base status rate to 1.27x and make it inflict Confuse.
     g__make_madowase_weapon_trampoline = mod::patch::hookFunction(
         ttyd::unit_party_chuchurina::_make_madowase_weapon,
         [](EvtEntry* evt, bool isFirstCall) {
             g__make_madowase_weapon_trampoline(evt, isFirstCall);
-            reinterpret_cast<BattleWeapon*>(evt->lwData[12])->dizzy_chance
-                *= 1.27;
+            BattleWeapon& weapon = 
+                *reinterpret_cast<BattleWeapon*>(evt->lwData[12]);
+            weapon.confuse_chance = weapon.dizzy_chance * 1.27;
+            weapon.dizzy_chance = 0;
             return 2;
         });
 
@@ -437,72 +584,8 @@ void ApplyFixedPatches() {
     ttyd::unit_party_yoshi::partyWeapon_YoshiCallGuard.
         target_property_flags |= 0x2000;
     ttyd::unit_party_yoshi::partyWeapon_YoshiCallGuard.base_fp_cost = 7;
-    // Bomb Squad and Bob-ombast are Defense-piercing.
+    // Bomb Squad is Defense-piercing.
     ttyd::unit_bomzou::weapon_bomzou_explosion.special_property_flags |= 0x40;
-    ttyd::unit_party_sanders::partyWeapon_SandersSuperBombAttack.
-        special_property_flags |= 0x40;
-
-    // Love Slap immune to fire and spikes (except pre-emptive spikes).
-    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeft.
-        counter_resistance_flags |= 0x1a;
-    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRight.
-        counter_resistance_flags |= 0x1a;
-    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackLeftLast.
-        counter_resistance_flags |= 0x1a;
-    ttyd::unit_party_chuchurina::partyWeapon_ChuchurinaNormalAttackRightLast.
-        counter_resistance_flags |= 0x1a;
-    // Love Slap maximum power of 4, 6 at Super, Ultra Rank.
-    // % of bar fullness for additional damage (Super, Ultra rank).
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgSuper), 34);
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_PercentPerDmgUltra), 20);
-    // Change tier of Action Command prize level to match the original game's,
-    // since by default it's based on base damage - 2.
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_GetPrizeTier),
-        GetLoveSlapPrizeTierPatch, sizeof(GetLoveSlapPrizeTierPatch));
-    // Bar fullness thresholds for color change.
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_BarColor1), 40);
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_BarColor2), 60);
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_BarColor3), 80);
-    // Change number of slaps based on move rank (avoids bug w/Counter status).
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps1), 1);
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps2), 3);
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_NumSlaps3), 5);
-    // Move SP calculation to the end of the attack so the Stylish is counted.
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp1),
-        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp2),
-        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_GetSp3),
-        DeclareStarPowerPatch, sizeof(DeclareStarPowerPatch));
-    mod::patch::writePatch(
-        reinterpret_cast<void*>(
-            g_partyChuchurinaAttack_NormalAttack_Patch_ResetFace),
-        reinterpret_cast<uint32_t>(
-            battle::AwardStarPowerAndResetFaceDirection));
 
     // Kiss Thief has higher FP cost, is immune to all contact hazards
     // (except lit Bob-ombs), and can target any height.
@@ -577,13 +660,6 @@ EVT_DEFINE_USER_FUNC(InitializePartyMember) {
     party_data.hp_level = starting_rank;
     party_data.attack_level = starting_rank;
     party_data.tech_level = starting_rank;
-    return 2;
-}
-
-EVT_DEFINE_USER_FUNC(GetLoveSlapPrizeTier) {
-    const int32_t damage = evtGetValue(evt, evt->evtArguments[0]);
-    // 2-3 damage = Nice, 4-5 = Good, 6 = Great, similar to original.
-    evtSetValue(evt, evt->evtArguments[0], damage / 2 - 1);
     return 2;
 }
 

@@ -105,11 +105,11 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_ResultACDefence, 2)
 // btlevtcmd_StartAC
 // btlevtcmd_SetupAC
 // btlevtcmd_AcSetOutputParam
-// btlevtcmd_AcGetOutputParam
+EVT_DECLARE_USER_FUNC(btlevtcmd_AcGetOutputParam, 2)
 // btlevtcmd_AcSetGaugeParam
 // btlevtcmd_AcGetParam
 // btlevtcmd_AcSetParam
-// btlevtcmd_AcSetParamAll
+EVT_DECLARE_USER_FUNC(btlevtcmd_AcSetParamAll, 8)
 // btlevtcmd_AcSetFlag
 // btlevtcmd_AcGetDifficulty
 // btlevtcmd_AcSetDifficulty
@@ -205,7 +205,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_ResetFaceDirection, 1)
 // btlevtcmd_ChangeFaceDirection
 // btlevtcmd_GetFaceDirection
 // btlevtcmd_CalculateFaceDirection
-// btlevtcmd_GetPartyTechLv
+EVT_DECLARE_USER_FUNC(btlevtcmd_GetPartyTechLv, 2)
 // btlevtcmd_GetUnitId
 // btlevtcmd_GetBodyId
 // btlevtcmd_GetPartyId
@@ -228,7 +228,7 @@ EVT_DECLARE_USER_FUNC(btlevtcmd_StartAvoid, 2)
 // btlevtcmd_SetUnitWorkFloat
 // btlevtcmd_GetUnitWorkFloat
 // btlevtcmd_AddUnitWork
-// btlevtcmd_SetUnitWork
+EVT_DECLARE_USER_FUNC(btlevtcmd_SetUnitWork, 3)
 // btlevtcmd_GetUnitWork
 // btlevtcmd_SetOverTurnCount
 // btlevtcmd_GetOverTurnCount

@@ -1023,6 +1023,8 @@
 80106bb8:btlevtcmd_AnimeChangePose
 8010749c:btlevtcmd_AudienceDeclareACResult
 80107694:btlevtcmd_ResultACDefence
+801078dc:btlevtcmd_AcGetOutputParam
+80107a64:btlevtcmd_AcSetParamAll
 8010a26c:btlevtcmd_StartWaitEvent
 8010a78c:btlevtcmd_CheckDamage
 8010abac:btlevtcmd_PreCheckDamage
@@ -1036,8 +1038,10 @@
 8010d860:btlevtcmd_SetMoveSpeed
 8010ddac:btlevtcmd_CheckToken
 8010e4bc:btlevtcmd_ResetFaceDirection
+8010e99c:btlevtcmd_GetPartyTechLv
 8010ef44:btlevtcmd_CheckSpace
 8010f200:btlevtcmd_StartAvoid
+8010f7a4:btlevtcmd_SetUnitWork
 8010ff74:btlevtcmd_SetHp
 801124f8:btlevtcmd_GetHomePos
 80112fcc:btlevtcmd_SetPos
